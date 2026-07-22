@@ -1,0 +1,3 @@
+
+window.EMBEDDED_CANDIDATES = [];
+

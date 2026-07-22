@@ -1122,55 +1122,79 @@ function renderSavedJobs() {
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
 }
 
-async function removeSavedJob(docId, btnEl) {
+async function removeSavedJob(docId) {
   if(!docId) return;
-  if(btnEl) btnEl.disabled = true;
   const job = STATE.savedJobs.find(j => j.doc_id === docId);
-  if (!job) {
-    if(btnEl) btnEl.disabled = false;
-    return;
+  if (!job) return;
+
+  // Optimistic UI updates
+  STATE.savedJobs = STATE.savedJobs.filter(j => j.doc_id !== docId);
+  renderSavedJobs();
+  
+  // Sync with Kanban board safely
+  const cards = document.querySelectorAll('.job-card');
+  for (const card of cards) {
+    if (card.getAttribute('data-job-url') === job.url) {
+      card.style.border = '';
+      card.style.boxShadow = '';
+      const toggleBtn = card.querySelector('.btn-toggle-hotlist');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = '⭐ Save to Hotlist';
+        toggleBtn.style.background = 'rgba(255,255,255,0.05)';
+        toggleBtn.style.color = 'var(--text-main)';
+        toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+      }
+    }
   }
 
   try {
     await fetch(`/api/jobs/saved/${docId}`, { method: 'DELETE' });
-    STATE.savedJobs = STATE.savedJobs.filter(j => j.doc_id !== docId);
     toast('Job removed from Hotlist', 'success');
-    renderSavedJobs();
-    
-    // Sync with Kanban board safely
-    const cards = document.querySelectorAll('.job-card');
-    for (const card of cards) {
-      if (card.getAttribute('data-job-url') === job.url) {
-        card.style.border = '';
-        card.style.boxShadow = '';
-        const toggleBtn = card.querySelector('.btn-toggle-hotlist');
-        if (toggleBtn) {
-          toggleBtn.innerHTML = '⭐ Save to Hotlist';
-          toggleBtn.style.background = 'rgba(255,255,255,0.05)';
-          toggleBtn.style.color = 'var(--text-main)';
-          toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
-          toggleBtn.disabled = false;
-        }
-      }
-    }
   } catch(e) {
     toast('Failed to remove job', 'error');
     console.error(e);
-  } finally {
-    if(btnEl) btnEl.disabled = false;
   }
 }
 
 async function toggleHotlist(b64, btnEl) {
-  if (btnEl) btnEl.disabled = true;
   const job = JSON.parse(decodeURIComponent(atob(b64)));
   const savedJob = (STATE.savedJobs || []).find(sj => sj.url === job.url);
 
   if (savedJob) {
-    // Already saved: Remove it
-    await removeSavedJob(savedJob.doc_id, btnEl);
+    // Already saved: Remove it (Optimistic)
+    if (btnEl) {
+      btnEl.innerHTML = '⭐ Save to Hotlist';
+      btnEl.style.background = 'rgba(255,255,255,0.05)';
+      btnEl.style.color = 'var(--text-main)';
+      btnEl.style.borderColor = 'rgba(255,255,255,0.1)';
+      const card = btnEl.closest('.job-card');
+      if (card) {
+        card.style.border = '';
+        card.style.boxShadow = '';
+      }
+    }
+    await removeSavedJob(savedJob.doc_id);
   } else {
-    // Not saved: Save it
+    // Not saved: Save it (Optimistic)
+    if (btnEl) {
+      btnEl.innerHTML = '✅ Saved';
+      btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
+      btnEl.style.color = 'var(--emerald)';
+      btnEl.style.borderColor = 'var(--emerald)';
+      const card = btnEl.closest('.job-card');
+      if (card) {
+        card.style.border = '1px solid var(--emerald)';
+        card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
+      }
+    }
+    
+    // We add a temporary doc_id to allow immediate removal if double-clicked
+    const tempDocId = 'temp_' + Date.now();
+    job.doc_id = tempDocId;
+    if (!STATE.savedJobs) STATE.savedJobs = [];
+    STATE.savedJobs.unshift(job);
+    renderSavedJobs();
+
     try {
       const res = await fetch('/api/jobs/saved', {
         method: 'POST',
@@ -1178,29 +1202,18 @@ async function toggleHotlist(b64, btnEl) {
         body: JSON.stringify(job)
       });
       const data = await res.json();
-      job.doc_id = data.id;
       
-      if (!STATE.savedJobs) STATE.savedJobs = [];
-      STATE.savedJobs.unshift(job);
-      toast('⭐ Job saved to Hotlist!', 'success');
-      renderSavedJobs();
-      
-      // Sync UI
-      if (btnEl) {
-        btnEl.innerHTML = '✅ Saved';
-        btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
-        btnEl.style.color = 'var(--emerald)';
-        btnEl.style.borderColor = 'var(--emerald)';
-        const card = btnEl.closest('.job-card');
-        if (card) {
-          card.style.border = '1px solid var(--emerald)';
-          card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
-        }
+      // Update the real doc_id
+      const savedRef = STATE.savedJobs.find(sj => sj.doc_id === tempDocId);
+      if (savedRef) {
+        savedRef.doc_id = data.id;
       }
+      toast('⭐ Job saved to Hotlist!', 'success');
     } catch(e) {
       toast('Failed to save job', 'error');
-    } finally {
-      if (btnEl) btnEl.disabled = false;
+      // Revert if failed
+      STATE.savedJobs = STATE.savedJobs.filter(sj => sj.doc_id !== tempDocId);
+      renderSavedJobs();
     }
   }
 }
