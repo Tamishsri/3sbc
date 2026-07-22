@@ -5,7 +5,613 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Enterprise Talent Intelligence ATS</title>
   <meta name="description" content="Production-grade AI recruitment platform for candidate sourcing, evaluation, and team management.">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+/* ==========================================================================
+   ENTERPRISE TALENT INTELLIGENCE ATS — ASHBY / LINEAR DESIGN SYSTEM
+   Theme: Slate Dark (#0f172a, #1e293b, #334155)
+   Typography: Inter & Plus Jakarta Sans
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Slate Color Palette */
+  --bg-slate-900: #0f172a;
+  --bg-slate-800: #1e293b;
+  --bg-slate-700: #334155;
+  --bg-slate-950: #020617;
+
+  --border-slate-700: #334155;
+  --border-slate-800: #1e293b;
+  --border-blue-500: #3b82f6;
+
+  --text-slate-50: #f8fafc;
+  --text-slate-200: #e2e8f0;
+  --text-slate-400: #94a3b8;
+  --text-slate-500: #64748b;
+
+  --brand-blue: #2563eb;
+  --brand-blue-hover: #1d4ed8;
+
+  --emerald-bg: rgba(16, 185, 129, 0.12);
+  --emerald-text: #34d399;
+  --emerald-border: rgba(16, 185, 129, 0.25);
+
+  --amber-bg: rgba(245, 158, 11, 0.12);
+  --amber-text: #fbbf24;
+  --amber-border: rgba(245, 158, 11, 0.25);
+
+  --cyan-bg: rgba(6, 182, 212, 0.12);
+  --cyan-text: #38bdf8;
+  --cyan-border: rgba(6, 182, 212, 0.25);
+
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-slate-900);
+  color: var(--text-slate-50);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 5rem 2rem;
+}
+
+/* Header Navbar */
+.navbar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  margin-bottom: 2rem;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-logo-box {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.brand-titles h1 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-slate-50);
+}
+
+.brand-titles p {
+  font-size: 0.8rem;
+  color: var(--text-slate-400);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sync-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: var(--emerald-bg);
+  border: 1px solid var(--emerald-border);
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  color: var(--emerald-text);
+  font-weight: 600;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  background-color: var(--emerald-text);
+  border-radius: 50%;
+}
+
+.btn-primary-action {
+  padding: 0.6rem 1.2rem;
+  background-color: var(--brand-blue);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-primary-action:hover {
+  background-color: var(--brand-blue-hover);
+}
+
+.btn-secondary-action {
+  padding: 0.6rem 1.2rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-slate-700);
+  color: var(--text-slate-200);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-secondary-action:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-slate-50);
+}
+
+/* KPI Analytics Section */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-card {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-slate-50);
+  line-height: 1;
+}
+
+/* Team Performance Yield Section */
+.section-heading {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+
+.teams-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.team-stat-card {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+}
+
+.team-stat-card h4 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-slate-50);
+  margin-bottom: 0.5rem;
+}
+
+.team-metrics-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-slate-400);
+}
+
+/* Toolbar & Filters */
+.toolbar-container {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-field-box {
+  position: relative;
+}
+
+.search-field-box input {
+  width: 100%;
+  padding: 0.75rem 1.25rem 0.75rem 2.8rem;
+  background-color: var(--bg-slate-900);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-md);
+  color: var(--text-slate-50);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.search-field-box input:focus {
+  border-color: var(--brand-blue);
+}
+
+.search-icon-inside {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-slate-500);
+  font-size: 0.9rem;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab-button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-tab-btn {
+  padding: 0.4rem 0.9rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-sm);
+  color: var(--text-slate-400);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-tab-btn.active {
+  background-color: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.view-mode-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background-color: var(--bg-slate-900);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-slate-700);
+}
+
+.toggle-view-btn {
+  padding: 0.35rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-slate-400);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.toggle-view-btn.active {
+  background-color: var(--bg-slate-800);
+  color: var(--text-slate-50);
+}
+
+.team-dropdown-select {
+  padding: 0.4rem 0.85rem;
+  background-color: var(--bg-slate-900);
+  border: 1px solid var(--border-slate-700);
+  color: var(--text-slate-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  outline: none;
+}
+
+/* Candidate Grid View */
+.candidate-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.candidate-card {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.2s ease;
+}
+
+.candidate-card:hover {
+  border-color: var(--border-blue-500);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.team-tag-pill {
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  background: var(--cyan-bg);
+  border: 1px solid var(--cyan-border);
+  color: var(--cyan-text);
+  border-radius: var(--radius-full);
+}
+
+.score-badge-box {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-sm);
+}
+
+.score-high {
+  background: var(--emerald-bg);
+  color: var(--emerald-text);
+  border: 1px solid var(--emerald-border);
+}
+
+.score-medium {
+  background: var(--amber-bg);
+  color: var(--amber-text);
+  border: 1px solid var(--amber-border);
+}
+
+.candidate-name {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-slate-50);
+  margin-bottom: 0.25rem;
+}
+
+.candidate-role {
+  font-size: 0.85rem;
+  color: var(--cyan-text);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.candidate-location {
+  font-size: 0.775rem;
+  color: var(--text-slate-400);
+  margin-bottom: 1rem;
+}
+
+.evaluation-box {
+  background-color: var(--bg-slate-900);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-slate-400);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.evaluation-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brand-blue);
+  margin-bottom: 0.35rem;
+}
+
+.card-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-slate-700);
+  padding-top: 1rem;
+}
+
+.linkedin-link-btn {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--cyan-text);
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  background: var(--cyan-bg);
+  border: 1px solid var(--cyan-border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.linkedin-link-btn:hover {
+  background: var(--cyan-text);
+  color: #020617;
+}
+
+.status-select-control {
+  background-color: var(--bg-slate-900);
+  border: 1px solid var(--border-slate-700);
+  color: var(--text-slate-200);
+  font-size: 0.775rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+/* Data Table View */
+.data-table-wrapper {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  display: none;
+}
+
+.ats-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.ats-data-table th {
+  background-color: var(--bg-slate-900);
+  padding: 0.9rem 1.25rem;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-slate-700);
+}
+
+.ats-data-table td {
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--border-slate-700);
+  color: var(--text-slate-200);
+}
+
+.ats-data-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-box {
+  background-color: var(--bg-slate-800);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.modal-title-row h3 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-slate-400);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.terminal-console {
+  background-color: var(--bg-slate-950);
+  border: 1px solid var(--border-slate-700);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #38bdf8;
+  height: 320px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+  </style>
 </head>
 <body>
 
@@ -154,6 +760,938 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+const EMBEDDED_CANDIDATES = [
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP MM Consultant",
+    "Target Location": "Cypress, TX",
+    "Candidate Name/Title": "Senior SAP MM Consultant Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm-consultant-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP MM Consultant."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP MM Consultant",
+    "Target Location": "Cypress, TX",
+    "Candidate Name/Title": "SAP MM Consultant Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm-consultant-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP MM Consultant."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Fiori/ BTP",
+    "Target Location": "New Holland, PA",
+    "Candidate Name/Title": "Senior SAP Fiori/ BTP Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fiori--btp-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Fiori/ BTP."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Fiori/ BTP",
+    "Target Location": "New Holland, PA",
+    "Candidate Name/Title": "SAP Fiori/ BTP Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fiori--btp-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Fiori/ BTP."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Hybris",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "Senior SAP Hybris Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hybris-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Hybris."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Hybris",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "SAP Hybris Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hybris-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Hybris."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Eden Praire, MN",
+    "Candidate Name/Title": "Senior Azure Data Engineer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Azure Data Engineer."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Eden Praire, MN",
+    "Candidate Name/Title": "Azure Data Engineer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Azure Data Engineer."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP ABAP",
+    "Target Location": "New York Mills, NY",
+    "Candidate Name/Title": "Senior SAP ABAP Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-abap-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP ABAP."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP ABAP",
+    "Target Location": "New York Mills, NY",
+    "Candidate Name/Title": "SAP ABAP Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-abap-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP ABAP."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP MM Consultant",
+    "Target Location": "Cypress, TX",
+    "Candidate Name/Title": "SAP MM Consultant Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm-consultant-analyst",
+    "Match Score": 84,
+    "AI Reasoning": "Strong fit: Candidate demonstrates 5+ years of hands-on configuration, implementation, and support experience in SAP MM Consultant."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Fiori/ BTP",
+    "Target Location": "New Holland, PA",
+    "Candidate Name/Title": "SAP Fiori/ BTP Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fiori--btp-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP Fiori/ BTP projects."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP Hybris",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "SAP Hybris Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hybris-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP Hybris projects."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Eden Praire, MN",
+    "Candidate Name/Title": "Azure Data Engineer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Azure Data Engineer projects."
+  },
+  {
+    "Team Name": "Lokesh & Team",
+    "Target Skill (AREA)": "SAP ABAP",
+    "Target Location": "New York Mills, NY",
+    "Candidate Name/Title": "SAP ABAP Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-abap-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP ABAP projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP MM/ Ariba",
+    "Target Location": "Philadelphia, PA",
+    "Candidate Name/Title": "Senior SAP MM/ Ariba Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm--ariba-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP MM/ Ariba."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP MM/ Ariba",
+    "Target Location": "Philadelphia, PA",
+    "Candidate Name/Title": "SAP MM/ Ariba Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm--ariba-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP MM/ Ariba."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP Testing",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "Senior SAP Testing Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-testing-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Testing."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP Testing",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "SAP Testing Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-testing-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP Testing."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Clinical SAS Programmer",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "Senior Clinical SAS Programmer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/clinical-sas-programmer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Clinical SAS Programmer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Clinical SAS Programmer",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "Clinical SAS Programmer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/clinical-sas-programmer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Clinical SAS Programmer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP HCM Successfactors",
+    "Target Location": "Brooklyn, NY",
+    "Candidate Name/Title": "Senior SAP HCM Successfactors Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hcm-successfactors-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP HCM Successfactors."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP HCM Successfactors",
+    "Target Location": "Brooklyn, NY",
+    "Candidate Name/Title": "SAP HCM Successfactors Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hcm-successfactors-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP HCM Successfactors."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Chicago, IL",
+    "Candidate Name/Title": "Senior Azure Data Engineer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Azure Data Engineer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Chicago, IL",
+    "Candidate Name/Title": "Azure Data Engineer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Azure Data Engineer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Data Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "Senior Data Engineer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/data-engineer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Data Engineer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Data Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "Data Engineer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/data-engineer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Data Engineer."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP MM/ Ariba",
+    "Target Location": "Philadelphia, PA",
+    "Candidate Name/Title": "SAP MM/ Ariba Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-mm--ariba-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP MM/ Ariba projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP Testing",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "SAP Testing Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-testing-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP Testing projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Clinical SAS Programmer",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "Clinical SAS Programmer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/clinical-sas-programmer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Clinical SAS Programmer projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "SAP HCM Successfactors",
+    "Target Location": "Brooklyn, NY",
+    "Candidate Name/Title": "SAP HCM Successfactors Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-hcm-successfactors-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP HCM Successfactors projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Azure Data Engineer",
+    "Target Location": "Chicago, IL",
+    "Candidate Name/Title": "Azure Data Engineer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/azure-data-engineer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Azure Data Engineer projects."
+  },
+  {
+    "Team Name": "Mahesh & Team",
+    "Target Skill (AREA)": "Data Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "Data Engineer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/data-engineer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Data Engineer projects."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AWS/ DevOps",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "Senior AWS/ DevOps Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/aws--devops-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in AWS/ DevOps."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AWS/ DevOps",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "AWS/ DevOps Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/aws--devops-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in AWS/ DevOps."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Angular / Front End",
+    "Target Location": "San Antonio, TX",
+    "Candidate Name/Title": "Senior Angular / Front End Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/angular---front-end-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Angular / Front End."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Angular / Front End",
+    "Target Location": "San Antonio, TX",
+    "Candidate Name/Title": "Angular / Front End Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/angular---front-end-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Angular / Front End."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Business/ Data Analyst",
+    "Target Location": "Minneapolis, MN",
+    "Candidate Name/Title": "Senior Business/ Data Analyst Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business--data-analyst-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Business/ Data Analyst."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Business/ Data Analyst",
+    "Target Location": "Minneapolis, MN",
+    "Candidate Name/Title": "Business/ Data Analyst Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business--data-analyst-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Business/ Data Analyst."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "SAP SD/ Vistex Consultant",
+    "Target Location": "Walnut Creek, CA",
+    "Candidate Name/Title": "Senior SAP SD/ Vistex Consultant Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-sd--vistex-consultant-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP SD/ Vistex Consultant."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "SAP SD/ Vistex Consultant",
+    "Target Location": "Walnut Creek, CA",
+    "Candidate Name/Title": "SAP SD/ Vistex Consultant Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-sd--vistex-consultant-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP SD/ Vistex Consultant."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AI/ML Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "Senior AI/ML Engineer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/ai-ml-engineer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in AI/ML Engineer."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AI/ML Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "AI/ML Engineer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/ai-ml-engineer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in AI/ML Engineer."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "SAP SD/ Vistex Consultant",
+    "Target Location": "Walnut Creek, CA",
+    "Candidate Name/Title": "SAP SD/ Vistex Consultant Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-sd--vistex-consultant-analyst",
+    "Match Score": 84,
+    "AI Reasoning": "Strong fit: Candidate demonstrates 5+ years of hands-on configuration, implementation, and support experience in SAP SD/ Vistex Consultant."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AWS/ DevOps",
+    "Target Location": "Dallas, TX",
+    "Candidate Name/Title": "AWS/ DevOps Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/aws--devops-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting AWS/ DevOps projects."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Angular / Front End",
+    "Target Location": "San Antonio, TX",
+    "Candidate Name/Title": "Angular / Front End Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/angular---front-end-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Angular / Front End projects."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "Business/ Data Analyst",
+    "Target Location": "Minneapolis, MN",
+    "Candidate Name/Title": "Business/ Data Analyst Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business--data-analyst-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Business/ Data Analyst projects."
+  },
+  {
+    "Team Name": "Suresh & Team",
+    "Target Skill (AREA)": "AI/ML Engineer",
+    "Target Location": "Plano, TX",
+    "Candidate Name/Title": "AI/ML Engineer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/ai-ml-engineer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting AI/ML Engineer projects."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "QA Automation",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "Senior QA Automation Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/qa-automation-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in QA Automation."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "QA Automation",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "QA Automation Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/qa-automation-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in QA Automation."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAS Clinical Programmer",
+    "Target Location": "Butler, PA",
+    "Candidate Name/Title": "Senior SAS Clinical Programmer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sas-clinical-programmer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAS Clinical Programmer."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAS Clinical Programmer",
+    "Target Location": "Butler, PA",
+    "Candidate Name/Title": "SAS Clinical Programmer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sas-clinical-programmer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAS Clinical Programmer."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAP FICO",
+    "Target Location": "Austin, TX",
+    "Candidate Name/Title": "Senior SAP FICO Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fico-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP FICO."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAP FICO",
+    "Target Location": "Austin, TX",
+    "Candidate Name/Title": "SAP FICO Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fico-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in SAP FICO."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Business Analyst",
+    "Target Location": "Spring, TX",
+    "Candidate Name/Title": "Senior Business Analyst Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business-analyst-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Business Analyst."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Business Analyst",
+    "Target Location": "Spring, TX",
+    "Candidate Name/Title": "Business Analyst Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business-analyst-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Business Analyst."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Python Developer",
+    "Target Location": "Hanover, MD",
+    "Candidate Name/Title": "Senior Python Developer Specialist",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/python-developer-lead-specialist",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Python Developer."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Python Developer",
+    "Target Location": "Hanover, MD",
+    "Candidate Name/Title": "Python Developer Lead Consultant",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/python-developer-consultant",
+    "Match Score": 92,
+    "AI Reasoning": "Exceptional fit: Candidate possesses 8+ years of enterprise experience with proven leadership and deep technical expertise in Python Developer."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "QA Automation",
+    "Target Location": "Houston, TX",
+    "Candidate Name/Title": "QA Automation Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/qa-automation-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting QA Automation projects."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAS Clinical Programmer",
+    "Target Location": "Butler, PA",
+    "Candidate Name/Title": "SAS Clinical Programmer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sas-clinical-programmer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAS Clinical Programmer projects."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "SAP FICO",
+    "Target Location": "Austin, TX",
+    "Candidate Name/Title": "SAP FICO Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/sap-fico-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting SAP FICO projects."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Business Analyst",
+    "Target Location": "Spring, TX",
+    "Candidate Name/Title": "Business Analyst Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/business-analyst-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Business Analyst projects."
+  },
+  {
+    "Team Name": "Uma & Team",
+    "Target Skill (AREA)": "Python Developer",
+    "Target Location": "Hanover, MD",
+    "Candidate Name/Title": "Python Developer Functional Analyst",
+    "Candidate LinkedIn URL": "https://www.linkedin.com/in/python-developer-analyst",
+    "Match Score": 76,
+    "AI Reasoning": "Good fit: Candidate brings 3+ years of functional background and analytical capabilities supporting Python Developer projects."
+  }
+];
+
+/**
+ * app.js — Production Talent Intelligence ATS Frontend Logic
+ */
+
+document.addEventListener('DOMContentLoaded', async () => {
+  let allCandidates = [];
+  let currentScoreFilter = 'ALL';
+  let activeViewMode = 'GRID';
+
+  // DOM Elements
+  const cardGrid = document.getElementById('candidateGrid');
+  const tableContainer = document.getElementById('candidateTableContainer');
+  const tableBody = document.getElementById('candidateTableBody');
+
+  const searchInput = document.getElementById('searchInput');
+  const teamFilter = document.getElementById('teamFilter');
+  const scoreTabs = document.getElementById('scoreTabs');
+  const teamsGrid = document.getElementById('teamsGrid');
+
+  const viewGridBtn = document.getElementById('viewGridBtn');
+  const viewTableBtn = document.getElementById('viewTableBtn');
+
+  const statTotal = document.getElementById('statTotal');
+  const statTopMatches = document.getElementById('statTopMatches');
+  const statTeams = document.getElementById('statTeams');
+  const statAvgScore = document.getElementById('statAvgScore');
+
+  const runBtn = document.getElementById('runPipelineBtn');
+  const handoffBtn = document.getElementById('handoffBtn');
+  const handoffModal = document.getElementById('handoffModal');
+  const closeHandoffBtn = document.getElementById('closeHandoffBtn');
+
+  const terminalModal = document.getElementById('terminalModal');
+  const closeTerminalBtn = document.getElementById('closeTerminalBtn');
+  const terminalOutput = document.getElementById('terminalOutput');
+
+  // Load Dashboard Data (Tries live API first, falls back to candidates_data.json)
+  async function loadDashboard() {
+    try {
+      const candRes = await fetch('/api/candidates');
+      if (!candRes.ok) throw new Error('Static host fallback');
+      allCandidates = await candRes.json();
+
+      const statsRes = await fetch('/api/stats');
+      const stats = await statsRes.json();
+      updateStats(stats);
+      renderTeamAnalytics(stats.team_breakdown || {});
+    } catch (err) {
+      try {
+        const staticRes = await fetch('candidates_data.json');
+        if (staticRes.ok) {
+          allCandidates = await staticRes.json();
+        }
+      } catch (staticErr) {
+        console.error('Static data load error:', staticErr);
+      }
+
+      const computedStats = computeLocalStats(allCandidates);
+      updateStats(computedStats);
+      renderTeamAnalytics(computedStats.team_breakdown || {});
+    }
+
+    populateTeamFilter(allCandidates);
+    applyFilters();
+  }
+
+  // Compute stats for static fallback
+  function computeLocalStats(records) {
+    if (!records || !records.length) {
+      return { total_candidates: 0, top_matches: 0, teams_count: 0, avg_score: 0, team_breakdown: {} };
+    }
+
+    const scores = [];
+    const teams = new Set();
+    const team_breakdown = {};
+
+    records.forEach(r => {
+      const team_name = (r['Team Name'] || 'Unassigned').trim();
+      const score = parseInt(r['Match Score']) || 0;
+      scores.push(score);
+      teams.add(team_name);
+
+      if (!team_breakdown[team_name]) {
+        team_breakdown[team_name] = { count: 0, top_matches: 0, total_score: 0 };
+      }
+      team_breakdown[team_name].count++;
+      team_breakdown[team_name].total_score += score;
+      if (score >= 80) team_breakdown[team_name].top_matches++;
+    });
+
+    Object.keys(team_breakdown).forEach(t => {
+      const tb = team_breakdown[t];
+      tb.avg_score = Math.round((tb.total_score / tb.count) * 10) / 10;
+    });
+
+    const top_count = scores.filter(s => s >= 80).length;
+    const avg = scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0;
+
+    return {
+      total_candidates: records.length,
+      top_matches: top_count,
+      teams_count: teams.size,
+      avg_score: avg,
+      team_breakdown
+    };
+  }
+
+  // Update Stats Header
+  function updateStats(stats) {
+    statTotal.textContent = stats.total_candidates || 0;
+    statTopMatches.textContent = stats.top_matches || 0;
+    statTeams.textContent = stats.teams_count || 0;
+    statAvgScore.textContent = (stats.avg_score || 0) + '%';
+  }
+
+  // Render Team Performance Summary Cards
+  function renderTeamAnalytics(breakdown) {
+    const teams = Object.keys(breakdown).sort();
+    if (!teams.length) {
+      teamsGrid.innerHTML = '<div style="color: var(--text-slate-400); font-size: 0.85rem;">No team metrics available.</div>';
+      return;
+    }
+
+    teamsGrid.innerHTML = teams.map(t => {
+      const data = breakdown[t];
+      return `
+        <div class="team-stat-card">
+          <h4>${escapeHtml(t)}</h4>
+          <div class="team-metrics-row">
+            <span>Sourced: <strong>${data.count}</strong></span>
+            <span>Top Matches: <strong>${data.top_matches}</strong></span>
+            <span>Avg Fit: <strong style="color: var(--emerald-text);">${data.avg_score}%</strong></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Populate Teams Dropdown
+  function populateTeamFilter(candidates) {
+    const teams = Array.from(new Set(candidates.map(c => c['Team Name']).filter(Boolean))).sort();
+    teamFilter.innerHTML = '<option value="ALL">All Consultant Teams</option>';
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      teamFilter.appendChild(opt);
+    });
+  }
+
+  // Render Candidates Cards & Table
+  function renderCandidates(list) {
+    if (!list.length) {
+      cardGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-slate-400); padding: 4rem;">No matching candidate records found.</div>';
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-slate-400); padding: 3rem;">No matching candidate records found.</td></tr>';
+      return;
+    }
+
+    // Render Cards View
+    cardGrid.innerHTML = list.map(c => {
+      const score = parseInt(c['Match Score']) || 0;
+      const scoreClass = score >= 80 ? 'score-high' : 'score-medium';
+
+      const nameTitle = c['Candidate Name/Title'] || 'Candidate';
+      const role = c['Target Skill (AREA)'] || 'General Role';
+      const team = c['Team Name'] || 'Unassigned';
+      const location = c['Target Location'] || 'USA';
+      const reasoning = c['AI Reasoning'] || 'No AI reasoning available.';
+      const linkedinUrl = c['Candidate LinkedIn URL'] || '#';
+      const status = c['Status'] || 'New';
+      const candId = `${team}::${nameTitle}`.trim();
+
+      return `
+        <article class="candidate-card">
+          <div>
+            <div class="card-header-row">
+              <span class="team-tag-pill">${escapeHtml(team)}</span>
+              <div class="score-badge-box ${scoreClass}">${score}% Match</div>
+            </div>
+
+            <h3 class="candidate-name">${escapeHtml(nameTitle)}</h3>
+            <div class="candidate-role">🎯 Target Role: ${escapeHtml(role)}</div>
+            <div class="candidate-location">📍 Location: ${escapeHtml(location)}</div>
+
+            <div class="evaluation-box">
+              <div class="evaluation-title">AI Recruiter Evaluation</div>
+              ${escapeHtml(reasoning)}
+            </div>
+          </div>
+
+          <div class="card-footer-row">
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-link-btn">🔗 LinkedIn Profile</a>` : '<span style="font-size:0.775rem; color:var(--text-slate-400);">Profile Link</span>'}
+            
+            <select class="status-select-control" data-id="${escapeHtml(candId)}">
+              <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
+              <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
+              <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
+              <option value="Hired" ${status === 'Hired' ? 'selected' : ''}>✅ Hired</option>
+            </select>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    // Render Data Table View
+    tableBody.innerHTML = list.map(c => {
+      const score = parseInt(c['Match Score']) || 0;
+      const scoreClass = score >= 80 ? 'score-high' : 'score-medium';
+      const nameTitle = c['Candidate Name/Title'] || 'Candidate';
+      const role = c['Target Skill (AREA)'] || 'General Role';
+      const team = c['Team Name'] || 'Unassigned';
+      const location = c['Target Location'] || 'USA';
+      const linkedinUrl = c['Candidate LinkedIn URL'] || '#';
+      const status = c['Status'] || 'New';
+      const candId = `${team}::${nameTitle}`.trim();
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(nameTitle)}</strong></td>
+          <td><span class="team-tag-pill">${escapeHtml(team)}</span></td>
+          <td>${escapeHtml(role)}</td>
+          <td>${escapeHtml(location)}</td>
+          <td><span class="score-badge-box ${scoreClass}">${score}%</span></td>
+          <td>
+            <select class="status-select-control" data-id="${escapeHtml(candId)}">
+              <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
+              <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
+              <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
+              <option value="Hired" ${status === 'Hired' ? 'selected' : ''}>✅ Hired</option>
+            </select>
+          </td>
+          <td>
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-link-btn" style="padding: 0.25rem 0.6rem;">LinkedIn</a>` : '-'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Attach Status Selectors Handlers
+    document.querySelectorAll('.status-select-control').forEach(sel => {
+      sel.addEventListener('change', async (e) => {
+        const candId = e.target.getAttribute('data-id');
+        const newStatus = e.target.value;
+        try {
+          await fetch('/api/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ candidate_id: candId, status: newStatus })
+          });
+        } catch (err) {
+          console.log('Status updated in local client state');
+        }
+        const found = allCandidates.find(c => `${c['Team Name']}::${c['Candidate Name/Title']}`.trim() === candId);
+        if (found) found['Status'] = newStatus;
+        applyFilters();
+      });
+    });
+  }
+
+  // Filter Logic
+  function applyFilters() {
+    const q = searchInput.value.toLowerCase().trim();
+    const selectedTeam = teamFilter.value;
+
+    const filtered = allCandidates.filter(c => {
+      const name = (c['Candidate Name/Title'] || '').toLowerCase();
+      const role = (c['Target Skill (AREA)'] || '').toLowerCase();
+      const team = (c['Team Name'] || '').toLowerCase();
+      const loc = (c['Target Location'] || '').toLowerCase();
+      const score = parseInt(c['Match Score']) || 0;
+      const status = c['Status'] || 'New';
+
+      const matchesSearch = !q || name.includes(q) || role.includes(q) || team.includes(q) || loc.includes(q);
+      const matchesTeam = selectedTeam === 'ALL' || c['Team Name'] === selectedTeam;
+      
+      let matchesScore = true;
+      if (currentScoreFilter === 'HIGH') matchesScore = (score >= 80);
+      else if (currentScoreFilter === 'MED') matchesScore = (score >= 50 && score < 80);
+      else if (currentScoreFilter === 'Shortlisted') matchesScore = (status === 'Shortlisted');
+
+      return matchesSearch && matchesTeam && matchesScore;
+    });
+
+    renderCandidates(filtered);
+  }
+
+  // Helper XSS prevention
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Tab Switcher
+  scoreTabs.addEventListener('click', (e) => {
+    if (e.target.classList.contains('filter-tab-btn')) {
+      document.querySelectorAll('.filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      currentScoreFilter = e.target.getAttribute('data-score') || e.target.getAttribute('data-status');
+      applyFilters();
+    }
+  });
+
+  // View Mode Switcher
+  viewGridBtn.addEventListener('click', () => {
+    activeViewMode = 'GRID';
+    viewGridBtn.classList.add('active');
+    viewTableBtn.classList.remove('active');
+    cardGrid.style.display = 'grid';
+    tableContainer.style.display = 'none';
+  });
+
+  viewTableBtn.addEventListener('click', () => {
+    activeViewMode = 'TABLE';
+    viewTableBtn.classList.add('active');
+    viewGridBtn.classList.remove('active');
+    cardGrid.style.display = 'none';
+    tableContainer.style.display = 'block';
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+  teamFilter.addEventListener('change', applyFilters);
+
+  // Trigger Pipeline POST
+  runBtn.addEventListener('click', async () => {
+    runBtn.disabled = true;
+    runBtn.innerHTML = '⏳ Running Pipeline ...';
+
+    terminalModal.classList.add('active');
+    terminalOutput.textContent = '🚀 Executing main.py pipeline orchestrator...\n\n[Step 1] Verifying environment & credentials...\n[Step 2] Reading Excel consultant roster...\n[Step 3] Sourcing candidate profiles...\n[Step 4] Scoring candidates with Gemini AI...\n[Step 5] Syncing live records to Cloud Firestore...\n[Step 6] Generating Excel report...\n\nPlease wait...';
+
+    try {
+      const res = await fetch('/api/run-pipeline', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        terminalOutput.textContent = data.output || '✅ Pipeline Execution Complete!\nAll records synced to Firestore and Excel generated.';
+        loadDashboard();
+      } else {
+        terminalOutput.textContent = '⚠️ Pipeline Output:\n\n' + (data.output || data.error);
+      }
+    } catch (err) {
+      terminalOutput.textContent = 'ℹ️ Pipeline execution triggered. If running on Vercel static, run python main.py locally to update cloud records.';
+    } finally {
+      runBtn.disabled = false;
+      runBtn.innerHTML = '🚀 Run Pipeline';
+    }
+  });
+
+  // Modal Handlers
+  handoffBtn.addEventListener('click', () => handoffModal.classList.add('active'));
+  closeHandoffBtn.addEventListener('click', () => handoffModal.classList.remove('active'));
+  closeTerminalBtn.addEventListener('click', () => terminalModal.classList.remove('active'));
+
+  [handoffModal, terminalModal].forEach(m => {
+    m.addEventListener('click', (e) => {
+      if (e.target === m) m.classList.remove('active');
+    });
+  });
+
+  // Initial Load
+  loadDashboard();
+});
+
+  </script>
 </body>
 </html>
