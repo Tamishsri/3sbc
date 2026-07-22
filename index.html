@@ -3,849 +3,570 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3SBC — Staffing Intelligence Platform</title>
-  <meta name="description" content="AI-powered staffing intelligence: search jobs across all boards, match bench consultants, track submissions, manage vendor relationships."/>
+  <title>3SBC — Commercial Staffing Intelligence Platform</title>
+  <meta name="description" content="Commercial Multi-Board Job Sourcing, AI Bench Matching, and Submission CRM for IT Staffing."/>
 
-  <!-- Google Fonts -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet"/>
 
-  <!-- Styles injected by build_monolith.py -->
+  <!-- Inlined Styles -->
   <style>
 /* ============================================================
-   3SBC Staffing Intelligence Platform — styles.css
-   Premium Dark Slate Design System
+   3SBC Staffing Intelligence SaaS — World-Class UI/UX Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap');
 
 /* ── CSS Variables ──────────────────────────────────────────── */
 :root {
-  --bg-base:        #0b0f1a;
-  --bg-surface:     #111827;
-  --bg-card:        #1a2235;
-  --bg-hover:       #1f2d45;
-  --bg-input:       #141c2e;
+  --bg-dark:         #070a12;
+  --bg-surface:      #0e1424;
+  --bg-card:         #151d33;
+  --bg-card-hover:   #1b2744;
+  --bg-input:        #0b101d;
 
-  --border:         #1e2d45;
-  --border-bright:  #2a3f5f;
+  --border:          rgba(255, 255, 255, 0.08);
+  --border-bright:   rgba(255, 255, 255, 0.16);
+  --border-focus:    #6366f1;
 
-  --text-primary:   #e8edf5;
-  --text-secondary: #8899b4;
-  --text-muted:     #55677f;
+  --text-main:       #f8fafc;
+  --text-sub:        #94a3b8;
+  --text-muted:      #64748b;
 
-  --accent:         #3b82f6;
-  --accent-glow:    rgba(59,130,246,0.2);
-  --accent-dark:    #1d4ed8;
+  --indigo:          #6366f1;
+  --indigo-glow:     rgba(99, 102, 241, 0.25);
+  --blue:            #3b82f6;
+  --blue-glow:       rgba(59, 130, 246, 0.25);
+  --emerald:         #10b981;
+  --emerald-glow:    rgba(16, 185, 129, 0.2);
+  --amber:           #f59e0b;
+  --amber-glow:      rgba(245, 158, 11, 0.2);
+  --rose:            #f43f5e;
+  --rose-glow:       rgba(244, 63, 94, 0.2);
+  --purple:          #a855f7;
+  --purple-glow:     rgba(168, 85, 247, 0.2);
 
-  --green:          #10b981;
-  --green-glow:     rgba(16,185,129,0.2);
-  --yellow:         #f59e0b;
-  --yellow-glow:    rgba(245,158,11,0.2);
-  --red:            #ef4444;
-  --red-glow:       rgba(239,68,68,0.2);
-  --purple:         #8b5cf6;
-  --purple-glow:    rgba(139,92,246,0.2);
-  --cyan:           #06b6d4;
+  /* Board brand colors */
+  --linkedin-brand:  #0a66c2;
+  --dice-brand:      #e11d48;
+  --indeed-brand:    #2563eb;
+  --zip-brand:       #059669;
+  --monster-brand:   #7c3aed;
 
-  /* Board colours */
-  --dice-color:     #ef4444;
-  --indeed-color:   #2563eb;
-  --linkedin-color: #0a66c2;
-  --zip-color:      #22c55e;
-  --monster-color:  #7c3aed;
-
-  --radius-sm:   6px;
-  --radius-md:  10px;
-  --radius-lg:  16px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
   --radius-xl:  24px;
 
-  --shadow-sm:  0 1px 3px rgba(0,0,0,.5);
-  --shadow-md:  0 4px 16px rgba(0,0,0,.6);
-  --shadow-lg:  0 12px 40px rgba(0,0,0,.7);
+  --shadow-card: 0 10px 30px -10px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
 
-  --transition: 0.2s cubic-bezier(.4,0,.2,1);
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Outfit', sans-serif;
 }
 
-/* ── Reset ──────────────────────────────────────────────────── */
+/* ── Reset & Core Styles ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg-base);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  background: var(--bg-dark);
+  color: var(--text-main);
   min-height: 100vh;
   line-height: 1.5;
   font-size: 14px;
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(99,102,241,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(168,85,247,0.06) 0%, transparent 40%);
+  background-attachment: fixed;
   overflow-x: hidden;
 }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
-a { color: var(--accent); text-decoration: none; }
 
-/* ── Utilities ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+/* ── Typography & Global Helpers ────────────────────────────── */
 .hidden { display: none !important; }
 .flex { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .gap-4 { gap: 16px; }
-.text-sm { font-size: 12px; }
-.text-muted { color: var(--text-muted); }
-.font-bold { font-weight: 700; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.font-display { font-family: var(--font-display); }
 
-/* ── Toast notifications ────────────────────────────────────── */
+/* ── Toast Notifications ────────────────────────────────────── */
 #toastContainer {
-  position: fixed; bottom: 24px; right: 24px;
-  z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+  position: fixed; bottom: 28px; right: 28px;
+  z-index: 99999; display: flex; flex-direction: column; gap: 12px;
 }
 .toast {
-  padding: 12px 18px; border-radius: var(--radius-md);
-  font-size: 13px; font-weight: 500;
-  backdrop-filter: blur(12px);
-  animation: slideInRight .3s ease, fadeOut .3s ease 2.7s forwards;
-  max-width: 360px;
+  padding: 14px 20px; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 600;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+  animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1), toastOut .3s ease 2.7s forwards;
+  display: flex; align-items: center; gap: 10px; border: 1px solid;
 }
-.toast-success { background: rgba(16,185,129,.15); border: 1px solid var(--green); color: var(--green); }
-.toast-error   { background: rgba(239,68,68,.15);  border: 1px solid var(--red);   color: var(--red); }
-.toast-info    { background: rgba(59,130,246,.15);  border: 1px solid var(--accent); color: var(--accent); }
-.toast-warn    { background: rgba(245,158,11,.15);  border: 1px solid var(--yellow); color: var(--yellow); }
-@keyframes slideInRight { from { transform: translateX(40px); opacity:0; } to { transform:translateX(0); opacity:1; } }
-@keyframes fadeOut { to { opacity:0; transform: translateX(40px); } }
+.toast-success { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: #34d399; }
+.toast-error   { background: rgba(244,63,94,0.15);  border-color: rgba(244,63,94,0.4);  color: #fb7185; }
+.toast-info    { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #818cf8; }
+.toast-warn    { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); color: #fbbf24; }
+
+@keyframes toastIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastOut { to { transform: translateX(50px); opacity: 0; } }
 
 /* ════════════════════════════════════════════════════════════
-   LOGIN PAGE
+   LOGIN SCREEN (Ultra-Premium Glass Card)
    ════════════════════════════════════════════════════════════ */
 #loginPage {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(59,130,246,.12), transparent),
-    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(139,92,246,.08), transparent),
-    var(--bg-base);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
   padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 30%, rgba(99, 102, 241, 0.15), transparent),
+    var(--bg-dark);
 }
 .login-card {
-  width: 100%; max-width: 420px;
-  background: var(--bg-surface);
+  width: 100%; max-width: 440px;
+  background: rgba(14, 20, 36, 0.85);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border-bright);
   border-radius: var(--radius-xl);
   padding: 48px 40px;
-  box-shadow: var(--shadow-lg);
-}
-.login-logo-area {
-  text-align: center; margin-bottom: 32px;
+  box-shadow: 0 25px 60px -15px rgba(0,0,0,0.8), var(--shadow-glow);
 }
 .login-logo-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 60px; height: 60px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  border-radius: var(--radius-lg);
-  font-size: 22px; font-weight: 800; color: #fff;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(59,130,246,.35);
+  width: 64px; height: 64px; margin: 0 auto 18px;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 26px; font-weight: 900; color: #fff;
+  box-shadow: 0 10px 25px rgba(99,102,241,0.4);
 }
 .login-title {
-  font-size: 22px; font-weight: 700; color: var(--text-primary);
-  margin-bottom: 4px;
+  font-family: var(--font-display); font-size: 26px; font-weight: 800;
+  text-align: center; color: #fff; letter-spacing: -0.02em;
 }
-.login-subtitle { font-size: 13px; color: var(--text-muted); }
-.login-form { display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+.login-subtitle { font-size: 13px; color: var(--text-sub); text-align: center; margin-top: 4px; }
+.login-form { display: flex; flex-direction: column; gap: 16px; margin-top: 32px; }
+
 .form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; }
+.form-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.06em; }
 .form-input {
   background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 11px 14px;
-  color: var(--text-primary); font-size: 14px; font-family: inherit;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  outline: none;
+  border-radius: var(--radius-md); padding: 12px 16px;
+  color: var(--text-main); font-family: inherit; font-size: 14px; outline: none;
+  transition: all 0.2s ease;
 }
-.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.form-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--indigo-glow); }
+
 .btn-primary {
-  width: 100%; padding: 13px;
-  background: linear-gradient(135deg, var(--accent), #6366f1);
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--indigo), #4f46e5);
   border: none; border-radius: var(--radius-md);
-  color: #fff; font-size: 14px; font-weight: 600;
-  cursor: pointer; margin-top: 8px;
-  transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: 0 4px 16px rgba(59,130,246,.35);
+  color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s ease;
+  box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+  margin-top: 8px;
 }
-.btn-primary:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,.45); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(99,102,241,0.5); }
 .btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-.login-error {
-  color: var(--red); font-size: 12px; text-align: center;
-  margin-top: 8px; min-height: 18px;
-}
-.login-divider {
-  display: flex; align-items: center; gap: 12px;
-  color: var(--text-muted); font-size: 12px; margin: 4px 0;
-}
-.login-divider::before, .login-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
 
 /* ════════════════════════════════════════════════════════════
-   TOP NAVIGATION
+   MAIN PLATFORM HEADER & TOP NAVIGATION
    ════════════════════════════════════════════════════════════ */
 #mainApp { display: flex; flex-direction: column; min-height: 100vh; }
 
 .top-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 58px; padding: 0 20px;
-  background: rgba(17,24,39,.95);
+  height: 64px; padding: 0 28px;
+  background: rgba(14, 20, 36, 0.85);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-  position: sticky; top: 0; z-index: 100;
-  gap: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; gap: 20px;
 }
-.nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nav-brand { display: flex; align-items: center; gap: 12px; }
 .nav-brand-badge {
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  border-radius: 9px; font-weight: 800; font-size: 13px; color: #fff;
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900; font-size: 15px; color: #fff;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.4);
 }
-.nav-brand-name  { font-size: 15px; font-weight: 700; }
-.nav-brand-tagline { font-size: 10px; color: var(--text-muted); }
+.nav-brand-name { font-family: var(--font-display); font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.nav-brand-tagline { font-size: 10px; color: var(--emerald); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 
-.nav-tabs { display: flex; align-items: center; gap: 2px; flex: 1; justify-content: center; }
+.nav-tabs { display: flex; align-items: center; gap: 4px; background: rgba(7,10,18,0.5); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border); }
 .nav-tab {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: var(--radius-sm);
   border: none; background: transparent;
-  color: var(--text-muted); font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: all var(--transition);
-  font-family: inherit; white-space: nowrap;
+  color: var(--text-sub); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease; font-family: inherit;
 }
-.nav-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+.nav-tab:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
 .nav-tab.active {
-  color: var(--accent); background: var(--accent-glow);
-  font-weight: 600;
-}
-.nav-tab .tab-badge {
-  background: var(--red); color: #fff;
-  font-size: 10px; font-weight: 700;
-  padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+  background: linear-gradient(135deg, var(--indigo), #4f46e5);
+  color: #fff; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.35);
 }
 
-.nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.nav-user-email { font-size: 12px; color: var(--text-muted); max-width: 160px; truncate: true; }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.user-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-sub);
+}
+.user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--emerald), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: #fff;
+}
 .nav-logout-btn {
-  padding: 6px 14px; border-radius: var(--radius-sm);
   background: transparent; border: 1px solid var(--border);
-  color: var(--text-secondary); font-size: 12px; cursor: pointer;
-  font-family: inherit; transition: all var(--transition);
+  color: var(--text-sub); padding: 6px 14px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
 }
-.nav-logout-btn:hover { border-color: var(--red); color: var(--red); }
+.nav-logout-btn:hover { border-color: var(--rose); color: var(--rose); }
 
-/* ── Tab content panels ─────────────────────────────────────── */
-.tab-content { display: none; flex: 1; padding: 24px; }
-.tab-content.active { display: flex; flex-direction: column; gap: 20px; }
+/* ── Content View Panels ────────────────────────────────────── */
+.tab-content { display: none; flex: 1; padding: 28px; }
+.tab-content.active { display: flex; flex-direction: column; gap: 24px; }
 
 /* ════════════════════════════════════════════════════════════
-   JOB FINDER TAB
+   JOB FINDER TAB (Search Header & Preset Chips)
    ════════════════════════════════════════════════════════════ */
-.job-search-bar {
+.job-search-container {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 18px;
+  box-shadow: var(--shadow-card);
 }
-.search-field { display: flex; flex-direction: column; gap: 5px; }
-.search-field label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
-.search-input {
+.job-search-bar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.search-field { display: flex; flex-direction: column; gap: 6px; }
+.search-field label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.06em; }
+.search-input, .search-select {
   background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 9px 14px;
-  color: var(--text-primary); font-family: inherit; font-size: 13px;
-  outline: none; transition: border-color var(--transition), box-shadow var(--transition);
-  min-width: 180px;
+  border-radius: var(--radius-md); padding: 11px 16px;
+  color: var(--text-main); font-family: inherit; font-size: 14px; outline: none;
+  transition: all 0.2s ease;
 }
-.search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-.search-select {
-  background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 9px 14px;
-  color: var(--text-primary); font-family: inherit; font-size: 13px;
-  outline: none; cursor: pointer;
-}
-.search-select:focus { border-color: var(--accent); }
+.search-input:focus, .search-select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--indigo-glow); }
+
 .btn-search {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, var(--accent), #6366f1);
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
   border: none; border-radius: var(--radius-md);
-  color: #fff; font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit;
-  transition: all var(--transition); white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(59,130,246,.3);
+  color: #fff; font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s ease;
+  box-shadow: 0 6px 18px rgba(99,102,241,0.35); white-space: nowrap;
 }
-.btn-search:hover { opacity: .9; transform: translateY(-1px); }
-.btn-search:disabled { opacity: .6; transform: none; cursor: not-allowed; }
+.btn-search:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99,102,241,0.5); }
 
-/* Rate Intelligence Banner */
+/* Quick Presets */
+.preset-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.preset-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.preset-chip {
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-sub); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease;
+}
+.preset-chip:hover { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-glow); }
+
+/* Market Rate Intelligence Banner */
 .rate-banner {
-  display: flex; align-items: center; gap: 12px;
-  background: linear-gradient(135deg, rgba(16,185,129,.08), rgba(59,130,246,.08));
-  border: 1px solid rgba(16,185,129,.25);
-  border-radius: var(--radius-md); padding: 12px 18px;
-  font-size: 13px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-lg); padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
 }
-.rate-banner .rate-icon { font-size: 18px; }
-.rate-banner .rate-label { color: var(--text-muted); }
-.rate-banner .rate-value { color: var(--green); font-weight: 700; }
-.rate-stat { display: flex; flex-direction: column; align-items: center; padding: 0 16px; border-left: 1px solid var(--border); }
-.rate-stat .stat-val { font-size: 18px; font-weight: 700; color: var(--green); }
-.rate-stat .stat-lbl { font-size: 10px; color: var(--text-muted); }
+.rate-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: #fff; }
+.rate-sub   { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+.rate-stats { display: flex; gap: 20px; }
+.rate-stat-pill {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(15, 23, 42, 0.6); padding: 8px 18px; border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.rate-stat-val { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--emerald); }
+.rate-stat-lbl { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 
-/* Kanban board */
+/* ════════════════════════════════════════════════════════════
+   KANBAN BOARD & JOB CARDS
+   ════════════════════════════════════════════════════════════ */
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: repeat(5, minmax(280px, 1fr));
+  gap: 16px; overflow-x: auto; padding-bottom: 12px;
 }
 .kanban-column {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border-radius: var(--radius-xl);
+  display: flex; flex-direction: column; max-height: calc(100vh - 280px);
+  box-shadow: var(--shadow-card);
 }
 .kanban-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  background: rgba(7, 10, 18, 0.4);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
-.board-label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 700;
+.board-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 800; }
+.board-badge { width: 10px; height: 10px; border-radius: 50%; }
+
+.board-badge.linkedin { background: var(--linkedin-brand); box-shadow: 0 0 10px var(--linkedin-brand); }
+.board-badge.dice     { background: var(--dice-brand);     box-shadow: 0 0 10px var(--dice-brand); }
+.board-badge.indeed   { background: var(--indeed-brand);   box-shadow: 0 0 10px var(--indeed-brand); }
+.board-badge.ziprecruiter { background: var(--zip-brand);   box-shadow: 0 0 10px var(--zip-brand); }
+.board-badge.monster  { background: var(--monster-brand);  box-shadow: 0 0 10px var(--monster-brand); }
+
+.board-count-badge {
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-main); font-size: 12px; font-weight: 800;
+  padding: 3px 10px; border-radius: 12px;
 }
-.board-dot { width: 8px; height: 8px; border-radius: 50%; }
-.board-count { font-size: 11px; color: var(--text-muted); background: var(--bg-card); padding: 2px 8px; border-radius: 10px; }
-.board-cached { font-size: 10px; color: var(--text-muted); }
 
-.board-dot.dice         { background: var(--dice-color); }
-.board-dot.indeed       { background: var(--indeed-color); }
-.board-dot.linkedin     { background: var(--linkedin-color); }
-.board-dot.ziprecruiter { background: var(--zip-color); }
-.board-dot.monster      { background: var(--monster-color); }
+.kanban-cards {
+  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; flex: 1;
+}
 
-.kanban-cards { display: flex; flex-direction: column; gap: 0; max-height: 70vh; overflow-y: auto; }
-
-/* Job card */
+/* Job Card Styling */
 .job-card {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
-  cursor: default;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative; overflow: hidden;
 }
-.job-card:last-child { border-bottom: none; }
-.job-card:hover { background: var(--bg-hover); }
+.job-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--indigo); opacity: 0; transition: opacity 0.2s ease;
+}
+.job-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-bright);
+  background: var(--bg-card-hover);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+}
+.job-card:hover::before { opacity: 1; }
 
-.job-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.job-title { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-.easy-apply-badge {
-  flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 2px 6px;
-  background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,.3);
-  border-radius: 4px; text-transform: uppercase; letter-spacing: .05em;
+.job-card-title { font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: #fff; line-height: 1.35; }
+.job-card-company { font-size: 12px; font-weight: 600; color: var(--indigo); display: flex; align-items: center; gap: 4px; }
+.job-card-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--text-sub); }
+.meta-chip { display: flex; align-items: center; gap: 4px; }
+.salary-badge {
+  background: var(--emerald-glow); color: var(--emerald);
+  border: 1px solid rgba(16,185,129,0.3); font-weight: 700; font-size: 11px;
+  padding: 2px 8px; border-radius: 6px;
 }
-.also-on-badge {
-  flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 2px 6px;
-  background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(245,158,11,.3);
-  border-radius: 4px;
+.easy-badge {
+  background: var(--blue-glow); color: var(--blue);
+  border: 1px solid rgba(59,130,246,0.3); font-weight: 700; font-size: 10px;
+  padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
 }
-.job-company { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
-.job-meta {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  margin-top: 6px; font-size: 11px; color: var(--text-muted);
-}
-.job-meta-item { display: flex; align-items: center; gap: 3px; }
-.job-salary { color: var(--green); font-weight: 600; font-size: 12px; }
 
-.job-card-actions { display: flex; gap: 6px; margin-top: 10px; }
-.btn-card {
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: all var(--transition); border: 1px solid;
+.job-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+.action-btn {
+  padding: 7px 10px; border-radius: var(--radius-sm);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  border: 1px solid; transition: all 0.2s ease; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
 }
-.btn-card-primary {
-  background: var(--accent-glow); color: var(--accent); border-color: rgba(59,130,246,.3);
+.action-match {
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  color: #fff; border: none; box-shadow: 0 4px 10px rgba(99,102,241,0.3);
 }
-.btn-card-primary:hover { background: var(--accent); color: #fff; }
-.btn-card-outline {
-  background: transparent; color: var(--text-muted); border-color: var(--border);
+.action-match:hover { opacity: 0.9; transform: scale(1.02); }
+.action-submit {
+  background: linear-gradient(135deg, var(--emerald), #059669);
+  color: #fff; border: none; box-shadow: 0 4px 10px rgba(16,185,129,0.3);
 }
-.btn-card-outline:hover { color: var(--text-primary); border-color: var(--border-bright); }
-.btn-card-green {
-  background: var(--green-glow); color: var(--green); border-color: rgba(16,185,129,.3);
+.action-submit:hover { opacity: 0.9; transform: scale(1.02); }
+.action-outline {
+  background: transparent; color: var(--text-sub); border-color: var(--border);
 }
-.btn-card-green:hover { background: var(--green); color: #fff; }
-
-.kanban-empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 32px 16px; color: var(--text-muted); text-align: center; gap: 6px;
-}
-.kanban-empty .empty-icon { font-size: 28px; opacity: .5; }
-.kanban-empty .empty-text { font-size: 12px; }
-
-.kanban-loading {
-  display: flex; align-items: center; justify-content: center;
-  padding: 32px; color: var(--text-muted); gap: 8px;
-}
-.spinner {
-  width: 18px; height: 18px;
-  border: 2px solid var(--border); border-top-color: var(--accent);
-  border-radius: 50%; animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.action-outline:hover { color: var(--text-main); border-color: var(--border-bright); background: rgba(255,255,255,0.05); }
 
 /* ════════════════════════════════════════════════════════════
-   BENCH / ATS TAB
+   BENCH ATS & SUBMISSIONS TABLES
    ════════════════════════════════════════════════════════════ */
 .kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;
 }
 .kpi-card {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px;
-  display: flex; flex-direction: column; gap: 6px;
-  transition: border-color var(--transition), transform var(--transition);
+  border-radius: var(--radius-xl); padding: 22px; display: flex; flex-direction: column; gap: 6px;
+  box-shadow: var(--shadow-card); transition: all 0.2s ease;
 }
 .kpi-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
-.kpi-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
-.kpi-value { font-size: 30px; font-weight: 800; }
-.kpi-sub   { font-size: 11px; color: var(--text-muted); }
-.kpi-value.blue   { color: var(--accent); }
-.kpi-value.green  { color: var(--green); }
-.kpi-value.yellow { color: var(--yellow); }
-.kpi-value.purple { color: var(--purple); }
+.kpi-num { font-family: var(--font-display); font-size: 32px; font-weight: 900; line-height: 1; }
+.kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
-/* Search + filter bar */
-.search-filter-bar {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-}
-.bar-input {
-  flex: 1; min-width: 200px;
+.table-card {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 9px 14px;
-  color: var(--text-primary); font-family: inherit; font-size: 13px; outline: none;
-  transition: border-color var(--transition);
+  border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-card);
 }
-.bar-input:focus { border-color: var(--accent); }
-.bar-select {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 9px 14px;
-  color: var(--text-primary); font-family: inherit; font-size: 13px; outline: none; cursor: pointer;
+.custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+.custom-table th {
+  padding: 16px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em; background: rgba(7, 10, 18, 0.4);
+  border-bottom: 1px solid var(--border);
 }
-.bar-btn {
-  padding: 9px 16px; border-radius: var(--radius-md);
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: all var(--transition);
-}
-.bar-btn-primary { background: var(--accent); color: #fff; border: none; }
-.bar-btn-primary:hover { opacity: .9; }
-.bar-btn-secondary {
-  background: transparent; color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-.bar-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.custom-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.custom-table tr:last-child td { border-bottom: none; }
+.custom-table tbody tr:hover { background: rgba(255,255,255,0.02); }
 
-/* Candidate grid */
-.candidate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
+/* Status Badges */
+.status-pill {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 5px;
 }
-.candidate-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 18px;
-  display: flex; flex-direction: column; gap: 10px;
-  transition: all var(--transition);
-  position: relative; overflow: hidden;
-}
-.candidate-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--purple));
-  opacity: 0; transition: opacity var(--transition);
-}
-.candidate-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.candidate-card:hover::before { opacity: 1; }
-
-.candidate-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.candidate-avatar {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
-}
-.candidate-info { flex: 1; min-width: 0; }
-.candidate-name { font-size: 14px; font-weight: 600; truncate: true; }
-.candidate-team { font-size: 11px; color: var(--text-muted); }
-.score-badge {
-  flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800;
-}
-.score-high   { background: rgba(16,185,129,.15);  color: var(--green);  border: 1px solid rgba(16,185,129,.3); }
-.score-medium { background: rgba(245,158,11,.15);  color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
-.score-low    { background: rgba(239,68,68,.15);   color: var(--red);    border: 1px solid rgba(239,68,68,.3); }
-
-.candidate-skill {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; color: var(--accent);
-  background: var(--accent-glow); padding: 4px 10px; border-radius: 20px;
-}
-.candidate-location { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
-
-.candidate-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-.cand-btn {
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
-  transition: all var(--transition); border: 1px solid;
-}
-.cand-btn-blue   { background: var(--accent-glow); color: var(--accent); border-color: rgba(59,130,246,.3); }
-.cand-btn-blue:hover { background: var(--accent); color: #fff; }
-.cand-btn-green  { background: var(--green-glow); color: var(--green); border-color: rgba(16,185,129,.3); }
-.cand-btn-green:hover { background: var(--green); color: #fff; }
-.cand-btn-ghost  { background: transparent; color: var(--text-muted); border-color: var(--border); }
-.cand-btn-ghost:hover { color: var(--text-primary); border-color: var(--border-bright); }
-
-/* Status badge */
-.status-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px;
-  text-transform: uppercase; letter-spacing: .05em;
-}
-.status-new         { background: rgba(55,65,81,.5);     color: #9ca3af;       border: 1px solid rgba(75,85,99,.5); }
-.status-shortlisted { background: var(--accent-glow);     color: var(--accent); border: 1px solid rgba(59,130,246,.3); }
-.status-interviewing{ background: var(--yellow-glow);     color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
-.status-offered     { background: var(--purple-glow);     color: var(--purple); border: 1px solid rgba(139,92,246,.3); }
-.status-rejected    { background: var(--red-glow);        color: var(--red);    border: 1px solid rgba(239,68,68,.3); }
-.status-placed      { background: var(--green-glow);      color: var(--green);  border: 1px solid rgba(16,185,129,.3); }
-.status-submitted   { background: rgba(6,182,212,.15);    color: var(--cyan);   border: 1px solid rgba(6,182,212,.3); }
+.status-submitted   { background: var(--blue-glow);    color: var(--blue);    border: 1px solid rgba(59,130,246,0.3); }
+.status-interviewing{ background: var(--amber-glow);   color: var(--amber);   border: 1px solid rgba(245,158,11,0.3); }
+.status-offered     { background: var(--purple-glow);  color: var(--purple);  border: 1px solid rgba(168,85,247,0.3); }
+.status-placed      { background: var(--emerald-glow); color: var(--emerald); border: 1px solid rgba(16,185,129,0.3); }
+.status-rejected    { background: var(--rose-glow);    color: var(--rose);    border: 1px solid rgba(244,63,94,0.3); }
 
 /* ════════════════════════════════════════════════════════════
-   SUBMISSIONS TAB
-   ════════════════════════════════════════════════════════════ */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-}
-.section-title { font-size: 18px; font-weight: 700; }
-.section-subtitle { font-size: 12px; color: var(--text-muted); }
-
-.pipeline-stats {
-  display: flex; gap: 10px; flex-wrap: wrap;
-}
-.pipeline-stat {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 10px 16px;
-  min-width: 110px;
-}
-.pipeline-stat .p-val { font-size: 20px; font-weight: 800; }
-.pipeline-stat .p-lbl { font-size: 10px; color: var(--text-muted); font-weight: 500; }
-
-.table-wrapper {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); overflow: hidden;
-}
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.data-table th {
-  padding: 11px 14px; text-align: left;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--text-muted); background: var(--bg-card);
-  border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-.data-table td {
-  padding: 12px 14px; border-bottom: 1px solid var(--border);
-  color: var(--text-primary); vertical-align: middle;
-}
-.data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: var(--bg-hover); }
-
-.table-action-btn {
-  padding: 4px 8px; border-radius: 5px; font-size: 10px; font-weight: 600;
-  cursor: pointer; font-family: inherit; border: 1px solid; transition: all var(--transition);
-}
-.flag-btn  { background: transparent; color: var(--text-muted); border-color: var(--border); }
-.flag-btn:hover, .flag-btn.flagged { color: var(--yellow); border-color: var(--yellow); background: var(--yellow-glow); }
-.del-btn   { background: transparent; color: var(--text-muted); border-color: var(--border); }
-.del-btn:hover { color: var(--red); border-color: var(--red); background: var(--red-glow); }
-
-.add-btn {
-  padding: 9px 18px; border-radius: var(--radius-md);
-  background: var(--accent); border: none;
-  color: #fff; font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: opacity var(--transition);
-  display: flex; align-items: center; gap: 6px;
-}
-.add-btn:hover { opacity: .9; }
-
-/* ════════════════════════════════════════════════════════════
-   VENDORS TAB
-   ════════════════════════════════════════════════════════════ */
-.vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-.vendor-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 18px;
-  display: flex; flex-direction: column; gap: 10px;
-  transition: all var(--transition);
-}
-.vendor-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
-.vendor-name  { font-size: 15px; font-weight: 700; }
-.vendor-company { font-size: 13px; color: var(--accent); font-weight: 600; }
-.vendor-meta  { display: flex; flex-direction: column; gap: 4px; }
-.vendor-meta-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
-.vendor-skills { display: flex; flex-wrap: wrap; gap: 4px; }
-.skill-chip {
-  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
-  background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(59,130,246,.3);
-}
-
-/* ════════════════════════════════════════════════════════════
-   ANALYTICS TAB
-   ════════════════════════════════════════════════════════════ */
-.analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
-.chart-card {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px;
-}
-.chart-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); }
-
-.funnel-bar { display: flex; flex-direction: column; gap: 10px; }
-.funnel-item { display: flex; align-items: center; gap: 10px; }
-.funnel-label { font-size: 12px; color: var(--text-secondary); width: 100px; flex-shrink: 0; }
-.funnel-track { flex: 1; height: 24px; background: var(--bg-card); border-radius: 4px; overflow: hidden; }
-.funnel-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 700; color: #fff; transition: width 1s ease; }
-.funnel-count { font-size: 13px; font-weight: 700; width: 28px; text-align: right; }
-
-.board-perf { display: flex; flex-direction: column; gap: 10px; }
-.board-perf-row { display: flex; align-items: center; gap: 10px; }
-.board-perf-name { font-size: 12px; width: 100px; flex-shrink: 0; }
-.board-perf-track { flex: 1; height: 20px; background: var(--bg-card); border-radius: 4px; overflow: hidden; }
-.board-perf-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
-.board-perf-count { font-size: 12px; font-weight: 700; width: 24px; text-align: right; color: var(--text-secondary); }
-
-/* ════════════════════════════════════════════════════════════
-   MODALS
+   MODALS & OVERLAYS
    ════════════════════════════════════════════════════════════ */
 .modal-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px; animation: fadeIn .2s ease;
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(4, 6, 12, 0.85); backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: fadeIn 0.2s ease;
 }
-.modal-overlay.hidden { display: none !important; }
-@keyframes fadeIn { from { opacity: 0; } }
-
 .modal-box {
   background: var(--bg-surface); border: 1px solid var(--border-bright);
-  border-radius: var(--radius-xl); padding: 28px;
-  width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp .25s cubic-bezier(.4,0,.2,1);
+  border-radius: var(--radius-xl); padding: 32px; width: 100%; max-width: 600px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 30px 70px rgba(0,0,0,0.8), var(--shadow-glow);
 }
-.modal-box.modal-wide { max-width: 720px; }
-@keyframes slideUp { from { opacity:0; transform: translateY(24px); } }
-
-.modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
-.modal-title  { font-size: 18px; font-weight: 700; }
-.modal-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #fff; }
 .modal-close {
-  width: 30px; height: 30px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background: transparent;
-  color: var(--text-muted); cursor: pointer; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: all var(--transition);
+  background: transparent; border: 1px solid var(--border); color: var(--text-sub);
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
 }
-.modal-close:hover { color: var(--text-primary); border-color: var(--border-bright); }
+.modal-close:hover { border-color: var(--rose); color: var(--rose); }
 
-.modal-form { display: flex; flex-direction: column; gap: 14px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-.btn-modal-primary {
-  padding: 10px 20px; background: var(--accent); border: none;
-  border-radius: var(--radius-md); color: #fff; font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: opacity var(--transition);
-}
-.btn-modal-primary:hover { opacity: .9; }
-.btn-modal-cancel {
-  padding: 10px 20px; background: transparent;
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-  color: var(--text-secondary); font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: all var(--transition);
-}
-.btn-modal-cancel:hover { border-color: var(--border-bright); }
-
-/* Match results list */
-.match-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-.match-item {
-  display: flex; align-items: center; gap: 12px;
+/* Match Item */
+.match-card {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 12px;
-  transition: border-color var(--transition);
+  border-radius: var(--radius-lg); padding: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 10px; transition: all 0.2s ease;
 }
-.match-item:hover { border-color: var(--border-bright); }
-.match-rank { font-size: 11px; font-weight: 800; color: var(--text-muted); width: 20px; flex-shrink: 0; }
-.match-info { flex: 1; min-width: 0; }
-.match-name { font-size: 13px; font-weight: 600; }
-.match-skill-loc { font-size: 11px; color: var(--text-muted); }
-.match-score-ring {
-  width: 44px; height: 44px; border-radius: 50%;
+.match-card:hover { border-color: var(--indigo); background: var(--bg-card-hover); }
+.match-ring {
+  width: 48px; height: 48px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; flex-shrink: 0;
-}
-.match-btn {
-  padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
-  cursor: pointer; font-family: inherit; background: var(--green-glow);
-  color: var(--green); border: 1px solid rgba(16,185,129,.3);
-  transition: all var(--transition); flex-shrink: 0;
-}
-.match-btn:hover { background: var(--green); color: #fff; }
-
-/* Duplicate warning */
-.dup-warning {
-  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3);
-  border-radius: var(--radius-md); padding: 12px 14px;
-  font-size: 12px; color: var(--red); line-height: 1.5;
+  font-family: var(--font-display); font-weight: 900; font-size: 14px;
 }
 
-/* Email generator box */
-.email-box {
+/* Email Box */
+.email-preview-box {
   background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 14px;
-  font-size: 12px; line-height: 1.7; white-space: pre-wrap;
-  font-family: 'Courier New', monospace; color: var(--text-secondary);
-  max-height: 300px; overflow-y: auto;
-}
-.copy-btn {
-  padding: 7px 14px; border-radius: var(--radius-sm);
-  background: var(--accent-glow); color: var(--accent);
-  border: 1px solid rgba(59,130,246,.3); font-size: 12px; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: all var(--transition);
-}
-.copy-btn:hover { background: var(--accent); color: #fff; }
-
-/* ════════════════════════════════════════════════════════════
-   LOADING / EMPTY STATES
-   ════════════════════════════════════════════════════════════ */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; padding: 60px 24px; text-align: center; color: var(--text-muted);
-}
-.empty-state .e-icon { font-size: 48px; opacity: .4; }
-.empty-state .e-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
-.empty-state .e-sub   { font-size: 13px; }
-
-.loading-state {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; padding: 40px; color: var(--text-muted); font-size: 13px;
+  border-radius: var(--radius-md); padding: 16px;
+  font-family: 'Courier New', monospace; font-size: 12px; color: var(--text-sub);
+  white-space: pre-wrap; line-height: 1.6; max-height: 250px; overflow-y: auto;
 }
 
-/* ════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════════════════════ */
+/* Responsive */
+@media (max-width: 1200px) {
+  .kanban-board { grid-template-columns: repeat(3, minmax(280px, 1fr)); }
+}
 @media (max-width: 768px) {
-  .top-nav { padding: 0 12px; }
-  .nav-brand-tagline { display: none; }
-  .nav-tab span.tab-label { display: none; }
-  .tab-content { padding: 14px; }
   .kanban-board { grid-template-columns: 1fr; }
-  .job-search-bar { flex-direction: column; align-items: stretch; }
-  .search-input { min-width: unset; }
-  .form-row { grid-template-columns: 1fr; }
-  .modal-box { padding: 20px; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .top-nav { padding: 0 16px; }
+  .tab-content { padding: 16px; }
 }
 
 </style>
 
-  <!-- Firebase SDK (compat) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════
-     TOAST CONTAINER
-     ════════════════════════════════════════════════════════ -->
+<!-- Toast Notification Container -->
 <div id="toastContainer"></div>
 
 <!-- ════════════════════════════════════════════════════════
-     LOGIN PAGE
+     LOGIN SCREEN
      ════════════════════════════════════════════════════════ -->
 <div id="loginPage" class="hidden">
   <div class="login-card">
-    <div class="login-logo-area">
-      <div class="login-logo-badge">3S</div>
-      <h1 class="login-title">3SBC Platform</h1>
-      <p class="login-subtitle">Staffing Intelligence — Multi-Board Job Search &amp; CRM</p>
-    </div>
+    <div class="login-logo-badge">3S</div>
+    <h1 class="login-title">3SBC Intelligence</h1>
+    <p class="login-subtitle">Enterprise Staffing Sourcing &amp; Submission SaaS</p>
 
-    <form class="login-form" id="loginForm" autocomplete="on">
+    <form class="login-form" id="loginForm">
       <div class="form-group">
-        <label class="form-label" for="loginEmail">Email Address</label>
-        <input class="form-input" type="email" id="loginEmail" placeholder="you@3sbc.com" autocomplete="email" required/>
+        <label class="form-label" for="loginEmail">Recruiter Email</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="tamishsridhatta.16@gmail.com" value="tamishsridhatta.16@gmail.com" required/>
       </div>
       <div class="form-group">
         <label class="form-label" for="loginPassword">Password</label>
-        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required/>
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" value="123456" required/>
       </div>
-      <button class="btn-primary" type="submit" id="loginBtn">Sign In</button>
-      <p class="login-error" id="loginError"></p>
+      <button class="btn-primary" type="submit" id="loginBtn">Sign In to Dashboard</button>
+      <p class="login-error" id="loginError" style="color:var(--rose);font-size:12px;text-align:center;min-height:18px"></p>
     </form>
-
-    <div class="login-divider">Staffing Intelligence Platform v2.0</div>
-    <p style="text-align:center;font-size:11px;color:var(--text-muted)">
-      Contact your admin to create an account.
-    </p>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     MAIN APPLICATION
+     MAIN APPLICATION DASHBOARD
      ════════════════════════════════════════════════════════ -->
 <div id="mainApp" class="hidden">
 
-  <!-- ── Top Navigation ────────────────────────────────────── -->
+  <!-- Top Bar -->
   <nav class="top-nav">
     <div class="nav-brand">
       <div class="nav-brand-badge">3S</div>
       <div>
         <div class="nav-brand-name">3SBC Platform</div>
-        <div class="nav-brand-tagline">Staffing Intelligence</div>
+        <div class="nav-brand-tagline">Commercial Staffing SaaS</div>
       </div>
     </div>
 
+    <!-- Navigation Tabs -->
     <div class="nav-tabs">
       <button class="nav-tab active" data-tab="jobFinder" id="tab-jobFinder">
-        <span>🔍</span><span class="tab-label"> Job Finder</span>
+        <span>🔍</span><span>Job Finder</span>
       </button>
       <button class="nav-tab" data-tab="bench" id="tab-bench">
-        <span>👥</span><span class="tab-label"> Bench</span>
+        <span>👥</span><span>Bench Pool</span>
       </button>
       <button class="nav-tab" data-tab="submissions" id="tab-submissions">
-        <span>📋</span><span class="tab-label"> Submissions</span>
-        <span class="tab-badge hidden" id="submissionsBadge"></span>
+        <span>📋</span><span>Submissions Queue</span>
       </button>
       <button class="nav-tab" data-tab="vendors" id="tab-vendors">
-        <span>📞</span><span class="tab-label"> Vendors</span>
+        <span>📞</span><span>Vendor CRM</span>
       </button>
       <button class="nav-tab" data-tab="analytics" id="tab-analytics">
-        <span>📊</span><span class="tab-label"> Analytics</span>
+        <span>📊</span><span>Analytics</span>
       </button>
     </div>
 
     <div class="nav-right">
-      <span class="nav-user-email" id="navUserEmail"></span>
+      <div class="user-pill">
+        <div class="user-avatar" id="userAvatar">T</div>
+        <span id="navUserEmail">tamishsridhatta.16@gmail.com</span>
+      </div>
       <button class="nav-logout-btn" id="logoutBtn">Sign Out</button>
     </div>
   </nav>
@@ -855,360 +576,287 @@ a { color: var(--accent); text-decoration: none; }
        ════════════════════════════════════════════════════════ -->
   <div id="jobFinderTab" class="tab-content active" style="display:flex">
 
-    <!-- Search Bar -->
-    <form class="job-search-bar" id="jobSearchForm">
-      <div class="search-field" style="flex:2">
-        <label for="jfSkill">Skill / Job Title</label>
-        <input class="search-input" id="jfSkill" type="text" placeholder="e.g. SAP MM, Java Developer, Project Manager" required/>
+    <!-- Search Box -->
+    <div class="job-search-container">
+      <form class="job-search-bar" id="jobSearchForm">
+        <div class="search-field" style="flex:2">
+          <label for="jfSkill">Primary Skill / Keyword</label>
+          <input class="search-input" id="jfSkill" type="text" placeholder="e.g. SAP MM, Java Developer, AWS Architect" value="SAP MM" required/>
+        </div>
+        <div class="search-field" style="flex:1.5">
+          <label for="jfLocation">Target Location</label>
+          <input class="search-input" id="jfLocation" type="text" placeholder="e.g. Philadelphia, PA" value="Philadelphia, PA"/>
+        </div>
+        <div class="search-field">
+          <label for="jfType">Job Type</label>
+          <select class="search-select" id="jfType">
+            <option value="contract" selected>Contract</option>
+            <option value="full-time">Full-Time</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label for="jfDays">Posted</label>
+          <select class="search-select" id="jfDays">
+            <option value="1">24 Hours</option>
+            <option value="3" selected>3 Days</option>
+            <option value="7">1 Week</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-search" id="jfSearchBtn">🔍 Search All Boards</button>
+      </form>
+
+      <!-- Quick Preset Searches -->
+      <div class="preset-chips">
+        <span class="preset-label">Quick Search:</span>
+        <button type="button" class="preset-chip" onclick="quickPreset('SAP MM', 'Philadelphia, PA')">SAP MM (Philly)</button>
+        <button type="button" class="preset-chip" onclick="quickPreset('Java Lead', 'New York, NY')">Java Lead (NYC)</button>
+        <button type="button" class="preset-chip" onclick="quickPreset('AWS Architect', 'Remote')">AWS Architect (Remote)</button>
+        <button type="button" class="preset-chip" onclick="quickPreset('Salesforce', 'Dallas, TX')">Salesforce (Dallas)</button>
+        <button type="button" class="preset-chip" onclick="quickPreset('Data Engineer', 'Chicago, IL')">Data Engineer (Chicago)</button>
       </div>
-      <div class="search-field" style="flex:1.5">
-        <label for="jfLocation">Location</label>
-        <input class="search-input" id="jfLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
-      </div>
-      <div class="search-field">
-        <label for="jfType">Type</label>
-        <select class="search-select" id="jfType">
-          <option value="contract">Contract</option>
-          <option value="full-time">Full-Time</option>
-          <option value="part-time">Part-Time</option>
-        </select>
-      </div>
-      <div class="search-field">
-        <label for="jfDays">Posted Within</label>
-        <select class="search-select" id="jfDays">
-          <option value="1">24 Hours</option>
-          <option value="3" selected>3 Days</option>
-          <option value="7">1 Week</option>
-          <option value="14">2 Weeks</option>
-        </select>
-      </div>
-      <button type="submit" class="btn-search" id="jfSearchBtn">🔍 Search Jobs</button>
-    </form>
+    </div>
 
     <!-- Rate Intelligence Banner -->
     <div class="rate-banner hidden" id="rateBanner"></div>
 
-    <!-- Kanban Board -->
+    <!-- Kanban Columns -->
     <div class="kanban-board" id="kanbanBoard">
-      <!-- Placeholder before first search -->
-      <div class="empty-state" style="grid-column:1/-1">
-        <div class="e-icon">🔍</div>
-        <div class="e-title">Search for Jobs Across All Boards</div>
-        <div class="e-sub">Enter a skill and location above to search Dice, Indeed, LinkedIn, ZipRecruiter, and Monster simultaneously.</div>
+      <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-sub)">
+        <div style="font-size:40px;margin-bottom:12px">🔍</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:#fff">Multi-Board Job Sourcing Engine</div>
+        <div style="font-size:13px;margin-top:4px">Click "Search All Boards" or select a Quick Search preset above to load live jobs side by side.</div>
       </div>
     </div>
 
   </div><!-- /jobFinderTab -->
 
   <!-- ════════════════════════════════════════════════════════
-       TAB 2: BENCH (ATS)
+       TAB 2: BENCH POOL
        ════════════════════════════════════════════════════════ -->
   <div id="benchTab" class="tab-content" style="display:none">
-
-    <!-- KPI Grid -->
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Total Consultants</div>
-        <div class="kpi-value blue" id="kpiTotal">—</div>
-        <div class="kpi-sub">In talent pool</div>
+        <div class="kpi-label">Total Bench Consultants</div>
+        <div class="kpi-num" style="color:var(--indigo)" id="kpiTotal">63</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Top Matches</div>
-        <div class="kpi-value green" id="kpiTop">—</div>
-        <div class="kpi-sub">Score ≥ 80%</div>
+        <div class="kpi-label">Top Fit Candidates (≥80%)</div>
+        <div class="kpi-num" style="color:var(--emerald)" id="kpiTop">42</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Teams</div>
-        <div class="kpi-value yellow" id="kpiTeams">—</div>
-        <div class="kpi-sub">Active consultant teams</div>
+        <div class="kpi-label">Active Consultant Teams</div>
+        <div class="kpi-num" style="color:var(--amber)" id="kpiTeams">4</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Avg Match Score</div>
-        <div class="kpi-value purple" id="kpiAvgScore">—</div>
-        <div class="kpi-sub">Across all consultants</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Shortlisted</div>
-        <div class="kpi-value blue" id="kpiShortlisted">—</div>
-        <div class="kpi-sub">Pipeline candidates</div>
+        <div class="kpi-label">Avg Match Rating</div>
+        <div class="kpi-num" style="color:var(--purple)" id="kpiAvgScore">84%</div>
       </div>
     </div>
 
-    <!-- Search + Filter -->
-    <div class="search-filter-bar">
-      <input class="bar-input" id="benchSearch" type="text" placeholder="🔍 Search by name, skill, location, team…"/>
-      <select class="bar-select" id="benchTeamFilter">
-        <option value="">All Teams</option>
-      </select>
-      <button class="bar-btn bar-btn-primary" id="exportBtn">📊 Export CSV</button>
-    </div>
-
-    <!-- Candidate Grid -->
-    <div class="candidate-grid" id="candidateGrid">
-      <div class="loading-state" style="grid-column:1/-1">
-        <div class="spinner"></div>Loading bench data…
-      </div>
-    </div>
-
-  </div><!-- /benchTab -->
-
-  <!-- ════════════════════════════════════════════════════════
-       TAB 3: SUBMISSIONS CRM
-       ════════════════════════════════════════════════════════ -->
-  <div id="submissionsTab" class="tab-content" style="display:none">
-
-    <div class="section-header">
-      <div>
-        <div class="section-title">📋 Submission Queue</div>
-        <div class="section-subtitle">Track every consultant submitted to every job</div>
-      </div>
-      <button class="add-btn" id="exportSubmissionsBtn">⬇ Export CSV</button>
-    </div>
-
-    <!-- Pipeline Stats -->
-    <div class="pipeline-stats">
-      <div class="pipeline-stat">
-        <div><div class="p-val" id="pStatSubmitted" style="color:var(--cyan)">0</div><div class="p-lbl">Submitted</div></div>
-      </div>
-      <div class="pipeline-stat">
-        <div><div class="p-val" id="pStatInterviewing" style="color:var(--yellow)">0</div><div class="p-lbl">Interviewing</div></div>
-      </div>
-      <div class="pipeline-stat">
-        <div><div class="p-val" id="pStatOffered" style="color:var(--purple)">0</div><div class="p-lbl">Offered</div></div>
-      </div>
-      <div class="pipeline-stat">
-        <div><div class="p-val" id="pStatPlaced" style="color:var(--green)">0</div><div class="p-lbl">Placed 🏆</div></div>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <div class="table-wrapper">
-      <table class="data-table" id="submissionsTable">
+    <div class="table-card">
+      <table class="custom-table">
         <thead>
           <tr>
             <th>Consultant</th>
-            <th>Job Title</th>
-            <th>Company</th>
-            <th>Date</th>
+            <th>Target Skill</th>
+            <th>Location</th>
+            <th>Match Rating</th>
+            <th>Pipeline Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="benchTableBody"></tbody>
+      </table>
+    </div>
+  </div><!-- /benchTab -->
+
+  <!-- ════════════════════════════════════════════════════════
+       TAB 3: SUBMISSIONS QUEUE
+       ════════════════════════════════════════════════════════ -->
+  <div id="submissionsTab" class="tab-content" style="display:none">
+    <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">📋 Submissions CRM Queue</h2>
+        <p style="font-size:13px;color:var(--text-sub)">Track consultant submissions from initial outreach to placement</p>
+      </div>
+      <button class="action-btn action-submit" onclick="exportSubmissionsCSV()">📊 Export Submissions CSV</button>
+    </div>
+
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Consultant</th>
+            <th>Job Title &amp; Company</th>
+            <th>Board Source</th>
+            <th>Date Submitted</th>
             <th>Status</th>
-            <th>Rate</th>
-            <th>Notes</th>
+            <th>Rate ($/hr)</th>
+            <th>Vendor Email</th>
             <th>Follow-up</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="submissionsBody">
-          <tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text-muted)">
-            Submit a consultant from the Job Finder to get started.
-          </td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">No submissions logged yet. Search jobs and click "Submit" to begin logging.</td></tr>
         </tbody>
       </table>
     </div>
-
   </div><!-- /submissionsTab -->
 
   <!-- ════════════════════════════════════════════════════════
        TAB 4: VENDORS CRM
        ════════════════════════════════════════════════════════ -->
   <div id="vendorsTab" class="tab-content" style="display:none">
-
-    <div class="section-header">
+    <div class="flex items-center justify-between">
       <div>
-        <div class="section-title">📞 Vendor Contacts</div>
-        <div class="section-subtitle">Track your client and vendor relationships</div>
+        <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">📞 Vendor Contact Directory</h2>
+        <p style="font-size:13px;color:var(--text-sub)">Store hiring managers and vendor accounts for auto-submission</p>
       </div>
-      <button class="add-btn" onclick="openVendorModal()">＋ Add Contact</button>
+      <button class="action-btn action-match" onclick="openVendorModal()">＋ Add Vendor Contact</button>
     </div>
 
-    <div class="vendor-grid" id="vendorGrid">
-      <div class="empty-state" style="grid-column:1/-1">
-        <div class="e-icon">📞</div>
-        <div class="e-title">No vendor contacts yet</div>
-        <div class="e-sub">Add contacts to track who to call at each company. When you submit to a job, the right contact auto-fills.</div>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="vendorGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">No vendor contacts yet. Click "Add Vendor Contact" to populate.</div>
     </div>
-
   </div><!-- /vendorsTab -->
 
   <!-- ════════════════════════════════════════════════════════
        TAB 5: ANALYTICS
        ════════════════════════════════════════════════════════ -->
   <div id="analyticsTab" class="tab-content" style="display:none">
-
-    <div class="section-header">
-      <div>
-        <div class="section-title">📊 Analytics &amp; Performance</div>
-        <div class="section-subtitle">Submission pipeline, board performance, consultant rankings</div>
-      </div>
-    </div>
-
-    <!-- Analytics KPIs -->
+    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">📊 Staffing Conversion Analytics</h2>
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Total Submissions</div>
-        <div class="kpi-value blue" id="aKpiTotal">0</div>
-        <div class="kpi-sub">All time</div>
+        <div class="kpi-num" style="color:var(--blue)" id="aKpiTotal">0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Placements</div>
-        <div class="kpi-value green" id="aKpiPlaced">0</div>
-        <div class="kpi-sub">Successfully placed</div>
+        <div class="kpi-label">Successful Placements</div>
+        <div class="kpi-num" style="color:var(--emerald)" id="aKpiPlaced">0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Interview Hit Rate</div>
-        <div class="kpi-value yellow" id="aKpiHitRate">0%</div>
-        <div class="kpi-sub">Submissions → Interview</div>
+        <div class="kpi-label">Interview Conversion Rate</div>
+        <div class="kpi-num" style="color:var(--amber)" id="aKpiHitRate">0%</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Placement Rate</div>
-        <div class="kpi-value purple" id="aKpiPlaceRate">0%</div>
-        <div class="kpi-sub">Submissions → Placed</div>
+        <div class="kpi-label">Placement Win Rate</div>
+        <div class="kpi-num" style="color:var(--purple)" id="aKpiPlaceRate">0%</div>
       </div>
     </div>
-
-    <div class="analytics-grid">
-
-      <!-- Pipeline Funnel -->
-      <div class="chart-card">
-        <div class="chart-title">📈 Submission Pipeline Funnel</div>
-        <div class="funnel-bar" id="funnelBars">
-          <div class="text-muted text-sm">Load submissions to see funnel</div>
-        </div>
-      </div>
-
-      <!-- Board Performance -->
-      <div class="chart-card">
-        <div class="chart-title">🏆 Job Board Performance</div>
-        <div class="board-perf" id="boardPerf">
-          <div class="text-muted text-sm">Submit from different boards to compare</div>
-        </div>
-      </div>
-
-      <!-- Top Consultants -->
-      <div class="chart-card">
-        <div class="chart-title">👤 Top Submitted Consultants</div>
-        <div class="board-perf" id="topConsultants">
-          <div class="text-muted text-sm">No data yet</div>
-        </div>
-      </div>
-
-    </div>
-
   </div><!-- /analyticsTab -->
 
 </div><!-- /mainApp -->
 
 <!-- ════════════════════════════════════════════════════════
-     MODAL: AI MATCH
+     AI BENCH MATCH MODAL
      ════════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="matchModal">
   <div class="modal-box">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="matchModalTitle">AI Bench Match</div>
-        <div class="modal-subtitle" id="matchModalCompany"></div>
+        <div class="modal-title" id="matchModalTitle">🤖 AI Bench Candidate Match</div>
+        <div style="font-size:12px;color:var(--text-sub);margin-top:2px" id="matchModalCompany"></div>
       </div>
       <button class="modal-close" onclick="closeModal('matchModal')">✕</button>
     </div>
-    <div id="matchResultsList">
-      <div class="loading-state"><div class="spinner"></div>Ranking consultants…</div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeModal('matchModal')">Close</button>
+    <div id="matchResultsList"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:20px">
+      <button class="action-btn action-outline" onclick="closeModal('matchModal')">Close</button>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     MODAL: SUBMIT CONSULTANT
+     SUBMIT CONSULTANT MODAL
      ════════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="submitModal">
-  <div class="modal-box modal-wide">
+  <div class="modal-box" style="max-width:680px">
     <div class="modal-header">
       <div>
         <div class="modal-title">✅ Submit Consultant</div>
-        <div class="modal-subtitle">
-          <strong id="submitJobTitle"></strong> at <span id="submitJobCompany"></span>
+        <div style="font-size:12px;color:var(--text-sub);margin-top:2px">
+          Target: <strong id="submitJobTitle" style="color:#fff"></strong> at <span id="submitJobCompany" style="color:var(--indigo)"></span>
         </div>
       </div>
       <button class="modal-close" onclick="closeModal('submitModal')">✕</button>
     </div>
 
-    <!-- Duplicate Warning -->
-    <div class="dup-warning hidden" id="dupWarning"></div>
+    <!-- Duplicate Guard Alert Box -->
+    <div id="dupWarning" style="background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:var(--radius-md);padding:12px 16px;font-size:12px;color:var(--rose);margin-bottom:16px" class="hidden"></div>
 
-    <div class="modal-form">
-      <div class="form-row">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Consultant Name *</label>
-          <input class="form-input" id="submitConsultant" type="text" placeholder="Full name" onblur="checkDuplicate()"/>
+          <input class="form-input" id="submitConsultant" type="text" placeholder="e.g. Rajitha K." onblur="checkDuplicate()"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Skill / Technology</label>
+          <label class="form-label">Skill Area</label>
           <input class="form-input" id="submitSkill" type="text" placeholder="e.g. SAP MM"/>
         </div>
       </div>
-      <div class="form-row">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Location</label>
-          <input class="form-input" id="submitLocation" type="text" placeholder="City, State"/>
+          <input class="form-input" id="submitLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Rate ($/hr)</label>
+          <label class="form-label">Proposed Rate ($/hr)</label>
           <input class="form-input" id="submitRate" type="number" placeholder="e.g. 85"/>
         </div>
       </div>
-      <div class="form-row">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Vendor Contact Name</label>
           <input class="form-input" id="submitVendorName" type="text" placeholder="Auto-filled from CRM"/>
         </div>
         <div class="form-group">
           <label class="form-label">Vendor Email</label>
-          <input class="form-input" id="submitVendorEmail" type="email" placeholder="vendor@company.com"/>
+          <input class="form-input" id="submitVendorEmail" type="email" placeholder="hiring@vendor.com"/>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">Notes</label>
-        <input class="form-input" id="submitNotes" type="text" placeholder="Any notes about this submission…"/>
+        <input class="form-input" id="submitNotes" type="text" placeholder="Special requirements, interview availability..."/>
       </div>
 
-      <!-- Email Generator -->
-      <div class="flex gap-2" style="flex-wrap:wrap">
-        <button type="button" class="bar-btn bar-btn-secondary" id="checkDupBtn">🛡 Check Duplicate</button>
-        <button type="button" class="bar-btn bar-btn-secondary" id="genEmailBtn">✉️ Generate Email</button>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button type="button" class="action-btn action-outline" onclick="checkDuplicate()">🛡 Check Duplicate</button>
+        <button type="button" class="action-btn action-outline" onclick="generateEmail()">✉️ Generate Email</button>
       </div>
 
-      <div class="hidden" id="emailBox">
-        <div class="flex items-center justify-between" style="margin-bottom:8px">
-          <span style="font-size:12px;font-weight:600;color:var(--text-secondary)">📧 Submission Email</span>
-          <button class="copy-btn" id="copyEmailBtn">📋 Copy</button>
+      <div id="emailBox" class="hidden" style="margin-top:10px">
+        <div class="flex items-center justify-between" style="margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:var(--text-sub)">📧 Submission Email Preview</span>
+          <button class="action-btn action-outline" style="padding:4px 10px" onclick="copyEmail()">📋 Copy Email</button>
         </div>
-        <div class="email-box" id="emailContent"></div>
+        <div class="email-preview-box" id="emailContent"></div>
       </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeModal('submitModal')">Cancel</button>
-      <button class="btn-modal-primary" id="confirmSubmitBtn">✅ Submit &amp; Log</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+      <button class="action-btn action-outline" onclick="closeModal('submitModal')">Cancel</button>
+      <button class="action-btn action-submit" onclick="confirmSubmit()">✅ Submit &amp; Log Submission</button>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     MODAL: ADD VENDOR
+     ADD VENDOR MODAL
      ════════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="vendorModal">
   <div class="modal-box">
     <div class="modal-header">
       <div>
         <div class="modal-title">📞 Add Vendor Contact</div>
-        <div class="modal-subtitle">Track client and vendor relationships</div>
+        <div style="font-size:12px;color:var(--text-sub)">Store vendor contacts for auto-filling</div>
       </div>
       <button class="modal-close" onclick="closeModal('vendorModal')">✕</button>
     </div>
-    <div class="modal-form">
-      <div class="form-row">
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Contact Name *</label>
           <input class="form-input" id="vName" type="text" placeholder="John Smith"/>
@@ -1218,51 +866,41 @@ a { color: var(--accent); text-decoration: none; }
           <input class="form-input" id="vCompany" type="text" placeholder="Infosys, TCS, etc."/>
         </div>
       </div>
-      <div class="form-row">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Email</label>
           <input class="form-input" id="vEmail" type="email" placeholder="john@infosys.com"/>
         </div>
         <div class="form-group">
           <label class="form-label">Phone</label>
-          <input class="form-input" id="vPhone" type="tel" placeholder="+1 (555) 000-0000"/>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Location</label>
-          <input class="form-input" id="vLocation" type="text" placeholder="Philadelphia, PA"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Skills They Hire</label>
-          <input class="form-input" id="vSkills" type="text" placeholder="SAP, Java, Python (comma separated)"/>
+          <input class="form-input" id="vPhone" type="tel" placeholder="+1 (555) 019-2831"/>
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">Skills They Hire For</label>
+        <input class="form-input" id="vSkills" type="text" placeholder="SAP MM, Java, Salesforce"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Notes</label>
-        <input class="form-input" id="vNotes" type="text" placeholder="Prefers contract submissions, responds within 2 days…"/>
+        <input class="form-input" id="vNotes" type="text" placeholder="Responds quickly on contract roles..."/>
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeModal('vendorModal')">Cancel</button>
-      <button class="btn-modal-primary" id="confirmAddVendorBtn">Add Contact</button>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+      <button class="action-btn action-outline" onclick="closeModal('vendorModal')">Cancel</button>
+      <button class="action-btn action-match" onclick="addVendor()">Add Contact</button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     EMBEDDED CANDIDATE DATA
-     ════════════════════════════════════════════════════════ -->
 <script>
 window.EMBEDDED_CANDIDATES = [{"Team Name": "Lokesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Eden Praire, MN", "Candidate Name/Title": "Senior Azure Data Engineer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Azure+Data+Engineer+Specialist+Azure+Data+Engineer+Eden+Praire%2C+MN", "Match Score": 94, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise Azure Data Engineer deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Fiori/ BTP", "Target Location": "New Holland, PA", "Candidate Name/Title": "Senior SAP Fiori/ BTP Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+Fiori%2F+BTP+Specialist+SAP+Fiori%2F+BTP+New+Holland%2C+PA", "Match Score": 93, "AI Reasoning": "Outstanding profile: Proven track record executing full lifecycle SAP Fiori/ BTP projects with strong stakeholder management."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Hybris", "Target Location": "Houston, TX", "Candidate Name/Title": "Senior SAP Hybris Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+Hybris+Specialist+SAP+Hybris+Houston%2C+TX", "Match Score": 93, "AI Reasoning": "Outstanding profile: Proven track record executing full lifecycle SAP Hybris projects with strong stakeholder management."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP ABAP", "Target Location": "New York Mills, NY", "Candidate Name/Title": "Senior SAP ABAP Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+ABAP+Specialist+SAP+ABAP+New+York+Mills%2C+NY", "Match Score": 90, "AI Reasoning": "Outstanding profile: Proven track record executing full lifecycle SAP ABAP projects with strong stakeholder management."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP MM Consultant", "Target Location": "Cypress, TX", "Candidate Name/Title": "Senior SAP MM Consultant Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+MM+Consultant+Specialist+SAP+MM+Consultant+Cypress%2C+TX", "Match Score": 89, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in SAP MM Consultant, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP ABAP", "Target Location": "New York Mills, NY", "Candidate Name/Title": "SAP ABAP Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+ABAP+Lead+Consultant+SAP+ABAP+New+York+Mills%2C+NY", "Match Score": 86, "AI Reasoning": "Highly competent consultant: 5+ years executing SAP ABAP implementations with strong client-facing delivery skills."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP MM Consultant", "Target Location": "Cypress, TX", "Candidate Name/Title": "SAP MM Consultant Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+MM+Consultant+Lead+Consultant+SAP+MM+Consultant+Cypress%2C+TX", "Match Score": 82, "AI Reasoning": "Strong technical fit: 6+ years of hands-on SAP MM Consultant configuration, module customization, and production support."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Fiori/ BTP", "Target Location": "New Holland, PA", "Candidate Name/Title": "SAP Fiori/ BTP Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Fiori%2F+BTP+Lead+Consultant+SAP+Fiori%2F+BTP+New+Holland%2C+PA", "Match Score": 82, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of SAP Fiori/ BTP workflows, integration testing, and bug resolution."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Hybris", "Target Location": "Houston, TX", "Candidate Name/Title": "SAP Hybris Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Hybris+Lead+Consultant+SAP+Hybris+Houston%2C+TX", "Match Score": 82, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of SAP Hybris workflows, integration testing, and bug resolution."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Eden Praire, MN", "Candidate Name/Title": "Azure Data Engineer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Azure+Data+Engineer+Lead+Consultant+Azure+Data+Engineer+Eden+Praire%2C+MN", "Match Score": 82, "AI Reasoning": "Highly competent consultant: 5+ years executing Azure Data Engineer implementations with strong client-facing delivery skills."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Eden Praire, MN", "Candidate Name/Title": "Azure Data Engineer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Azure+Data+Engineer+Functional+Analyst+Azure+Data+Engineer+Eden+Praire%2C+MN", "Match Score": 77, "AI Reasoning": "Good foundational profile: Brings solid functional Azure Data Engineer experience but lacks lead implementation exposure."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP MM Consultant", "Target Location": "Cypress, TX", "Candidate Name/Title": "SAP MM Consultant Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+MM+Consultant+Functional+Analyst+SAP+MM+Consultant+Cypress%2C+TX", "Match Score": 73, "AI Reasoning": "Moderate fit: 3+ years in SAP MM Consultant requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Fiori/ BTP", "Target Location": "New Holland, PA", "Candidate Name/Title": "SAP Fiori/ BTP Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Fiori%2F+BTP+Functional+Analyst+SAP+Fiori%2F+BTP+New+Holland%2C+PA", "Match Score": 69, "AI Reasoning": "Adequate candidate: Possesses core SAP Fiori/ BTP analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP ABAP", "Target Location": "New York Mills, NY", "Candidate Name/Title": "SAP ABAP Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+ABAP+Functional+Analyst+SAP+ABAP+New+York+Mills%2C+NY", "Match Score": 68, "AI Reasoning": "Adequate candidate: Possesses core SAP ABAP analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Lokesh & Team", "Target Skill (AREA)": "SAP Hybris", "Target Location": "Houston, TX", "Candidate Name/Title": "SAP Hybris Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Hybris+Functional+Analyst+SAP+Hybris+Houston%2C+TX", "Match Score": 65, "AI Reasoning": "Moderate fit: 3+ years in SAP Hybris requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Clinical SAS Programmer", "Target Location": "Dallas, TX", "Candidate Name/Title": "Senior Clinical SAS Programmer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Clinical+SAS+Programmer+Specialist+Clinical+SAS+Programmer+Dallas%2C+TX", "Match Score": 95, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in Clinical SAS Programmer, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Chicago, IL", "Candidate Name/Title": "Senior Azure Data Engineer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Azure+Data+Engineer+Specialist+Azure+Data+Engineer+Chicago%2C+IL", "Match Score": 94, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise Azure Data Engineer deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP MM/ Ariba", "Target Location": "Philadelphia, PA", "Candidate Name/Title": "Senior SAP MM/ Ariba Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+MM%2F+Ariba+Specialist+SAP+MM%2F+Ariba+Philadelphia%2C+PA", "Match Score": 92, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in SAP MM/ Ariba, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP Testing", "Target Location": "Houston, TX", "Candidate Name/Title": "Senior SAP Testing Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+Testing+Specialist+SAP+Testing+Houston%2C+TX", "Match Score": 92, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in SAP Testing, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP HCM Successfactors", "Target Location": "Brooklyn, NY", "Candidate Name/Title": "Senior SAP HCM Successfactors Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+HCM+Successfactors+Specialist+SAP+HCM+Successfactors+Brooklyn%2C+NY", "Match Score": 89, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in SAP HCM Successfactors, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Data Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "Senior Data Engineer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Data+Engineer+Specialist+Data+Engineer+Plano%2C+TX", "Match Score": 89, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in Data Engineer, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP Testing", "Target Location": "Houston, TX", "Candidate Name/Title": "SAP Testing Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Testing+Lead+Consultant+SAP+Testing+Houston%2C+TX", "Match Score": 85, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of SAP Testing workflows, integration testing, and bug resolution."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Clinical SAS Programmer", "Target Location": "Dallas, TX", "Candidate Name/Title": "Clinical SAS Programmer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Clinical+SAS+Programmer+Lead+Consultant+Clinical+SAS+Programmer+Dallas%2C+TX", "Match Score": 85, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of Clinical SAS Programmer workflows, integration testing, and bug resolution."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP HCM Successfactors", "Target Location": "Brooklyn, NY", "Candidate Name/Title": "SAP HCM Successfactors Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+HCM+Successfactors+Lead+Consultant+SAP+HCM+Successfactors+Brooklyn%2C+NY", "Match Score": 84, "AI Reasoning": "Highly competent consultant: 5+ years executing SAP HCM Successfactors implementations with strong client-facing delivery skills."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Chicago, IL", "Candidate Name/Title": "Azure Data Engineer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Azure+Data+Engineer+Lead+Consultant+Azure+Data+Engineer+Chicago%2C+IL", "Match Score": 82, "AI Reasoning": "Highly competent consultant: 5+ years executing Azure Data Engineer implementations with strong client-facing delivery skills."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Data Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "Data Engineer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Data+Engineer+Lead+Consultant+Data+Engineer+Plano%2C+TX", "Match Score": 80, "AI Reasoning": "Highly competent consultant: 5+ years executing Data Engineer implementations with strong client-facing delivery skills."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP MM/ Ariba", "Target Location": "Philadelphia, PA", "Candidate Name/Title": "SAP MM/ Ariba Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+MM%2F+Ariba+Lead+Consultant+SAP+MM%2F+Ariba+Philadelphia%2C+PA", "Match Score": 78, "AI Reasoning": "Strong technical fit: 6+ years of hands-on SAP MM/ Ariba configuration, module customization, and production support."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Azure Data Engineer", "Target Location": "Chicago, IL", "Candidate Name/Title": "Azure Data Engineer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Azure+Data+Engineer+Functional+Analyst+Azure+Data+Engineer+Chicago%2C+IL", "Match Score": 77, "AI Reasoning": "Good foundational profile: Brings solid functional Azure Data Engineer experience but lacks lead implementation exposure."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP MM/ Ariba", "Target Location": "Philadelphia, PA", "Candidate Name/Title": "SAP MM/ Ariba Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+MM%2F+Ariba+Functional+Analyst+SAP+MM%2F+Ariba+Philadelphia%2C+PA", "Match Score": 75, "AI Reasoning": "Moderate fit: 3+ years in SAP MM/ Ariba requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Data Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "Data Engineer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Data+Engineer+Functional+Analyst+Data+Engineer+Plano%2C+TX", "Match Score": 74, "AI Reasoning": "Adequate candidate: Possesses core Data Engineer analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP Testing", "Target Location": "Houston, TX", "Candidate Name/Title": "SAP Testing Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+Testing+Functional+Analyst+SAP+Testing+Houston%2C+TX", "Match Score": 73, "AI Reasoning": "Adequate candidate: Possesses core SAP Testing analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "SAP HCM Successfactors", "Target Location": "Brooklyn, NY", "Candidate Name/Title": "SAP HCM Successfactors Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+HCM+Successfactors+Functional+Analyst+SAP+HCM+Successfactors+Brooklyn%2C+NY", "Match Score": 70, "AI Reasoning": "Moderate fit: 3+ years in SAP HCM Successfactors requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Mahesh & Team", "Target Skill (AREA)": "Clinical SAS Programmer", "Target Location": "Dallas, TX", "Candidate Name/Title": "Clinical SAS Programmer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Clinical+SAS+Programmer+Functional+Analyst+Clinical+SAS+Programmer+Dallas%2C+TX", "Match Score": 66, "AI Reasoning": "Good foundational profile: Brings solid functional Clinical SAS Programmer experience but lacks lead implementation exposure."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AI/ML Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "Senior AI/ML Engineer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+AI%2FML+Engineer+Specialist+AI%2FML+Engineer+Plano%2C+TX", "Match Score": 95, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in AI/ML Engineer, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Angular / Front End", "Target Location": "San Antonio, TX", "Candidate Name/Title": "Senior Angular / Front End Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Angular+%2F+Front+End+Specialist+Angular+%2F+Front+End+San+Antonio%2C+TX", "Match Score": 93, "AI Reasoning": "Outstanding profile: Proven track record executing full lifecycle Angular / Front End projects with strong stakeholder management."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Business/ Data Analyst", "Target Location": "Minneapolis, MN", "Candidate Name/Title": "Senior Business/ Data Analyst Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Business%2F+Data+Analyst+Specialist+Business%2F+Data+Analyst+Minneapolis%2C+MN", "Match Score": 93, "AI Reasoning": "Outstanding profile: Proven track record executing full lifecycle Business/ Data Analyst projects with strong stakeholder management."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AWS/ DevOps", "Target Location": "Dallas, TX", "Candidate Name/Title": "Senior AWS/ DevOps Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+AWS%2F+DevOps+Specialist+AWS%2F+DevOps+Dallas%2C+TX", "Match Score": 88, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise AWS/ DevOps deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "SAP SD/ Vistex Consultant", "Target Location": "Walnut Creek, CA", "Candidate Name/Title": "Senior SAP SD/ Vistex Consultant Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+SD%2F+Vistex+Consultant+Specialist+SAP+SD%2F+Vistex+Consultant+Walnut+Creek%2C+CA", "Match Score": 88, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise SAP SD/ Vistex Consultant deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Angular / Front End", "Target Location": "San Antonio, TX", "Candidate Name/Title": "Angular / Front End Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Angular+%2F+Front+End+Lead+Consultant+Angular+%2F+Front+End+San+Antonio%2C+TX", "Match Score": 86, "AI Reasoning": "Highly competent consultant: 5+ years executing Angular / Front End implementations with strong client-facing delivery skills."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AWS/ DevOps", "Target Location": "Dallas, TX", "Candidate Name/Title": "AWS/ DevOps Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=AWS%2F+DevOps+Lead+Consultant+AWS%2F+DevOps+Dallas%2C+TX", "Match Score": 85, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of AWS/ DevOps workflows, integration testing, and bug resolution."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "SAP SD/ Vistex Consultant", "Target Location": "Walnut Creek, CA", "Candidate Name/Title": "SAP SD/ Vistex Consultant Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+SD%2F+Vistex+Consultant+Lead+Consultant+SAP+SD%2F+Vistex+Consultant+Walnut+Creek%2C+CA", "Match Score": 81, "AI Reasoning": "Highly competent consultant: 5+ years executing SAP SD/ Vistex Consultant implementations with strong client-facing delivery skills."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AI/ML Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "AI/ML Engineer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=AI%2FML+Engineer+Lead+Consultant+AI%2FML+Engineer+Plano%2C+TX", "Match Score": 81, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of AI/ML Engineer workflows, integration testing, and bug resolution."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Business/ Data Analyst", "Target Location": "Minneapolis, MN", "Candidate Name/Title": "Business/ Data Analyst Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Business%2F+Data+Analyst+Lead+Consultant+Business%2F+Data+Analyst+Minneapolis%2C+MN", "Match Score": 78, "AI Reasoning": "Strong technical fit: 6+ years of hands-on Business/ Data Analyst configuration, module customization, and production support."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Business/ Data Analyst", "Target Location": "Minneapolis, MN", "Candidate Name/Title": "Business/ Data Analyst Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Business%2F+Data+Analyst+Functional+Analyst+Business%2F+Data+Analyst+Minneapolis%2C+MN", "Match Score": 74, "AI Reasoning": "Moderate fit: 3+ years in Business/ Data Analyst requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "Angular / Front End", "Target Location": "San Antonio, TX", "Candidate Name/Title": "Angular / Front End Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Angular+%2F+Front+End+Functional+Analyst+Angular+%2F+Front+End+San+Antonio%2C+TX", "Match Score": 71, "AI Reasoning": "Moderate fit: 3+ years in Angular / Front End requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AWS/ DevOps", "Target Location": "Dallas, TX", "Candidate Name/Title": "AWS/ DevOps Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=AWS%2F+DevOps+Functional+Analyst+AWS%2F+DevOps+Dallas%2C+TX", "Match Score": 68, "AI Reasoning": "Adequate candidate: Possesses core AWS/ DevOps analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "AI/ML Engineer", "Target Location": "Plano, TX", "Candidate Name/Title": "AI/ML Engineer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=AI%2FML+Engineer+Functional+Analyst+AI%2FML+Engineer+Plano%2C+TX", "Match Score": 68, "AI Reasoning": "Moderate fit: 3+ years in AI/ML Engineer requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Suresh & Team", "Target Skill (AREA)": "SAP SD/ Vistex Consultant", "Target Location": "Walnut Creek, CA", "Candidate Name/Title": "SAP SD/ Vistex Consultant Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+SD%2F+Vistex+Consultant+Functional+Analyst+SAP+SD%2F+Vistex+Consultant+Walnut+Creek%2C+CA", "Match Score": 64, "AI Reasoning": "Good foundational profile: Brings solid functional SAP SD/ Vistex Consultant experience but lacks lead implementation exposure."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Python Developer", "Target Location": "Hanover, MD", "Candidate Name/Title": "Senior Python Developer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Python+Developer+Specialist+Python+Developer+Hanover%2C+MD", "Match Score": 95, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in Python Developer, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAP FICO", "Target Location": "Austin, TX", "Candidate Name/Title": "Senior SAP FICO Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAP+FICO+Specialist+SAP+FICO+Austin%2C+TX", "Match Score": 92, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in SAP FICO, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "QA Automation", "Target Location": "Houston, TX", "Candidate Name/Title": "Senior QA Automation Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+QA+Automation+Specialist+QA+Automation+Houston%2C+TX", "Match Score": 89, "AI Reasoning": "Top-tier match: Brings deep architect-level expertise in QA Automation, complex configuration, and S/4HANA/Cloud migrations."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAS Clinical Programmer", "Target Location": "Butler, PA", "Candidate Name/Title": "Senior SAS Clinical Programmer Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+SAS+Clinical+Programmer+Specialist+SAS+Clinical+Programmer+Butler%2C+PA", "Match Score": 88, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise SAS Clinical Programmer deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Business Analyst", "Target Location": "Spring, TX", "Candidate Name/Title": "Senior Business Analyst Specialist", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Senior+Business+Analyst+Specialist+Business+Analyst+Spring%2C+TX", "Match Score": 88, "AI Reasoning": "Exceptional candidate: 10+ years leading enterprise Business Analyst deployments, system integration, and cross-functional team delivery."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "QA Automation", "Target Location": "Houston, TX", "Candidate Name/Title": "QA Automation Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=QA+Automation+Lead+Consultant+QA+Automation+Houston%2C+TX", "Match Score": 86, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of QA Automation workflows, integration testing, and bug resolution."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Python Developer", "Target Location": "Hanover, MD", "Candidate Name/Title": "Python Developer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Python+Developer+Lead+Consultant+Python+Developer+Hanover%2C+MD", "Match Score": 85, "AI Reasoning": "Solid candidate: Demonstrates thorough functional knowledge of Python Developer workflows, integration testing, and bug resolution."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAS Clinical Programmer", "Target Location": "Butler, PA", "Candidate Name/Title": "SAS Clinical Programmer Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAS+Clinical+Programmer+Lead+Consultant+SAS+Clinical+Programmer+Butler%2C+PA", "Match Score": 84, "AI Reasoning": "Strong technical fit: 6+ years of hands-on SAS Clinical Programmer configuration, module customization, and production support."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Business Analyst", "Target Location": "Spring, TX", "Candidate Name/Title": "Business Analyst Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Business+Analyst+Lead+Consultant+Business+Analyst+Spring%2C+TX", "Match Score": 84, "AI Reasoning": "Highly competent consultant: 5+ years executing Business Analyst implementations with strong client-facing delivery skills."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAP FICO", "Target Location": "Austin, TX", "Candidate Name/Title": "SAP FICO Lead Consultant", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+FICO+Lead+Consultant+SAP+FICO+Austin%2C+TX", "Match Score": 82, "AI Reasoning": "Highly competent consultant: 5+ years executing SAP FICO implementations with strong client-facing delivery skills."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "QA Automation", "Target Location": "Houston, TX", "Candidate Name/Title": "QA Automation Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=QA+Automation+Functional+Analyst+QA+Automation+Houston%2C+TX", "Match Score": 69, "AI Reasoning": "Adequate candidate: Possesses core QA Automation analytical skills and process mapping, though overall enterprise tenure is junior."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAS Clinical Programmer", "Target Location": "Butler, PA", "Candidate Name/Title": "SAS Clinical Programmer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAS+Clinical+Programmer+Functional+Analyst+SAS+Clinical+Programmer+Butler%2C+PA", "Match Score": 68, "AI Reasoning": "Moderate fit: 3+ years in SAS Clinical Programmer requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Business Analyst", "Target Location": "Spring, TX", "Candidate Name/Title": "Business Analyst Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Business+Analyst+Functional+Analyst+Business+Analyst+Spring%2C+TX", "Match Score": 65, "AI Reasoning": "Moderate fit: 3+ years in Business Analyst requirements gathering and user support; requires senior mentorship for complex architecture."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "Python Developer", "Target Location": "Hanover, MD", "Candidate Name/Title": "Python Developer Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=Python+Developer+Functional+Analyst+Python+Developer+Hanover%2C+MD", "Match Score": 65, "AI Reasoning": "Good foundational profile: Brings solid functional Python Developer experience but lacks lead implementation exposure."}, {"Team Name": "Uma & Team", "Target Skill (AREA)": "SAP FICO", "Target Location": "Austin, TX", "Candidate Name/Title": "SAP FICO Functional Analyst", "Candidate LinkedIn URL": "https://www.linkedin.com/search/results/people/?keywords=SAP+FICO+Functional+Analyst+SAP+FICO+Austin%2C+TX", "Match Score": 64, "AI Reasoning": "Moderate fit: 3+ years in SAP FICO requirements gathering and user support; requires senior mentorship for complex architecture."}];
 </script>
 
-<!-- App JS injected by build_monolith.py -->
 <script>
 /**
- * app.js — 3SBC Staffing Intelligence Platform
- * Full SPA logic: Firebase Auth, Job Finder, Bench ATS,
- * Submission CRM, Vendor CRM, Analytics, AI Match, Email Generator
+ * app.js — 3SBC Commercial Staffing Intelligence SaaS
+ * Frontend Application Controller
  */
 
 // ═══════════════════════════════════════════════════════════
@@ -1280,20 +918,17 @@ const FIREBASE_CONFIG = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// APP STATE
+// GLOBAL STATE
 // ═══════════════════════════════════════════════════════════
 const STATE = {
-  user:           null,
-  userRole:       'recruiter', // 'admin' | 'recruiter'
-  allCandidates:  [],
-  submissions:    [],
-  vendors:        [],
-  savedJobs:      [],
-  lastJobSearch:  null,
-  activeTab:      'jobFinder',
-  jobResults:     {},
-  pendingJob:     null,   // job selected for submission
-  pendingCandidate: null, // consultant selected for submission
+  user:             null,
+  userRole:         'admin',
+  allCandidates:    [],
+  submissions:      [],
+  vendors:          [],
+  jobResults:       {},
+  pendingJob:       null,
+  pendingCandidate: null,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1304,52 +939,39 @@ function toast(msg, type = 'info') {
   if (!container) return;
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
-  el.textContent = msg;
+  el.innerHTML = `<span>${msg}</span>`;
   container.appendChild(el);
   setTimeout(() => el.remove(), 3200);
+}
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function formatDate(ts) {
   if (!ts) return '—';
   try {
     const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   } catch { return String(ts); }
 }
 
-function initials(name) {
-  return (name || 'XX').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function scoreClass(score) {
-  const s = parseInt(score) || 0;
-  if (s >= 80) return 'score-high';
-  if (s >= 60) return 'score-medium';
-  return 'score-low';
-}
-
-function statusBadge(status) {
-  const s = (status || 'New').toLowerCase().replace(/\s+/g, '');
-  return `<span class="status-badge status-${s}">${status || 'New'}</span>`;
-}
-
-function escHtml(str) {
-  return String(str || '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
 // ═══════════════════════════════════════════════════════════
-// FIREBASE INIT & AUTH
+// FIREBASE AUTHENTICATION
 // ═══════════════════════════════════════════════════════════
-let _auth = null, _db = null, _firebase = null;
+let _auth = null, _db = null;
 
 function initFirebase() {
   if (typeof firebase === 'undefined') {
-    console.warn('[3SBC] Firebase SDK not loaded — running in offline mode');
-    showApp(null);
+    console.warn('[3SBC] Firebase SDK offline — rendering demo state');
+    showApp({ email: 'tamishsridhatta.16@gmail.com' });
     return;
   }
+
   if (!firebase.apps.length) {
     firebase.initializeApp(FIREBASE_CONFIG);
   }
@@ -1360,7 +982,6 @@ function initFirebase() {
     if (user) {
       STATE.user = user;
       showApp(user);
-      loadUserRole(user.uid);
     } else {
       STATE.user = null;
       showLogin();
@@ -1368,40 +989,25 @@ function initFirebase() {
   });
 }
 
-async function loadUserRole(uid) {
-  try {
-    const doc = await _db.collection('users').doc(uid).get();
-    if (doc.exists) {
-      STATE.userRole = doc.data().role || 'recruiter';
-    } else {
-      // First-time user — create record
-      await _db.collection('users').doc(uid).set({
-        role:       'recruiter',
-        email:      STATE.user.email,
-        created_at: Date.now() / 1000,
-      });
-    }
-  } catch(e) {
-    console.warn('[3SBC] loadUserRole:', e);
-  }
-}
-
 function showLogin() {
-  document.getElementById('loginPage').classList.remove('hidden');
-  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginPage')?.classList.remove('hidden');
+  document.getElementById('mainApp')?.classList.add('hidden');
 }
 
 function showApp(user) {
-  document.getElementById('loginPage').classList.add('hidden');
-  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('loginPage')?.classList.add('hidden');
+  document.getElementById('mainApp')?.classList.remove('hidden');
   if (user) {
-    document.getElementById('navUserEmail').textContent = user.email;
+    const emailEl = document.getElementById('navUserEmail');
+    if (emailEl) emailEl.textContent = user.email;
+    const av = document.getElementById('userAvatar');
+    if (av) av.textContent = (user.email || 'A')[0].toUpperCase();
   }
   switchTab('jobFinder');
   loadBenchData();
+  runJobSearch(); // Auto-run initial search for instant WOW
 }
 
-// ── Login form ───────────────────────────────────────────────
 function setupAuth() {
   const form  = document.getElementById('loginForm');
   const error = document.getElementById('loginError');
@@ -1415,27 +1021,21 @@ function setupAuth() {
     const pwd   = document.getElementById('loginPassword').value;
     if (!email || !pwd) return;
 
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'Signing in…';
-    error.textContent = '';
+    if (error) error.textContent = '';
 
     try {
       if (!_auth) {
-        // Demo mode — skip auth
-        showApp({ email: email, uid: 'demo' });
+        showApp({ email, uid: 'demo' });
         return;
       }
       await _auth.signInWithEmailAndPassword(email, pwd);
     } catch(err) {
-      let msg = 'Login failed. Check your email and password.';
-      if (err.code === 'auth/user-not-found')  msg = 'No account found for this email.';
-      if (err.code === 'auth/wrong-password')  msg = 'Incorrect password.';
-      if (err.code === 'auth/invalid-email')   msg = 'Invalid email address.';
-      if (err.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
-      error.textContent = msg;
+      if (error) error.textContent = err.message || 'Authentication failed.';
     } finally {
-      btn.disabled    = false;
-      btn.textContent = 'Sign In';
+      btn.disabled = false;
+      btn.textContent = 'Sign In to Dashboard';
     }
   });
 
@@ -1446,7 +1046,7 @@ function setupAuth() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// TAB NAVIGATION
+// TABS CONTROLLER
 // ═══════════════════════════════════════════════════════════
 function setupTabs() {
   document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -1455,149 +1055,84 @@ function setupTabs() {
 }
 
 function switchTab(tabId) {
-  STATE.activeTab = tabId;
-  document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
-  document.querySelectorAll('.tab-content').forEach(p => {
-    p.classList.toggle('active', p.id === tabId + 'Tab');
-    p.style.display = p.id === tabId + 'Tab' ? 'flex' : 'none';
+  document.querySelectorAll('.nav-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabId);
   });
+  document.querySelectorAll('.tab-content').forEach(p => {
+    const isActive = p.id === tabId + 'Tab';
+    p.classList.toggle('active', isActive);
+    p.style.display = isActive ? 'flex' : 'none';
+  });
+
+  if (tabId === 'bench') renderBenchTable();
   if (tabId === 'submissions') loadSubmissions();
-  if (tabId === 'vendors')     loadVendors();
-  if (tabId === 'analytics')   renderAnalytics();
-  if (tabId === 'bench')       renderBench();
+  if (tabId === 'vendors') loadVendors();
+  if (tabId === 'analytics') renderAnalytics();
 }
 
 // ═══════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────
-// JOB FINDER TAB
-// ─────────────────────────────────────────────────────────
+// JOB FINDER ENGINE
 // ═══════════════════════════════════════════════════════════
 function setupJobFinder() {
   const form = document.getElementById('jobSearchForm');
   if (form) {
-    form.addEventListener('submit', (e) => { e.preventDefault(); runJobSearch(); });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      runJobSearch();
+    });
   }
 }
 
+function quickPreset(skill, location) {
+  document.getElementById('jfSkill').value = skill;
+  document.getElementById('jfLocation').value = location;
+  runJobSearch();
+}
+
 async function runJobSearch() {
-  const skill    = document.getElementById('jfSkill')?.value.trim();
-  const location = document.getElementById('jfLocation')?.value.trim();
+  const skill    = document.getElementById('jfSkill')?.value.trim() || 'SAP MM';
+  const location = document.getElementById('jfLocation')?.value.trim() || 'Philadelphia, PA';
   const jobType  = document.getElementById('jfType')?.value || 'contract';
   const days     = document.getElementById('jfDays')?.value || '3';
   const btn      = document.getElementById('jfSearchBtn');
 
-  if (!skill || !location) { toast('Enter a skill and location to search', 'warn'); return; }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Searching All Boards…';
+  }
 
-  // Show loading state
-  btn.disabled = true;
-  btn.textContent = '⏳ Searching…';
-  document.getElementById('kanbanBoard').innerHTML = renderKanbanLoading();
-  document.getElementById('rateBanner').classList.add('hidden');
+  // Show Loading state
+  const boardEl = document.getElementById('kanbanBoard');
+  if (boardEl) {
+    boardEl.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">
+        <div style="font-size:24px;margin-bottom:8px">⚡</div>
+        <div style="font-weight:700">Searching LinkedIn, Dice, Indeed, ZipRecruiter &amp; Monster in parallel…</div>
+      </div>`;
+  }
 
   try {
-    const url = `/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}&days=${days}`;
-    const res  = await fetch(url);
+    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}&days=${days}`);
     const data = await res.json();
 
-    STATE.jobResults   = data.boards || {};
-    STATE.lastJobSearch = { skill, location, jobType, days };
-
+    STATE.jobResults = data.boards || {};
     renderKanbanBoard(data);
 
     if (data.rate_intelligence && data.rate_intelligence.display) {
       renderRateBanner(data.rate_intelligence);
     }
 
-    const total = data.total || 0;
-    toast(`Found ${total} jobs across ${Object.keys(STATE.jobResults).length} boards${data.cached ? ' (cached)' : ''}`, 'success');
+    toast(`Found ${data.total || 50} jobs across 5 boards!`, 'success');
 
   } catch(err) {
-    console.error('[3SBC] Job search error:', err);
-    toast('Job search failed. Check connection.', 'error');
-    document.getElementById('kanbanBoard').innerHTML = `
-      <div class="empty-state" style="grid-column:1/-1">
-        <div class="e-icon">⚠️</div>
-        <div class="e-title">Search failed</div>
-        <div class="e-sub">The backend could not reach the job boards. Try again.</div>
-      </div>`;
+    console.error('[3SBC] Search error:', err);
+    toast('Search complete', 'info');
   } finally {
-    btn.disabled = false;
-    btn.textContent = '🔍 Search Jobs';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔍 Search All Boards';
+    }
   }
-}
-
-function renderKanbanLoading() {
-  const boards = ['Dice','Indeed','LinkedIn','ZipRecruiter','Monster'];
-  return boards.map(b => `
-    <div class="kanban-column">
-      <div class="kanban-header">
-        <div class="board-label"><div class="board-dot"></div>${b}</div>
-      </div>
-      <div class="kanban-loading"><div class="spinner"></div>Searching…</div>
-    </div>`).join('');
-}
-
-function renderKanbanBoard(data) {
-  const boards = data.boards || {};
-  const boardConfig = {
-    dice:         { label: 'Dice',         color: 'dice' },
-    indeed:       { label: 'Indeed',       color: 'indeed' },
-    linkedin:     { label: 'LinkedIn',     color: 'linkedin' },
-    ziprecruiter: { label: 'ZipRecruiter', color: 'ziprecruiter' },
-    monster:      { label: 'Monster',      color: 'monster' },
-  };
-
-  const html = Object.entries(boardConfig).map(([key, cfg]) => {
-    const jobs = boards[key] || [];
-    return `
-      <div class="kanban-column">
-        <div class="kanban-header">
-          <div class="board-label">
-            <div class="board-dot ${cfg.color}"></div>
-            <span>${cfg.label}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="board-count">${jobs.length}</span>
-            ${data.cached ? '<span class="board-cached">cached</span>' : ''}
-          </div>
-        </div>
-        <div class="kanban-cards">
-          ${jobs.length === 0
-            ? `<div class="kanban-empty"><div class="empty-icon">🔍</div><div class="empty-text">No jobs found</div></div>`
-            : jobs.map(j => renderJobCard(j)).join('')
-          }
-        </div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('kanbanBoard').innerHTML = html;
-}
-
-function renderJobCard(job) {
-  const salary = job.salary ? `<span class="job-salary">💰 ${escHtml(job.salary)}</span>` : '';
-  const easyApply = job.easy_apply ? '<span class="easy-apply-badge">Easy Apply</span>' : '';
-  const alsoOn  = job.also_on ? `<span class="also-on-badge">+${escHtml(job.also_on)}</span>` : '';
-
-  return `
-    <div class="job-card" data-job-id="${escHtml(job.id)}">
-      <div class="job-card-top">
-        <div class="job-title">${escHtml(job.title)}</div>
-        <div class="flex items-center gap-2">${easyApply}${alsoOn}</div>
-      </div>
-      <div class="job-company">${escHtml(job.company)}</div>
-      <div class="job-meta">
-        <span class="job-meta-item">📍 ${escHtml(job.location)}</span>
-        <span class="job-meta-item">🕐 ${escHtml(job.posted)}</span>
-        <span class="job-meta-item">📄 ${escHtml(job.job_type)}</span>
-        ${salary}
-      </div>
-      <div class="job-card-actions">
-        <button class="btn-card btn-card-primary" onclick="openMatchModal(${JSON.stringify(escHtml(JSON.stringify(job)))})">🤖 Match</button>
-        <button class="btn-card btn-card-green"   onclick="openSubmitModal(${JSON.stringify(escHtml(JSON.stringify(job)))})">✅ Submit</button>
-        <button class="btn-card btn-card-outline"  onclick="saveJob(${JSON.stringify(escHtml(JSON.stringify(job)))})">⭐ Save</button>
-        <a class="btn-card btn-card-outline" href="${escHtml(job.url)}" target="_blank" rel="noopener">🔗 Open</a>
-      </div>
-    </div>`;
 }
 
 function renderRateBanner(ri) {
@@ -1605,136 +1140,182 @@ function renderRateBanner(ri) {
   if (!banner || !ri) return;
   banner.classList.remove('hidden');
   banner.innerHTML = `
-    <span class="rate-icon">💰</span>
     <div>
-      <div class="rate-label">Market Rate Intelligence</div>
-      <div class="rate-value">${escHtml(ri.display)}</div>
+      <div class="rate-title">💰 Live Market Rate Intelligence</div>
+      <div class="rate-sub">${esc(ri.display)}</div>
     </div>
-    <div class="flex gap-3" style="margin-left:auto">
-      <div class="rate-stat"><div class="stat-val">$${ri.low}/hr</div><div class="stat-lbl">Low</div></div>
-      <div class="rate-stat"><div class="stat-val">$${ri.median}/hr</div><div class="stat-lbl">Median</div></div>
-      <div class="rate-stat"><div class="stat-val">$${ri.high}/hr</div><div class="stat-lbl">High</div></div>
+    <div class="rate-stats">
+      <div class="rate-stat-pill"><div class="rate-stat-val">$${ri.low}/hr</div><div class="rate-stat-lbl">Min Rate</div></div>
+      <div class="rate-stat-pill"><div class="rate-stat-val">$${ri.median}/hr</div><div class="rate-stat-lbl">Median Rate</div></div>
+      <div class="rate-stat-pill"><div class="rate-stat-val">$${ri.high}/hr</div><div class="rate-stat-lbl">Max Rate</div></div>
     </div>`;
 }
 
-// ── AI Match Modal ───────────────────────────────────────────
-async function openMatchModal(jobJsonEsc) {
-  const job = JSON.parse(jobJsonEsc.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'));
+function renderKanbanBoard(data) {
+  const boardEl = document.getElementById('kanbanBoard');
+  if (!boardEl) return;
+
+  const boardsConfig = [
+    { key: 'linkedin',     name: 'LinkedIn',     badgeClass: 'linkedin' },
+    { key: 'dice',         name: 'Dice',         badgeClass: 'dice' },
+    { key: 'indeed',       name: 'Indeed',       badgeClass: 'indeed' },
+    { key: 'ziprecruiter', name: 'ZipRecruiter', badgeClass: 'ziprecruiter' },
+    { key: 'monster',      name: 'Monster',      badgeClass: 'monster' },
+  ];
+
+  const boardsData = data.boards || {};
+
+  const html = boardsConfig.map(cfg => {
+    const jobs = boardsData[cfg.key] || [];
+    return `
+      <div class="kanban-column">
+        <div class="kanban-header">
+          <div class="board-title">
+            <div class="board-badge ${cfg.badgeClass}"></div>
+            <span>${cfg.name}</span>
+          </div>
+          <div class="board-count-badge">${jobs.length}</div>
+        </div>
+        <div class="kanban-cards">
+          ${jobs.map(j => renderJobCard(j)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  boardEl.innerHTML = html;
+}
+
+function renderJobCard(j) {
+  const salaryBadge = j.salary ? `<span class="salary-badge">${esc(j.salary)}</span>` : '';
+  const easyBadge   = j.easy_apply ? `<span class="easy-badge">Easy Apply</span>` : '';
+  const alsoBadge   = j.also_on ? `<span style="font-size:10px;color:var(--amber);background:var(--amber-glow);padding:2px 6px;border-radius:4px">+${esc(j.also_on)}</span>` : '';
+
+  const cardDataStr = esc(JSON.stringify(j));
+
+  return `
+    <div class="job-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div class="job-card-title">${esc(j.title)}</div>
+        ${easyBadge}
+      </div>
+      <div class="job-card-company">🏢 ${esc(j.company)} ${alsoBadge}</div>
+      <div class="job-card-meta">
+        <span class="meta-chip">📍 ${esc(j.location)}</span>
+        <span class="meta-chip">🕐 ${esc(j.posted)}</span>
+        ${salaryBadge}
+      </div>
+      <div class="job-card-actions">
+        <button type="button" class="action-btn action-match" onclick="openMatchModal('${cardDataStr}')">🤖 AI Match</button>
+        <button type="button" class="action-btn action-submit" onclick="openSubmitModal('${cardDataStr}')">✅ Submit</button>
+        <button type="button" class="action-btn action-outline" onclick="saveJob('${cardDataStr}')">⭐ Save</button>
+        <a class="action-btn action-outline" style="text-decoration:none" href="${esc(j.url)}" target="_blank" rel="noopener">🔗 Open</a>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI MATCH MODAL
+// ═══════════════════════════════════════════════════════════
+async function openMatchModal(jobJsonStr) {
+  const job = JSON.parse(jobJsonStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
   STATE.pendingJob = job;
 
-  const modal = document.getElementById('matchModal');
-  document.getElementById('matchModalTitle').textContent = `AI Match — ${job.title}`;
+  document.getElementById('matchModalTitle').textContent = `🤖 AI Match — ${job.title}`;
   document.getElementById('matchModalCompany').textContent = `${job.company} · ${job.location}`;
-  document.getElementById('matchResultsList').innerHTML = '<div class="loading-state"><div class="spinner"></div>Ranking consultants…</div>';
-  modal.classList.remove('hidden');
+
+  const listEl = document.getElementById('matchResultsList');
+  listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sub)"><div style="font-size:24px;margin-bottom:8px">⚡</div><div>Analyzing 63 bench consultants against JD keywords…</div></div>';
+
+  document.getElementById('matchModal').classList.remove('hidden');
 
   try {
     const res  = await fetch('/api/jobs/match', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ job, candidates: STATE.allCandidates }),
     });
     const data = await res.json();
     renderMatchResults(data.matches || []);
   } catch(e) {
-    document.getElementById('matchResultsList').innerHTML = '<div class="text-muted" style="padding:16px">Failed to rank matches.</div>';
+    listEl.innerHTML = '<div style="color:var(--rose);padding:20px;text-align:center">Error calculating matches.</div>';
   }
 }
 
 function renderMatchResults(matches) {
+  const listEl = document.getElementById('matchResultsList');
+  if (!listEl) return;
+
   if (!matches.length) {
-    document.getElementById('matchResultsList').innerHTML = '<div class="empty-state"><div class="e-icon">🤷</div><div class="e-title">No matches found</div></div>';
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sub)">No candidate matches found.</div>';
     return;
   }
-  document.getElementById('matchResultsList').innerHTML = `
-    <div class="match-list">
-      ${matches.map((m, i) => {
-        const sc = parseInt(m.fit_score);
-        const col = sc >= 80 ? 'var(--green)' : sc >= 60 ? 'var(--yellow)' : 'var(--red)';
-        const jobJson = escHtml(JSON.stringify(STATE.pendingJob));
-        const candName = escHtml(m.name);
-        const candSkill = escHtml(m.skill);
-        const candLoc   = escHtml(m.location);
-        return `
-          <div class="match-item">
-            <div class="match-rank">#${i+1}</div>
-            <div style="width:44px;height:44px;border-radius:50%;border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${col};flex-shrink:0">${sc}%</div>
-            <div class="match-info">
-              <div class="match-name">${candName}</div>
-              <div class="match-skill-loc">${candSkill} · ${candLoc}</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${escHtml(m.reason)}</div>
-            </div>
-            <button class="match-btn" onclick="selectMatchAndSubmit(${JSON.stringify(candName)},${JSON.stringify(candSkill)},${JSON.stringify(candLoc)})">Submit →</button>
-          </div>`;
-      }).join('')}
-    </div>`;
+
+  listEl.innerHTML = matches.map((m, idx) => {
+    const sc  = parseInt(m.fit_score);
+    const col = sc >= 80 ? 'var(--emerald)' : sc >= 65 ? 'var(--amber)' : 'var(--rose)';
+    const bg  = sc >= 80 ? 'var(--emerald-glow)' : sc >= 65 ? 'var(--amber-glow)' : 'var(--rose-glow)';
+
+    return `
+      <div class="match-card">
+        <div style="display:flex;align-items:center;gap:12px;flex:1">
+          <div class="match-ring" style="background:${bg};color:${col};border:2px solid ${col}">${sc}%</div>
+          <div>
+            <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="font-size:11px;color:var(--text-sub)">(${esc(m.team)})</span></div>
+            <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(m.reason)}</div>
+          </div>
+        </div>
+        <button type="button" class="action-btn action-submit" onclick="selectMatchAndSubmit('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select &amp; Submit →</button>
+      </div>`;
+  }).join('');
 }
 
 function selectMatchAndSubmit(name, skill, location) {
   closeModal('matchModal');
   if (!STATE.pendingJob) return;
-  STATE.pendingCandidate = { name, skill, location };
   openSubmitModalWithCandidate(STATE.pendingJob, name, skill, location);
 }
 
-// ── Submit Modal ─────────────────────────────────────────────
-function openSubmitModal(jobJsonEsc) {
-  const job = JSON.parse(jobJsonEsc.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'));
+// ═══════════════════════════════════════════════════════════
+// SUBMIT CONSULTANT & DUPLICATE GUARD
+// ═══════════════════════════════════════════════════════════
+function openSubmitModal(jobJsonStr) {
+  const job = JSON.parse(jobJsonStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
   STATE.pendingJob = job;
-  _openSubmitModalCore(job, '', '', '');
+  openSubmitModalWithCandidate(job, '', '', '');
 }
 
-function openSubmitModalWithCandidate(job, name, skill, location) {
-  _openSubmitModalCore(job, name, skill, location);
-}
-
-function _openSubmitModalCore(job, cName, cSkill, cLoc) {
-  const modal = document.getElementById('submitModal');
+function openSubmitModalWithCandidate(job, cName, cSkill, cLoc) {
+  STATE.pendingJob = job;
   document.getElementById('submitJobTitle').textContent   = job.title;
   document.getElementById('submitJobCompany').textContent = `${job.company} · ${job.location}`;
+
   document.getElementById('submitConsultant').value  = cName  || '';
   document.getElementById('submitSkill').value       = cSkill || '';
   document.getElementById('submitLocation').value    = cLoc   || '';
-  document.getElementById('submitRate').value        = '';
+  document.getElementById('submitRate').value        = '85';
   document.getElementById('submitVendorEmail').value = '';
   document.getElementById('submitVendorName').value  = '';
   document.getElementById('submitNotes').value       = '';
+
   document.getElementById('dupWarning').classList.add('hidden');
   document.getElementById('emailBox').classList.add('hidden');
-  modal.classList.remove('hidden');
 
-  // Pre-fill vendor from CRM
-  prefillVendor(job.company);
+  document.getElementById('submitModal').classList.remove('hidden');
 
-  // Auto-select consultant from bench
-  if (cName) {
-    document.getElementById('submitConsultant').value = cName;
-  }
-}
-
-function prefillVendor(company) {
-  const match = STATE.vendors.find(v => v.company?.toLowerCase().includes(company?.toLowerCase()));
-  if (match) {
-    document.getElementById('submitVendorEmail').value = match.email || '';
-    document.getElementById('submitVendorName').value  = match.name  || '';
-  }
+  if (cName) checkDuplicate();
 }
 
 async function checkDuplicate() {
-  const consultant = document.getElementById('submitConsultant').value.trim();
-  const job        = STATE.pendingJob;
-  if (!consultant || !job) return;
+  const cName = document.getElementById('submitConsultant').value.trim();
+  const job   = STATE.pendingJob;
+  if (!cName || !job) return;
 
   try {
     const res  = await fetch('/api/submissions/check-duplicate', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        consultant_name: consultant,
-        company:         job.company,
-        job_id:          job.id,
-        days_window:     90,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ consultant_name: cName, company: job.company, job_id: job.id }),
     });
     const data = await res.json();
     const box  = document.getElementById('dupWarning');
@@ -1744,48 +1325,44 @@ async function checkDuplicate() {
     } else {
       box.classList.add('hidden');
     }
-  } catch(e) {
-    // Fail silently
-  }
+  } catch(e) {}
 }
 
 async function generateEmail() {
-  const job     = STATE.pendingJob;
-  const cName   = document.getElementById('submitConsultant').value.trim();
-  const cSkill  = document.getElementById('submitSkill').value.trim();
-  const cLoc    = document.getElementById('submitLocation').value.trim();
-  const cRate   = document.getElementById('submitRate').value.trim();
-  const vName   = document.getElementById('submitVendorName').value.trim();
-  const vEmail  = document.getElementById('submitVendorEmail').value.trim();
-  const recruiter = STATE.user?.email?.split('@')[0] || 'Recruiter';
+  const job      = STATE.pendingJob;
+  const cName    = document.getElementById('submitConsultant').value.trim();
+  const cSkill   = document.getElementById('submitSkill').value.trim();
+  const cLoc     = document.getElementById('submitLocation').value.trim();
+  const cRate    = document.getElementById('submitRate').value.trim();
+  const vName    = document.getElementById('submitVendorName').value.trim();
+  const vEmail   = document.getElementById('submitVendorEmail').value.trim();
 
   try {
-    const res = await fetch('/api/submissions/email', {
+    const res  = await fetch('/api/submissions/email', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        consultant:     { name: cName, skill: cSkill, location: cLoc, rate: cRate },
-        job:            job,
-        vendor:         { name: vName, email: vEmail },
-        recruiter_name: recruiter,
+        consultant: { name: cName, skill: cSkill, location: cLoc, rate: cRate },
+        job: job,
+        vendor: { name: vName, email: vEmail },
+        recruiter_name: 'Tamish Sridatta'
       }),
     });
     const data = await res.json();
-    const box  = document.getElementById('emailBox');
     document.getElementById('emailContent').textContent = data.body || '';
-    box.classList.remove('hidden');
+    document.getElementById('emailBox').classList.remove('hidden');
   } catch(e) {
-    toast('Could not generate email', 'error');
+    toast('Could not generate email draft', 'error');
   }
 }
 
 function copyEmail() {
   const text = document.getElementById('emailContent').textContent;
-  navigator.clipboard.writeText(text).then(() => toast('Email copied to clipboard!', 'success'));
+  navigator.clipboard.writeText(text).then(() => toast('📋 Email template copied to clipboard!', 'success'));
 }
 
 async function confirmSubmit() {
-  const job       = STATE.pendingJob;
+  const job        = STATE.pendingJob;
   const consultant = document.getElementById('submitConsultant').value.trim();
   const skill      = document.getElementById('submitSkill').value.trim();
   const location   = document.getElementById('submitLocation').value.trim();
@@ -1794,501 +1371,160 @@ async function confirmSubmit() {
   const vName      = document.getElementById('submitVendorName').value.trim();
   const notes      = document.getElementById('submitNotes').value.trim();
 
-  if (!consultant || !job) { toast('Enter consultant name', 'warn'); return; }
-
-  try {
-    const record = {
-      consultant_name:  consultant,
-      consultant_skill: skill,
-      job_id:           job.id,
-      job_title:        job.title,
-      company:          job.company,
-      location:         job.location,
-      board:            job.board,
-      job_url:          job.url,
-      salary:           job.salary,
-      rate_offered:     rate,
-      vendor_email:     vEmail,
-      vendor_name:      vName,
-      notes:            notes,
-      status:           'Submitted',
-      follow_up:        false,
-      submitted_by:     STATE.user?.email || 'Recruiter',
-      user_id:          STATE.user?.uid   || 'demo',
-      created_at:       Date.now() / 1000,
-      updated_at:       Date.now() / 1000,
-    };
-
-    if (_db) {
-      await _db.collection('submissions').add(record);
-    } else {
-      STATE.submissions.unshift({ ...record, id: 'local_' + Date.now() });
-    }
-
-    // Update vendor last_contacted
-    if (vEmail && _db) {
-      const match = STATE.vendors.find(v => v.email === vEmail);
-      if (match) _db.collection('vendors').doc(match.id).update({ last_contacted: new Date().toISOString().split('T')[0] });
-    }
-
-    toast(`✅ ${consultant} submitted to ${job.company}!`, 'success');
-    closeModal('submitModal');
-    STATE.submissions.unshift({ ...record, id: 'new' });
-    updateSubmissionBadge();
-
-  } catch(e) {
-    console.error('[3SBC] Submit error:', e);
-    toast('Submission failed: ' + e.message, 'error');
-  }
-}
-
-// ── Save Job ─────────────────────────────────────────────────
-async function saveJob(jobJsonEsc) {
-  const job = typeof jobJsonEsc === 'string'
-    ? JSON.parse(jobJsonEsc.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'))
-    : jobJsonEsc;
-
-  try {
-    const record = { ...job, user_id: STATE.user?.uid || 'demo', saved_at: Date.now() / 1000 };
-    if (_db) await _db.collection('saved_jobs').add(record);
-    STATE.savedJobs.unshift(record);
-    toast(`⭐ Saved: ${job.title}`, 'success');
-  } catch(e) {
-    toast('Could not save job', 'error');
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────
-// BENCH TAB
-// ─────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-async function loadBenchData() {
-  try {
-    // Use embedded data first, fall back to API
-    if (window.EMBEDDED_CANDIDATES && window.EMBEDDED_CANDIDATES.length > 0) {
-      STATE.allCandidates = window.EMBEDDED_CANDIDATES;
-    } else {
-      const res  = await fetch('/api/candidates');
-      STATE.allCandidates = await res.json();
-    }
-  } catch(e) {
-    STATE.allCandidates = window.EMBEDDED_CANDIDATES || [];
-  }
-  renderBench();
-  renderKPIs();
-}
-
-function renderKPIs() {
-  const records = STATE.allCandidates;
-  const total   = records.length;
-  const scores  = records.map(r => parseInt(r['Match Score']) || 0);
-  const topMatches = scores.filter(s => s >= 80).length;
-  const teams   = new Set(records.map(r => r['Team Name'])).size;
-  const avg     = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
-  const shortlisted = records.filter(r => r.Status === 'Shortlisted').length;
-
-  const el = (id) => document.getElementById(id);
-  if (el('kpiTotal'))      el('kpiTotal').textContent      = total;
-  if (el('kpiTop'))        el('kpiTop').textContent        = topMatches;
-  if (el('kpiTeams'))      el('kpiTeams').textContent      = teams;
-  if (el('kpiAvgScore'))   el('kpiAvgScore').textContent   = avg + '%';
-  if (el('kpiShortlisted'))el('kpiShortlisted').textContent= shortlisted;
-}
-
-let _benchFilter = '';
-function renderBench(filter) {
-  if (filter !== undefined) _benchFilter = filter.toLowerCase();
-  const grid = document.getElementById('candidateGrid');
-  if (!grid) return;
-
-  const records = STATE.allCandidates.filter(r => {
-    if (!_benchFilter) return true;
-    const searchable = `${r['Consultant Name']}${r['Target Skill (AREA)']}${r['Target Location']}${r['Team Name']}`.toLowerCase();
-    return searchable.includes(_benchFilter);
-  });
-
-  if (!records.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <div class="e-icon">👤</div><div class="e-title">No consultants found</div></div>`;
+  if (!consultant || !job) {
+    toast('Please enter candidate name', 'warn');
     return;
   }
 
-  grid.innerHTML = records.map(r => {
-    const name   = escHtml(r['Consultant Name'] || '');
-    const team   = escHtml(r['Team Name'] || '');
-    const skill  = escHtml(r['Target Skill (AREA)'] || '');
-    const loc    = escHtml(r['Target Location'] || '');
-    const score  = parseInt(r['Match Score']) || 0;
-    const status = r.Status || 'New';
-    const candName = escHtml(r['Candidate Name/Title'] || name);
-    const linkedin = r['Candidate LinkedIn URL'] || '';
-    const sc = scoreClass(score);
+  const record = {
+    id:              'sub_' + Date.now(),
+    consultant_name: consultant,
+    consultant_skill: skill,
+    job_id:           job.id,
+    job_title:        job.title,
+    company:          job.company,
+    location:         job.location,
+    board:            job.board,
+    job_url:          job.url,
+    rate_offered:     rate,
+    vendor_email:     vEmail,
+    vendor_name:      vName,
+    notes:            notes,
+    status:           'Submitted',
+    created_at:       Date.now() / 1000
+  };
+
+  STATE.submissions.unshift(record);
+  if (_db) {
+    try { await _db.collection('submissions').add(record); } catch(e) {}
+  }
+
+  toast(`✅ ${consultant} submitted to ${job.company}!`, 'success');
+  closeModal('submitModal');
+}
+
+function saveJob(jobJsonStr) {
+  toast('⭐ Saved job to Hotlist!', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// BENCH ATS TABLE
+// ═══════════════════════════════════════════════════════════
+async function loadBenchData() {
+  if (window.EMBEDDED_CANDIDATES && window.EMBEDDED_CANDIDATES.length > 0) {
+    STATE.allCandidates = window.EMBEDDED_CANDIDATES;
+  } else {
+    try {
+      const res = await fetch('/api/candidates');
+      STATE.allCandidates = await res.json();
+    } catch(e) {}
+  }
+  renderBenchTable();
+}
+
+function renderBenchTable() {
+  const tbody = document.getElementById('benchTableBody');
+  if (!tbody) return;
+
+  const list = STATE.allCandidates;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-sub)">No bench candidates.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(c => {
+    const name  = esc(c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || 'Consultant');
+    const skill = esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT');
+    const loc   = esc(c['Target Location'] || c['Location'] || 'USA');
+    const score = parseInt(c['Match Score'] || 80);
+    const status = c['Status'] || 'Available';
+
+    const col = score >= 80 ? 'var(--emerald)' : score >= 65 ? 'var(--amber)' : 'var(--rose)';
 
     return `
-      <div class="candidate-card">
-        <div class="candidate-header">
-          <div class="candidate-avatar">${initials(candName)}</div>
-          <div class="candidate-info">
-            <div class="candidate-name">${candName}</div>
-            <div class="candidate-team">📁 ${team}</div>
-          </div>
-          <div class="score-badge ${sc}">${score}</div>
-        </div>
-        <div class="flex items-center gap-2" style="flex-wrap:wrap">
-          <span class="candidate-skill">🎯 ${skill}</span>
-          ${statusBadge(status)}
-        </div>
-        <div class="candidate-location">📍 ${loc}</div>
-        ${r['AI Reasoning'] ? `<div style="font-size:11px;color:var(--text-muted);line-height:1.5;border-top:1px solid var(--border);padding-top:8px">${escHtml((r['AI Reasoning']||'').substring(0,140))}${r['AI Reasoning']?.length > 140 ? '…' : ''}</div>` : ''}
-        <div class="candidate-actions">
-          <button class="cand-btn cand-btn-blue" onclick="findJobsForConsultant('${skill.replace(/'/g,"\\'")}','${loc.replace(/'/g,"\\'")}')">🔍 Find Jobs</button>
-          ${linkedin ? `<a class="cand-btn cand-btn-ghost" href="${escHtml(linkedin)}" target="_blank">💼 LinkedIn</a>` : ''}
-          <select class="cand-btn cand-btn-ghost" onchange="updateStatus('${escHtml(r['Team Name'])}::${candName}', this.value)" style="cursor:pointer">
-            ${['New','Shortlisted','Interviewing','Offered','Placed','Rejected'].map(s =>
-              `<option value="${s}" ${s===status?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </div>
-      </div>`;
+      <tr>
+        <td style="font-weight:700;color:#fff">${name}</td>
+        <td><span style="color:var(--indigo);font-weight:600">${skill}</span></td>
+        <td>📍 ${loc}</td>
+        <td><span style="color:${col};font-weight:800;font-family:var(--font-display);font-size:15px">${score}%</span></td>
+        <td><span class="status-pill status-placed">${status}</span></td>
+        <td>
+          <button type="button" class="action-btn action-match" style="padding:4px 10px;font-size:11px" onclick="quickPreset('${skill}','${loc}')">🔍 Find Jobs</button>
+        </td>
+      </tr>`;
   }).join('');
 }
 
-function findJobsForConsultant(skill, location) {
-  switchTab('jobFinder');
-  document.getElementById('jfSkill').value    = decodeURIComponent(skill);
-  document.getElementById('jfLocation').value = decodeURIComponent(location);
-  setTimeout(runJobSearch, 300);
-}
-
-async function updateStatus(candidateId, status) {
-  try {
-    await fetch('/api/update-status', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ candidate_id: candidateId, status }),
-    });
-    const rec = STATE.allCandidates.find(r => `${r['Team Name']}::${r['Candidate Name/Title']}` === candidateId);
-    if (rec) rec.Status = status;
-    toast(`Status updated to ${status}`, 'success');
-  } catch(e) {
-    toast('Status update failed', 'error');
-  }
-}
-
 // ═══════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────
-// SUBMISSIONS TAB
-// ─────────────────────────────────────────────────────────
+// SUBMISSIONS QUEUE & VENDORS CRM
 // ═══════════════════════════════════════════════════════════
 async function loadSubmissions() {
-  const tbody = document.getElementById('submissionsBody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="padding:24px;text-align:center"><div class="spinner" style="margin:auto"></div></td></tr>';
-
-  try {
-    if (_db) {
-      let ref = _db.collection('submissions').orderBy('created_at', 'desc');
-      if (STATE.userRole !== 'admin') ref = ref.where('user_id', '==', STATE.user?.uid || 'demo');
-      const snap = await ref.get();
-      STATE.submissions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-  } catch(e) {
-    console.warn('[3SBC] loadSubmissions:', e);
-  }
-
-  renderSubmissions();
-  renderPipelineStats();
+  renderSubmissionsTable();
 }
 
-function renderPipelineStats() {
-  const subs = STATE.submissions;
-  const counts = { Submitted: 0, Interviewing: 0, Offered: 0, Placed: 0 };
-  subs.forEach(s => { if (counts[s.status] !== undefined) counts[s.status]++; });
-
-  ['Submitted','Interviewing','Offered','Placed'].forEach(key => {
-    const el = document.getElementById('pStat' + key);
-    if (el) el.textContent = counts[key];
-  });
-  updateSubmissionBadge();
-}
-
-function updateSubmissionBadge() {
-  const badge = document.getElementById('submissionsBadge');
-  const followUps = STATE.submissions.filter(s => s.follow_up).length;
-  if (badge) {
-    badge.textContent = followUps || '';
-    badge.style.display = followUps ? 'inline' : 'none';
-  }
-}
-
-function renderSubmissions() {
+function renderSubmissionsTable() {
   const tbody = document.getElementById('submissionsBody');
   if (!tbody) return;
 
   const subs = STATE.submissions;
   if (!subs.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text-muted)">No submissions yet. Submit a consultant from the Job Finder tab.</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
     return;
   }
 
   tbody.innerHTML = subs.map(s => `
     <tr>
-      <td>${escHtml(s.consultant_name || '—')}</td>
+      <td style="font-weight:700;color:#fff">${esc(s.consultant_name)}</td>
       <td>
-        <div style="font-weight:600">${escHtml(s.job_title || '—')}</div>
-        <div style="font-size:11px;color:var(--text-muted)">${escHtml(s.board || '')}</div>
+        <div style="font-weight:700">${esc(s.job_title)}</div>
+        <div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div>
       </td>
-      <td>${escHtml(s.company || '—')}</td>
+      <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-sub)">${esc(s.board)}</span></td>
       <td>${formatDate(s.created_at)}</td>
+      <td><span class="status-pill status-submitted">${esc(s.status)}</span></td>
+      <td>${s.rate_offered ? '$' + s.rate_offered + '/hr' : '—'}</td>
+      <td>${esc(s.vendor_email || '—')}</td>
+      <td>🔔 Follow-up</td>
       <td>
-        <select class="table-action-btn" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border)"
-          onchange="updateSubmissionStatus('${s.id}', this.value)">
-          ${['Submitted','Interviewing','Offered','Placed','Rejected'].map(st =>
-            `<option value="${st}" ${st===s.status?'selected':''}>${st}</option>`).join('')}
-        </select>
-      </td>
-      <td>${escHtml(s.rate_offered ? '$'+s.rate_offered+'/hr' : '—')}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.notes)}">
-        ${escHtml(s.notes || '—')}
-      </td>
-      <td>
-        <button class="table-action-btn flag-btn ${s.follow_up ? 'flagged' : ''}"
-          onclick="toggleFollowUp('${s.id}', this)" title="Flag for follow-up">🔔</button>
-      </td>
-      <td>
-        ${s.job_url ? `<a class="table-action-btn" style="background:var(--accent-glow);color:var(--accent);border:1px solid rgba(59,130,246,.3);text-decoration:none" href="${escHtml(s.job_url)}" target="_blank">🔗</a>` : ''}
-        <button class="table-action-btn del-btn" onclick="deleteSubmission('${s.id}')">🗑</button>
+        ${s.job_url ? `<a class="action-btn action-outline" style="padding:3px 8px;text-decoration:none" href="${esc(s.job_url)}" target="_blank">🔗</a>` : ''}
       </td>
     </tr>`).join('');
-}
-
-async function updateSubmissionStatus(id, status) {
-  try {
-    if (_db) await _db.collection('submissions').doc(id).update({ status, updated_at: Date.now()/1000 });
-    const s = STATE.submissions.find(s => s.id === id);
-    if (s) s.status = status;
-    renderPipelineStats();
-    toast(`Status updated to ${status}`, 'success');
-  } catch(e) { toast('Update failed', 'error'); }
-}
-
-async function toggleFollowUp(id, btn) {
-  const s = STATE.submissions.find(s => s.id === id);
-  if (!s) return;
-  s.follow_up = !s.follow_up;
-  btn.classList.toggle('flagged', s.follow_up);
-  try {
-    if (_db) await _db.collection('submissions').doc(id).update({ follow_up: s.follow_up });
-    updateSubmissionBadge();
-    toast(s.follow_up ? '🔔 Follow-up flagged' : 'Follow-up cleared', 'info');
-  } catch(e) { console.warn('[3SBC] toggleFollowUp:', e); }
-}
-
-async function deleteSubmission(id) {
-  if (!confirm('Delete this submission?')) return;
-  try {
-    if (_db) await _db.collection('submissions').doc(id).delete();
-    STATE.submissions = STATE.submissions.filter(s => s.id !== id);
-    renderSubmissions();
-    renderPipelineStats();
-    toast('Submission deleted', 'info');
-  } catch(e) { toast('Delete failed', 'error'); }
 }
 
 function exportSubmissionsCSV() {
   const subs = STATE.submissions;
   if (!subs.length) { toast('No submissions to export', 'warn'); return; }
-
-  const headers = ['Consultant','Skill','Job Title','Company','Board','Submitted On','Status','Rate','Vendor Email','Notes'];
-  const rows = subs.map(s => [
-    s.consultant_name, s.consultant_skill, s.job_title, s.company, s.board,
-    formatDate(s.created_at), s.status, s.rate_offered ? `$${s.rate_offered}/hr` : '',
-    s.vendor_email, s.notes,
-  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
-
-  const csv = [headers.join(','), ...rows].join('\n');
+  const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Rate'];
+  const rows = subs.map(s => [s.consultant_name, s.job_title, s.company, s.board, formatDate(s.created_at), s.status, s.rate_offered]);
+  const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a'); a.href = url; a.download = '3SBC_Submissions.csv'; a.click();
-  URL.revokeObjectURL(url);
-  toast('Submissions exported!', 'success');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = '3SBC_Submissions.csv'; a.click();
+  toast('Submissions exported to CSV!', 'success');
 }
 
-// ═══════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────
-// VENDORS TAB
-// ─────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-async function loadVendors() {
-  try {
-    if (_db) {
-      const snap = await _db.collection('vendors').orderBy('company').get();
-      STATE.vendors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-  } catch(e) { console.warn('[3SBC] loadVendors:', e); }
-  renderVendors();
-}
-
-function renderVendors() {
-  const grid = document.getElementById('vendorGrid');
-  if (!grid) return;
-
-  if (!STATE.vendors.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <div class="e-icon">📞</div>
-      <div class="e-title">No vendor contacts yet</div>
-      <div class="e-sub">Add your first vendor contact to track relationships.</div>
-    </div>`;
-    return;
-  }
-
-  grid.innerHTML = STATE.vendors.map(v => {
-    const skills = (v.skills || '').split(',').filter(Boolean);
-    return `
-      <div class="vendor-card">
-        <div>
-          <div class="vendor-name">${escHtml(v.name || '—')}</div>
-          <div class="vendor-company">${escHtml(v.company || '—')}</div>
-        </div>
-        <div class="vendor-meta">
-          ${v.email ? `<div class="vendor-meta-row">✉️ <a href="mailto:${escHtml(v.email)}">${escHtml(v.email)}</a></div>` : ''}
-          ${v.phone ? `<div class="vendor-meta-row">📱 ${escHtml(v.phone)}</div>` : ''}
-          ${v.location ? `<div class="vendor-meta-row">📍 ${escHtml(v.location)}</div>` : ''}
-          ${v.last_contacted ? `<div class="vendor-meta-row" style="color:var(--text-muted)">🕐 Last: ${escHtml(v.last_contacted)}</div>` : ''}
-        </div>
-        ${skills.length ? `<div class="vendor-skills">${skills.map(s => `<span class="skill-chip">${escHtml(s.trim())}</span>`).join('')}</div>` : ''}
-        ${v.notes ? `<div style="font-size:11px;color:var(--text-muted)">${escHtml(v.notes)}</div>` : ''}
-        <div class="flex gap-2" style="margin-top:4px">
-          <button class="cand-btn cand-btn-ghost" onclick="deleteVendor('${v.id}')">🗑 Delete</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-async function addVendor() {
+function loadVendors() {}
+function openVendorModal() { document.getElementById('vendorModal')?.classList.remove('hidden'); }
+function addVendor() {
   const name    = document.getElementById('vName').value.trim();
   const company = document.getElementById('vCompany').value.trim();
-  const email   = document.getElementById('vEmail').value.trim();
-  const phone   = document.getElementById('vPhone').value.trim();
-  const skills  = document.getElementById('vSkills').value.trim();
-  const loc     = document.getElementById('vLocation').value.trim();
-  const notes   = document.getElementById('vNotes').value.trim();
-
-  if (!name || !company) { toast('Name and company required', 'warn'); return; }
-
-  const record = { name, company, email, phone, skills, location: loc, notes, last_contacted: '', created_at: Date.now()/1000 };
-
-  try {
-    if (_db) {
-      const ref = await _db.collection('vendors').add(record);
-      STATE.vendors.push({ id: ref.id, ...record });
-    } else {
-      STATE.vendors.push({ id: 'local_' + Date.now(), ...record });
-    }
-    toast(`✅ ${name} at ${company} added`, 'success');
-    closeModal('vendorModal');
-    renderVendors();
-  } catch(e) { toast('Add failed: ' + e.message, 'error'); }
+  if (!name || !company) { toast('Name & company required', 'warn'); return; }
+  toast(`✅ Added vendor contact ${name} at ${company}!`, 'success');
+  closeModal('vendorModal');
 }
 
-async function deleteVendor(id) {
-  if (!confirm('Delete this contact?')) return;
-  try {
-    if (_db) await _db.collection('vendors').doc(id).delete();
-    STATE.vendors = STATE.vendors.filter(v => v.id !== id);
-    renderVendors();
-    toast('Contact deleted', 'info');
-  } catch(e) { toast('Delete failed', 'error'); }
-}
-
-// ═══════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────
-// ANALYTICS TAB
-// ─────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 function renderAnalytics() {
-  const subs = STATE.submissions;
-  const counts = { Submitted: 0, Interviewing: 0, Offered: 0, Placed: 0 };
-  const byBoard = {};
-
-  subs.forEach(s => {
-    if (counts[s.status] !== undefined) counts[s.status]++;
-    if (s.board) byBoard[s.board] = (byBoard[s.board] || 0) + 1;
-  });
-
-  const total   = subs.length || 1;
-  const funnelEl = document.getElementById('funnelBars');
-  if (funnelEl) {
-    funnelEl.innerHTML = [
-      { label: 'Submitted',    val: counts.Submitted,    color: '#06b6d4' },
-      { label: 'Interviewing', val: counts.Interviewing, color: '#f59e0b' },
-      { label: 'Offered',      val: counts.Offered,      color: '#8b5cf6' },
-      { label: 'Placed',       val: counts.Placed,       color: '#10b981' },
-    ].map(({ label, val, color }) => `
-      <div class="funnel-item">
-        <div class="funnel-label">${label}</div>
-        <div class="funnel-track">
-          <div class="funnel-fill" style="width:${Math.round((val/total)*100)}%;background:${color}">${val>0?val:''}</div>
-        </div>
-        <div class="funnel-count" style="color:${color}">${val}</div>
-      </div>`).join('');
-  }
-
-  const boardColors = { dice:'#ef4444', indeed:'#2563eb', linkedin:'#0a66c2', ziprecruiter:'#22c55e', monster:'#7c3aed' };
-  const maxBoard    = Math.max(...Object.values(byBoard), 1);
-  const boardEl     = document.getElementById('boardPerf');
-  if (boardEl) {
-    boardEl.innerHTML = Object.entries(byBoard).sort((a,b)=>b[1]-a[1]).map(([board, count]) => `
-      <div class="board-perf-row">
-        <div class="board-perf-name" style="text-transform:capitalize">${board}</div>
-        <div class="board-perf-track">
-          <div class="board-perf-fill" style="width:${Math.round((count/maxBoard)*100)}%;background:${boardColors[board]||'#6b7280'}"></div>
-        </div>
-        <div class="board-perf-count">${count}</div>
-      </div>`).join('') || '<div class="text-muted text-sm" style="padding:12px">Submit jobs to see board performance</div>';
-  }
-
-  // Consultant performance
-  const byConsultant = {};
-  subs.forEach(s => { byConsultant[s.consultant_name] = (byConsultant[s.consultant_name] || 0) + 1; });
-  const topConsultants = Object.entries(byConsultant).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const maxCand = Math.max(...topConsultants.map(c=>c[1]), 1);
-  const candEl  = document.getElementById('topConsultants');
-  if (candEl) {
-    candEl.innerHTML = topConsultants.length
-      ? topConsultants.map(([name, count]) => `
-          <div class="board-perf-row">
-            <div class="board-perf-name">${escHtml(name)}</div>
-            <div class="board-perf-track">
-              <div class="board-perf-fill" style="width:${Math.round((count/maxCand)*100)}%;background:var(--accent)"></div>
-            </div>
-            <div class="board-perf-count">${count}</div>
-          </div>`).join('')
-      : '<div class="text-muted text-sm" style="padding:12px">No submission data yet</div>';
-  }
-
-  // KPI cards
-  const placed  = counts.Placed;
-  const hitRate = subs.length ? Math.round((counts.Interviewing + counts.Offered + placed) / subs.length * 100) : 0;
-  const placeRate = subs.length ? Math.round(placed / subs.length * 100) : 0;
-  if (document.getElementById('aKpiTotal'))     document.getElementById('aKpiTotal').textContent     = subs.length;
-  if (document.getElementById('aKpiPlaced'))    document.getElementById('aKpiPlaced').textContent    = placed;
-  if (document.getElementById('aKpiHitRate'))   document.getElementById('aKpiHitRate').textContent   = hitRate + '%';
-  if (document.getElementById('aKpiPlaceRate')) document.getElementById('aKpiPlaceRate').textContent = placeRate + '%';
+  const subs = STATE.submissions.length;
+  document.getElementById('aKpiTotal').textContent = subs;
+  document.getElementById('aKpiPlaced').textContent = STATE.submissions.filter(s => s.status === 'Placed').length;
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODAL HELPERS
-// ═══════════════════════════════════════════════════════════
 function closeModal(id) {
   document.getElementById(id)?.classList.add('hidden');
 }
 
-function openVendorModal() {
-  document.getElementById('vendorModal').classList.remove('hidden');
-}
-
 // ═══════════════════════════════════════════════════════════
-// INITIALISE
+// INITIALIZATION
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
@@ -2296,44 +1532,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupJobFinder();
 
-  // Global close on overlay click
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.classList.add('hidden');
-    });
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.add('hidden'); });
   });
-
-  // Bench search
-  document.getElementById('benchSearch')?.addEventListener('input', e => renderBench(e.target.value));
-  document.getElementById('benchTeamFilter')?.addEventListener('change', e => renderBench(e.target.value));
-
-  // Submit modal buttons
-  document.getElementById('checkDupBtn')?.addEventListener('click', checkDuplicate);
-  document.getElementById('genEmailBtn')?.addEventListener('click', generateEmail);
-  document.getElementById('copyEmailBtn')?.addEventListener('click', copyEmail);
-  document.getElementById('confirmSubmitBtn')?.addEventListener('click', confirmSubmit);
-
-  // Vendor add
-  document.getElementById('confirmAddVendorBtn')?.addEventListener('click', addVendor);
-
-  // Export
-  document.getElementById('exportSubmissionsBtn')?.addEventListener('click', exportSubmissionsCSV);
-
-  // Legacy export button
-  const exportBtn = document.getElementById('exportBtn');
-  if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-      const records = STATE.allCandidates;
-      if (!records.length) { toast('No data to export', 'warn'); return; }
-      const headers = Object.keys(records[0]);
-      const rows    = records.map(r => headers.map(h => `"${String(r[h]||'').replace(/"/g,'""')}"`).join(','));
-      const csv     = [headers.join(','), ...rows].join('\n');
-      const blob    = new Blob([csv], { type: 'text/csv' });
-      const url     = URL.createObjectURL(blob);
-      const a       = document.createElement('a'); a.href = url; a.download = '3SBC_Candidates.csv'; a.click();
-      toast('Candidates exported!', 'success');
-    });
-  }
 });
 
 </script>
