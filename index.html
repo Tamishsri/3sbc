@@ -1133,21 +1133,24 @@ async function removeSavedJob(docId) {
     toast('Job removed from Hotlist', 'success');
     renderSavedJobs();
     
-    // Sync with Kanban board if it is currently rendered
-    const card = document.querySelector(`.job-card[data-job-url="${job.url.replace(/"/g, '\\"')}"]`);
-    if (card) {
-      card.style.border = '';
-      card.style.boxShadow = '';
-      const toggleBtn = card.querySelector('.btn-toggle-hotlist');
-      if (toggleBtn) {
-        toggleBtn.innerHTML = '⭐ Save to Hotlist';
-        toggleBtn.style.background = 'rgba(255,255,255,0.05)';
-        toggleBtn.style.color = 'var(--text-main)';
-        toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+    // Sync with Kanban board safely
+    const cards = document.querySelectorAll('.job-card');
+    for (const card of cards) {
+      if (card.getAttribute('data-job-url') === job.url) {
+        card.style.border = '';
+        card.style.boxShadow = '';
+        const toggleBtn = card.querySelector('.btn-toggle-hotlist');
+        if (toggleBtn) {
+          toggleBtn.innerHTML = '⭐ Save to Hotlist';
+          toggleBtn.style.background = 'rgba(255,255,255,0.05)';
+          toggleBtn.style.color = 'var(--text-main)';
+          toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+        }
       }
     }
   } catch(e) {
     toast('Failed to remove job', 'error');
+    console.error(e);
   }
 }
 
