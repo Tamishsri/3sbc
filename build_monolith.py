@@ -55,9 +55,9 @@ def build():
         <button id="runPipelineBtn" class="btn-primary-action">
           <span>🚀 Run Pipeline</span>
         </button>
-        <a href="/api/download" class="btn-secondary-action">
+        <button id="exportBtn" class="btn-secondary-action">
           <span>📊 Export Excel</span>
-        </a>
+        </button>
         <button id="handoffBtn" class="btn-secondary-action">
           <span>📦 Delivery Guide</span>
         </button>
