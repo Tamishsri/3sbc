@@ -395,6 +395,15 @@ def api_saved_jobs():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+@app.route("/api/jobs/saved/<doc_id>", methods=["DELETE"])
+def api_delete_saved_job(doc_id):
+    import firebase_db
+    try:
+        success = firebase_db.remove_saved_job(doc_id)
+        return jsonify({"success": success})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 app_handler = app
