@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3SBC — Commercial Staffing Intelligence Platform</title>
-  <meta name="description" content="Commercial Multi-Board Job Sourcing, AI Bench Matching, and Submission CRM for IT Staffing."/>
+  <title>3SBC — Commercial Staffing Intelligence SaaS</title>
+  <meta name="description" content="Commercial Multi-Board Sourcing, AI Bench Matching, Margin Calculator, and Submissions CRM for IT Staffing."/>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -548,6 +548,10 @@ body {
       <button class="nav-tab active" data-tab="jobFinder" id="tab-jobFinder">
         <span>🔍</span><span>Job Finder</span>
       </button>
+      <button class="nav-tab" data-tab="hotlist" id="tab-hotlist">
+        <span>⭐</span><span>Hotlist Jobs</span>
+        <span class="board-count-badge" id="hotlistCount" style="margin-left:4px">0</span>
+      </button>
       <button class="nav-tab" data-tab="bench" id="tab-bench">
         <span>👥</span><span>Bench Pool</span>
       </button>
@@ -581,7 +585,7 @@ body {
       <form class="job-search-bar" id="jobSearchForm">
         <div class="search-field" style="flex:2">
           <label for="jfSkill">Primary Skill / Keyword</label>
-          <input class="search-input" id="jfSkill" type="text" placeholder="e.g. SAP MM, Java Developer, AWS Architect" value="SAP MM" required/>
+          <input class="search-input" id="jfSkill" type="text" placeholder="e.g. SAP MM, Java Lead, AWS Architect" value="SAP MM" required/>
         </div>
         <div class="search-field" style="flex:1.5">
           <label for="jfLocation">Target Location</label>
@@ -631,7 +635,27 @@ body {
   </div><!-- /jobFinderTab -->
 
   <!-- ════════════════════════════════════════════════════════
-       TAB 2: BENCH POOL
+       TAB 2: HOTLIST (SAVED JOBS)
+       ════════════════════════════════════════════════════════ -->
+  <div id="hotlistTab" class="tab-content" style="display:none">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">⭐ Bookmarked Hotlist Jobs</h2>
+        <p style="font-size:13px;color:var(--text-sub)">Jobs you have bookmarked for candidate submissions</p>
+      </div>
+      <button class="action-btn action-outline" onclick="clearHotlist()">🗑 Clear All</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px" id="hotlistGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)">
+        <div style="font-size:36px;margin-bottom:8px">⭐</div>
+        <div>No hotlist jobs saved yet. Click "⭐ Save" on any job card in Job Finder.</div>
+      </div>
+    </div>
+  </div><!-- /hotlistTab -->
+
+  <!-- ════════════════════════════════════════════════════════
+       TAB 3: BENCH POOL
        ════════════════════════════════════════════════════════ -->
   <div id="benchTab" class="tab-content" style="display:none">
     <div class="kpi-grid">
@@ -653,15 +677,33 @@ body {
       </div>
     </div>
 
+    <!-- Filter Bar for Bench -->
+    <div class="job-search-container" style="padding:16px 20px">
+      <div class="flex items-center gap-3" style="flex-wrap:wrap">
+        <input class="search-input" id="benchSearchInput" type="text" placeholder="🔍 Search consultant by name, skill, location..." style="flex:2" oninput="filterBench()"/>
+        <select class="search-select" id="benchVisaFilter" onchange="filterBench()">
+          <option value="">All Work Authorizations</option>
+          <option value="H1B">H1B Visa</option>
+          <option value="Green Card">Green Card</option>
+          <option value="US Citizen">US Citizen</option>
+          <option value="OPT">OPT / CPT</option>
+          <option value="TN Visa">TN Visa</option>
+        </select>
+        <button class="action-btn action-submit" onclick="exportBenchCSV()">📊 Export Bench CSV</button>
+      </div>
+    </div>
+
     <div class="table-card">
       <table class="custom-table">
         <thead>
           <tr>
-            <th>Consultant</th>
+            <th>Consultant Name</th>
             <th>Target Skill</th>
+            <th>Work Auth</th>
             <th>Location</th>
+            <th>Pay Rate</th>
             <th>Match Rating</th>
-            <th>Pipeline Status</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -671,7 +713,7 @@ body {
   </div><!-- /benchTab -->
 
   <!-- ════════════════════════════════════════════════════════
-       TAB 3: SUBMISSIONS QUEUE
+       TAB 4: SUBMISSIONS QUEUE
        ════════════════════════════════════════════════════════ -->
   <div id="submissionsTab" class="tab-content" style="display:none">
     <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:12px">
@@ -691,9 +733,9 @@ body {
             <th>Board Source</th>
             <th>Date Submitted</th>
             <th>Status</th>
-            <th>Rate ($/hr)</th>
-            <th>Vendor Email</th>
-            <th>Follow-up</th>
+            <th>Bill / Pay Rate</th>
+            <th>Margin ($/hr)</th>
+            <th>Vendor Contact</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -705,7 +747,7 @@ body {
   </div><!-- /submissionsTab -->
 
   <!-- ════════════════════════════════════════════════════════
-       TAB 4: VENDORS CRM
+       TAB 5: VENDORS CRM
        ════════════════════════════════════════════════════════ -->
   <div id="vendorsTab" class="tab-content" style="display:none">
     <div class="flex items-center justify-between">
@@ -722,7 +764,7 @@ body {
   </div><!-- /vendorsTab -->
 
   <!-- ════════════════════════════════════════════════════════
-       TAB 5: ANALYTICS
+       TAB 6: ANALYTICS
        ════════════════════════════════════════════════════════ -->
   <div id="analyticsTab" class="tab-content" style="display:none">
     <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">📊 Staffing Conversion Analytics</h2>
@@ -768,13 +810,13 @@ body {
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     SUBMIT CONSULTANT MODAL
+     SUBMIT CONSULTANT MODAL (WITH MARGIN CALCULATOR)
      ════════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="submitModal">
-  <div class="modal-box" style="max-width:680px">
+  <div class="modal-box" style="max-width:720px">
     <div class="modal-header">
       <div>
-        <div class="modal-title">✅ Submit Consultant</div>
+        <div class="modal-title">✅ Submit Consultant &amp; Deal Calculator</div>
         <div style="font-size:12px;color:var(--text-sub);margin-top:2px">
           Target: <strong id="submitJobTitle" style="color:#fff"></strong> at <span id="submitJobCompany" style="color:var(--indigo)"></span>
         </div>
@@ -802,10 +844,46 @@ body {
           <input class="form-input" id="submitLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Proposed Rate ($/hr)</label>
-          <input class="form-input" id="submitRate" type="number" placeholder="e.g. 85"/>
+          <label class="form-label">Work Authorization / Visa</label>
+          <select class="search-select" id="submitVisa">
+            <option value="H1B">H1B Visa</option>
+            <option value="Green Card">Green Card</option>
+            <option value="US Citizen" selected>US Citizen</option>
+            <option value="OPT">OPT / CPT</option>
+            <option value="TN Visa">TN Visa</option>
+          </select>
         </div>
       </div>
+
+      <!-- 💰 MARGIN & DEAL PROFITABILITY CALCULATOR CARD -->
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--emerald);display:flex;align-items:center;justify-content:space-between">
+          <span>💰 Margin &amp; Deal Profitability Calculator</span>
+          <span style="font-size:11px;color:var(--text-sub);font-weight:600">Live Commission Estimator</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Client Bill Rate ($/hr)</label>
+            <input class="form-input" id="submitBillRate" type="number" placeholder="e.g. 90" value="90" oninput="calculateMargin()"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Consultant Pay Rate ($/hr)</label>
+            <input class="form-input" id="submitPayRate" type="number" placeholder="e.g. 65" value="65" oninput="calculateMargin()"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(15,23,42,0.6);padding:10px 16px;border-radius:var(--radius-md)">
+          <div>
+            <span style="font-size:11px;color:var(--text-sub);font-weight:700">GROSS MARGIN: </span>
+            <strong id="calcMarginHr" style="font-size:15px;color:var(--emerald);font-family:var(--font-display)">$25.00/hr</strong>
+            <span id="calcMarginPct" style="font-size:12px;color:var(--indigo);font-weight:700;margin-left:6px">(27.8%)</span>
+          </div>
+          <div>
+            <span style="font-size:11px;color:var(--text-sub);font-weight:700">EST. MONTHLY PROFIT: </span>
+            <strong id="calcMonthlyProfit" style="font-size:15px;color:var(--amber);font-family:var(--font-display)">$4,333/mo</strong>
+          </div>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Vendor Contact Name</label>
@@ -816,14 +894,10 @@ body {
           <input class="form-input" id="submitVendorEmail" type="email" placeholder="hiring@vendor.com"/>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <input class="form-input" id="submitNotes" type="text" placeholder="Special requirements, interview availability..."/>
-      </div>
 
       <div style="display:flex;gap:10px;margin-top:6px">
         <button type="button" class="action-btn action-outline" onclick="checkDuplicate()">🛡 Check Duplicate</button>
-        <button type="button" class="action-btn action-outline" onclick="generateEmail()">✉️ Generate Email</button>
+        <button type="button" class="action-btn action-outline" onclick="generateEmail()">✉️ Generate Email Draft</button>
       </div>
 
       <div id="emailBox" class="hidden" style="margin-top:10px">
@@ -837,7 +911,7 @@ body {
 
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
       <button class="action-btn action-outline" onclick="closeModal('submitModal')">Cancel</button>
-      <button class="action-btn action-submit" onclick="confirmSubmit()">✅ Submit &amp; Log Submission</button>
+      <button class="action-btn action-submit" onclick="confirmSubmit()">✅ Submit &amp; Log Deal</button>
     </div>
   </div>
 </div>
@@ -926,6 +1000,7 @@ const STATE = {
   allCandidates:    [],
   submissions:      [],
   vendors:          [],
+  hotlist:          [],
   jobResults:       {},
   pendingJob:       null,
   pendingCandidate: null,
@@ -967,7 +1042,6 @@ let _auth = null, _db = null;
 
 function initFirebase() {
   if (typeof firebase === 'undefined') {
-    console.warn('[3SBC] Firebase SDK offline — rendering demo state');
     showApp({ email: 'tamishsridhatta.16@gmail.com' });
     return;
   }
@@ -1005,7 +1079,8 @@ function showApp(user) {
   }
   switchTab('jobFinder');
   loadBenchData();
-  runJobSearch(); // Auto-run initial search for instant WOW
+  loadHotlist();
+  runJobSearch();
 }
 
 function setupAuth() {
@@ -1065,6 +1140,7 @@ function switchTab(tabId) {
   });
 
   if (tabId === 'bench') renderBenchTable();
+  if (tabId === 'hotlist') renderHotlist();
   if (tabId === 'submissions') loadSubmissions();
   if (tabId === 'vendors') loadVendors();
   if (tabId === 'analytics') renderAnalytics();
@@ -1101,7 +1177,6 @@ async function runJobSearch() {
     btn.textContent = '⏳ Searching All Boards…';
   }
 
-  // Show Loading state
   const boardEl = document.getElementById('kanbanBoard');
   if (boardEl) {
     boardEl.innerHTML = `
@@ -1214,17 +1289,94 @@ function renderJobCard(j) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AI MATCH MODAL
+// HOTLIST / BOOKMARKED JOBS
+// ═══════════════════════════════════════════════════════════
+function saveJob(jobJsonStr) {
+  const job = JSON.parse(jobJsonStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+
+  if (!STATE.hotlist.some(h => h.id === job.id)) {
+    STATE.hotlist.unshift(job);
+    try { localStorage.setItem('3sbc_hotlist', JSON.stringify(STATE.hotlist)); } catch(e){}
+    toast(`⭐ Bookmarked to Hotlist: ${job.title}`, 'success');
+    updateHotlistBadge();
+  } else {
+    toast('Job is already in Hotlist!', 'info');
+  }
+}
+
+function loadHotlist() {
+  try {
+    const saved = localStorage.getItem('3sbc_hotlist');
+    if (saved) STATE.hotlist = JSON.parse(saved);
+  } catch(e){}
+  updateHotlistBadge();
+}
+
+function updateHotlistBadge() {
+  const el = document.getElementById('hotlistCount');
+  if (el) el.textContent = STATE.hotlist.length;
+}
+
+function renderHotlist() {
+  const grid = document.getElementById('hotlistGrid');
+  if (!grid) return;
+
+  if (!STATE.hotlist.length) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)">
+        <div style="font-size:36px;margin-bottom:8px">⭐</div>
+        <div>No hotlist jobs saved yet. Click "⭐ Save" on any job card in Job Finder.</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = STATE.hotlist.map(j => {
+    const cardDataStr = esc(JSON.stringify(j));
+    return `
+      <div class="job-card" style="background:var(--bg-surface)">
+        <div style="font-size:11px;font-weight:700;color:var(--indigo);text-transform:uppercase;margin-bottom:2px">${esc(j.board)}</div>
+        <div class="job-card-title">${esc(j.title)}</div>
+        <div class="job-card-company">🏢 ${esc(j.company)}</div>
+        <div class="job-card-meta">
+          <span class="meta-chip">📍 ${esc(j.location)}</span>
+          <span class="salary-badge">${esc(j.salary || '$75–$95/hr')}</span>
+        </div>
+        <div class="job-card-actions" style="margin-top:12px">
+          <button type="button" class="action-btn action-submit" onclick="openSubmitModal('${cardDataStr}')">✅ Submit Consultant</button>
+          <button type="button" class="action-btn action-outline" onclick="removeFromHotlist('${esc(j.id)}')">🗑 Remove</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function removeFromHotlist(id) {
+  STATE.hotlist = STATE.hotlist.filter(h => h.id !== id);
+  try { localStorage.setItem('3sbc_hotlist', JSON.stringify(STATE.hotlist)); } catch(e){}
+  updateHotlistBadge();
+  renderHotlist();
+  toast('Removed from Hotlist', 'info');
+}
+
+function clearHotlist() {
+  STATE.hotlist = [];
+  try { localStorage.removeItem('3sbc_hotlist'); } catch(e){}
+  updateHotlistBadge();
+  renderHotlist();
+  toast('Hotlist cleared', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI BENCH MATCH & PITCH BULLETS
 // ═══════════════════════════════════════════════════════════
 async function openMatchModal(jobJsonStr) {
   const job = JSON.parse(jobJsonStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
   STATE.pendingJob = job;
 
-  document.getElementById('matchModalTitle').textContent = `🤖 AI Match — ${job.title}`;
+  document.getElementById('matchModalTitle').textContent = `🤖 AI Bench Match — ${job.title}`;
   document.getElementById('matchModalCompany').textContent = `${job.company} · ${job.location}`;
 
   const listEl = document.getElementById('matchResultsList');
-  listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sub)"><div style="font-size:24px;margin-bottom:8px">⚡</div><div>Analyzing 63 bench consultants against JD keywords…</div></div>';
+  listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sub)"><div style="font-size:24px;margin-bottom:8px">⚡</div><div>Ranking 63 bench consultants &amp; generating pitch bullets…</div></div>';
 
   document.getElementById('matchModal').classList.remove('hidden');
 
@@ -1254,18 +1406,24 @@ function renderMatchResults(matches) {
     const sc  = parseInt(m.fit_score);
     const col = sc >= 80 ? 'var(--emerald)' : sc >= 65 ? 'var(--amber)' : 'var(--rose)';
     const bg  = sc >= 80 ? 'var(--emerald-glow)' : sc >= 65 ? 'var(--amber-glow)' : 'var(--rose-glow)';
+    const bullets = (m.pitch_bullets || []).map(b => `<div style="font-size:11px;color:var(--text-sub);margin-top:2px">${esc(b)}</div>`).join('');
 
     return `
-      <div class="match-card">
-        <div style="display:flex;align-items:center;gap:12px;flex:1">
-          <div class="match-ring" style="background:${bg};color:${col};border:2px solid ${col}">${sc}%</div>
-          <div>
-            <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="font-size:11px;color:var(--text-sub)">(${esc(m.team)})</span></div>
-            <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(m.reason)}</div>
+      <div class="match-card" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="match-ring" style="background:${bg};color:${col};border:2px solid ${col}">${sc}%</div>
+            <div>
+              <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="font-size:11px;color:var(--indigo);background:var(--indigo-glow);padding:2px 6px;border-radius:4px;margin-left:4px">${esc(m.visa || 'H1B')}</span></div>
+              <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
+            </div>
           </div>
+          <button type="button" class="action-btn action-submit" onclick="selectMatchAndSubmit('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select &amp; Submit →</button>
         </div>
-        <button type="button" class="action-btn action-submit" onclick="selectMatchAndSubmit('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select &amp; Submit →</button>
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
+          <div style="font-size:10px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:0.04em">Tailored Candidate Pitch Bullets:</div>
+          ${bullets}
+        </div>
       </div>`;
   }).join('');
 }
@@ -1277,7 +1435,7 @@ function selectMatchAndSubmit(name, skill, location) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SUBMIT CONSULTANT & DUPLICATE GUARD
+// MARGIN CALCULATOR & SUBMISSION
 // ═══════════════════════════════════════════════════════════
 function openSubmitModal(jobJsonStr) {
   const job = JSON.parse(jobJsonStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
@@ -1293,17 +1451,32 @@ function openSubmitModalWithCandidate(job, cName, cSkill, cLoc) {
   document.getElementById('submitConsultant').value  = cName  || '';
   document.getElementById('submitSkill').value       = cSkill || '';
   document.getElementById('submitLocation').value    = cLoc   || '';
-  document.getElementById('submitRate').value        = '85';
+  document.getElementById('submitBillRate').value    = '90';
+  document.getElementById('submitPayRate').value     = '65';
   document.getElementById('submitVendorEmail').value = '';
   document.getElementById('submitVendorName').value  = '';
   document.getElementById('submitNotes').value       = '';
 
+  calculateMargin();
   document.getElementById('dupWarning').classList.add('hidden');
   document.getElementById('emailBox').classList.add('hidden');
 
   document.getElementById('submitModal').classList.remove('hidden');
 
   if (cName) checkDuplicate();
+}
+
+function calculateMargin() {
+  const bill = parseFloat(document.getElementById('submitBillRate')?.value || 90);
+  const pay  = parseFloat(document.getElementById('submitPayRate')?.value || 65);
+
+  const margin = Math.max(bill - pay, 0);
+  const pct    = bill > 0 ? ((margin / bill) * 100).toFixed(1) : 0;
+  const monthly = Math.round(margin * 173.3);
+
+  document.getElementById('calcMarginHr').textContent   = `$${margin.toFixed(2)}/hr`;
+  document.getElementById('calcMarginPct').textContent  = `(${pct}%)`;
+  document.getElementById('calcMonthlyProfit').textContent = `$${monthly.toLocaleString()}/mo`;
 }
 
 async function checkDuplicate() {
@@ -1315,7 +1488,7 @@ async function checkDuplicate() {
     const res  = await fetch('/api/submissions/check-duplicate', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ consultant_name: cName, company: job.company, job_id: job.id }),
+      body: JSON.stringify({ consultant_name: cName, company: job.company }),
     });
     const data = await res.json();
     const box  = document.getElementById('dupWarning');
@@ -1333,7 +1506,8 @@ async function generateEmail() {
   const cName    = document.getElementById('submitConsultant').value.trim();
   const cSkill   = document.getElementById('submitSkill').value.trim();
   const cLoc     = document.getElementById('submitLocation').value.trim();
-  const cRate    = document.getElementById('submitRate').value.trim();
+  const cRate    = document.getElementById('submitBillRate').value.trim();
+  const cVisa    = document.getElementById('submitVisa').value;
   const vName    = document.getElementById('submitVendorName').value.trim();
   const vEmail   = document.getElementById('submitVendorEmail').value.trim();
 
@@ -1342,7 +1516,7 @@ async function generateEmail() {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        consultant: { name: cName, skill: cSkill, location: cLoc, rate: cRate },
+        consultant: { name: cName, skill: cSkill, location: cLoc, rate: cRate, visa: cVisa },
         job: job,
         vendor: { name: vName, email: vEmail },
         recruiter_name: 'Tamish Sridatta'
@@ -1366,7 +1540,9 @@ async function confirmSubmit() {
   const consultant = document.getElementById('submitConsultant').value.trim();
   const skill      = document.getElementById('submitSkill').value.trim();
   const location   = document.getElementById('submitLocation').value.trim();
-  const rate       = document.getElementById('submitRate').value.trim();
+  const billRate   = document.getElementById('submitBillRate').value.trim();
+  const payRate    = document.getElementById('submitPayRate').value.trim();
+  const visa       = document.getElementById('submitVisa').value;
   const vEmail     = document.getElementById('submitVendorEmail').value.trim();
   const vName      = document.getElementById('submitVendorName').value.trim();
   const notes      = document.getElementById('submitNotes').value.trim();
@@ -1376,17 +1552,22 @@ async function confirmSubmit() {
     return;
   }
 
+  const marginHr = Math.max(parseFloat(billRate || 90) - parseFloat(payRate || 65), 0).toFixed(2);
+
   const record = {
     id:              'sub_' + Date.now(),
     consultant_name: consultant,
     consultant_skill: skill,
+    visa:             visa,
     job_id:           job.id,
     job_title:        job.title,
     company:          job.company,
     location:         job.location,
     board:            job.board,
     job_url:          job.url,
-    rate_offered:     rate,
+    rate_offered:     billRate,
+    pay_rate:         payRate,
+    margin_hr:        marginHr,
     vendor_email:     vEmail,
     vendor_name:      vName,
     notes:            notes,
@@ -1399,16 +1580,12 @@ async function confirmSubmit() {
     try { await _db.collection('submissions').add(record); } catch(e) {}
   }
 
-  toast(`✅ ${consultant} submitted to ${job.company}!`, 'success');
+  toast(`✅ ${consultant} submitted to ${job.company} ($${marginHr}/hr margin logged)!`, 'success');
   closeModal('submitModal');
 }
 
-function saveJob(jobJsonStr) {
-  toast('⭐ Saved job to Hotlist!', 'success');
-}
-
 // ═══════════════════════════════════════════════════════════
-// BENCH ATS TABLE
+// BENCH ATS & FILTERS
 // ═══════════════════════════════════════════════════════════
 async function loadBenchData() {
   if (window.EMBEDDED_CANDIDATES && window.EMBEDDED_CANDIDATES.length > 0) {
@@ -1422,20 +1599,40 @@ async function loadBenchData() {
   renderBenchTable();
 }
 
+function filterBench() {
+  renderBenchTable();
+}
+
 function renderBenchTable() {
   const tbody = document.getElementById('benchTableBody');
   if (!tbody) return;
 
-  const list = STATE.allCandidates;
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-sub)">No bench candidates.</td></tr>';
+  const query = (document.getElementById('benchSearchInput')?.value || '').toLowerCase();
+  const visaFilter = document.getElementById('benchVisaFilter')?.value || '';
+
+  const filtered = STATE.allCandidates.filter(c => {
+    const name  = (c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || '').toLowerCase();
+    const skill = (c['Target Skill (AREA)'] || c['AREA'] || '').toLowerCase();
+    const loc   = (c['Target Location'] || c['Location'] || '').toLowerCase();
+    const visa  = (c['Visa'] || 'H1B');
+
+    const matchesQuery = !query || name.includes(query) || skill.includes(query) || loc.includes(query);
+    const matchesVisa  = !visaFilter || visa === visaFilter;
+
+    return matchesQuery && matchesVisa;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-sub)">No matching bench consultants found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = list.map(c => {
+  tbody.innerHTML = filtered.map(c => {
     const name  = esc(c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || 'Consultant');
     const skill = esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT');
     const loc   = esc(c['Target Location'] || c['Location'] || 'USA');
+    const visa  = esc(c['Visa'] || 'H1B');
+    const payRate = c['PayRate'] || 65;
     const score = parseInt(c['Match Score'] || 80);
     const status = c['Status'] || 'Available';
 
@@ -1445,7 +1642,9 @@ function renderBenchTable() {
       <tr>
         <td style="font-weight:700;color:#fff">${name}</td>
         <td><span style="color:var(--indigo);font-weight:600">${skill}</span></td>
+        <td><span style="font-size:11px;font-weight:700;color:var(--indigo);background:var(--indigo-glow);padding:2px 8px;border-radius:10px">${visa}</span></td>
         <td>📍 ${loc}</td>
+        <td style="font-weight:700;color:var(--emerald)">$${payRate}/hr</td>
         <td><span style="color:${col};font-weight:800;font-family:var(--font-display);font-size:15px">${score}%</span></td>
         <td><span class="status-pill status-placed">${status}</span></td>
         <td>
@@ -1453,6 +1652,26 @@ function renderBenchTable() {
         </td>
       </tr>`;
   }).join('');
+}
+
+function exportBenchCSV() {
+  const list = STATE.allCandidates;
+  if (!list.length) { toast('No candidates to export', 'warn'); return; }
+  const headers = ['Consultant Name', 'Target Skill', 'Work Auth', 'Location', 'Pay Rate', 'Match Rating', 'Status'];
+  const rows = list.map(c => [
+    c['Consultant Name'] || c['NAME OF THE CONSULTANT'],
+    c['Target Skill (AREA)'] || c['AREA'],
+    c['Visa'] || 'H1B',
+    c['Target Location'] || c['Location'],
+    `$${c['PayRate'] || 65}/hr`,
+    `${c['Match Score'] || 80}%`,
+    c['Status'] || 'Available'
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = '3SBC_Bench_Consultants.csv'; a.click();
+  toast('Bench roster exported to CSV!', 'success');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1482,9 +1701,9 @@ function renderSubmissionsTable() {
       <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-sub)">${esc(s.board)}</span></td>
       <td>${formatDate(s.created_at)}</td>
       <td><span class="status-pill status-submitted">${esc(s.status)}</span></td>
-      <td>${s.rate_offered ? '$' + s.rate_offered + '/hr' : '—'}</td>
+      <td>${s.rate_offered ? '$' + s.rate_offered + '/hr' : '—'} / ${s.pay_rate ? '$' + s.pay_rate + '/hr' : '—'}</td>
+      <td style="font-weight:800;color:var(--emerald);font-family:var(--font-display)">${s.margin_hr ? '$' + s.margin_hr + '/hr' : '$25.00/hr'}</td>
       <td>${esc(s.vendor_email || '—')}</td>
-      <td>🔔 Follow-up</td>
       <td>
         ${s.job_url ? `<a class="action-btn action-outline" style="padding:3px 8px;text-decoration:none" href="${esc(s.job_url)}" target="_blank">🔗</a>` : ''}
       </td>
@@ -1494,8 +1713,8 @@ function renderSubmissionsTable() {
 function exportSubmissionsCSV() {
   const subs = STATE.submissions;
   if (!subs.length) { toast('No submissions to export', 'warn'); return; }
-  const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Rate'];
-  const rows = subs.map(s => [s.consultant_name, s.job_title, s.company, s.board, formatDate(s.created_at), s.status, s.rate_offered]);
+  const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Bill Rate', 'Pay Rate', 'Margin $/hr'];
+  const rows = subs.map(s => [s.consultant_name, s.job_title, s.company, s.board, formatDate(s.created_at), s.status, s.rate_offered, s.pay_rate, s.margin_hr]);
   const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
