@@ -1,229 +1,319 @@
 """
 firebase_db.py
 --------------
-Firebase Admin SDK integration for the Recruitment Automation Pipeline.
-
-Responsibilities:
-  - Initialise the Firebase Admin SDK using a local service-account key file
-    (firebase-key.json in the same directory as this script).
-  - Connect to Cloud Firestore.
-  - Expose `upload_candidates_to_firestore(evaluated_data)` which flattens
-    the nested pipeline output and upserts one document per sourced candidate
-    into the Firestore 'candidates' collection.
-
-Document structure (per candidate):
-  - team          : str   – e.g. "Mahesh & Team"
-  - target_area   : str   – required skill/role, e.g. "SAP MM/ Ariba"
-  - location      : str   – target geography, e.g. "Philadelphia, PA"
-  - candidate_url : str   – LinkedIn profile URL
-  - candidate_name: str   – Full name / headline
-  - match_score   : int   – 0-100 AI fit score
-  - reasoning     : str   – 1-2 sentence AI justification
-  - created_at    : timestamp – server-side Firestore timestamp
+Firebase Firestore operations for 3SBC Staffing Intelligence Platform.
+Handles: candidates, submissions, saved jobs, vendor contacts, job cache.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+import time
 from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-KEY_FILE = Path(__file__).parent / "firebase-key.json"
-COLLECTION_NAME = "candidates"
-
-# Module-level singleton so we only initialise Firebase once per process
-_db = None
-
-
-# ---------------------------------------------------------------------------
-# Initialisation
+# Initialise Firebase Admin SDK (idempotent)
 # ---------------------------------------------------------------------------
 
-def _init_firebase():
-    """
-    Initialise Firebase Admin SDK (idempotent – safe to call multiple times).
+_firebase_initialised = False
 
-    Uses the service-account JSON file at `firebase-key.json` in the project
-    root. Raises FileNotFoundError with a descriptive message if the key file
-    is missing so the caller can surface a clear error.
 
-    Returns
-    -------
-    google.cloud.firestore.Client
-        A ready-to-use Firestore client.
-    """
-    global _db  # noqa: PLW0603
-
-    if _db is not None:
-        return _db
-
+def _init_firebase() -> None:
+    global _firebase_initialised
+    if _firebase_initialised:
+        return
     try:
         import firebase_admin
         from firebase_admin import credentials, firestore
-    except ImportError as exc:
-        raise ImportError(
-            "firebase-admin is not installed. "
-            "Run: pip install firebase-admin"
-        ) from exc
 
-    if not KEY_FILE.exists():
-        raise FileNotFoundError(
-            f"Firebase service-account key not found at: {KEY_FILE}\n"
-            "Steps to fix:\n"
-            "  1. Go to Firebase Console -> Project Settings -> Service accounts.\n"
-            "  2. Click 'Generate new private key' and download the JSON file.\n"
-            "  3. Rename it 'firebase-key.json' and place it in the project root.\n"
-            "  4. Make sure 'firebase-key.json' is listed in .gitignore!"
-        )
+        if not firebase_admin._apps:
+            key_path = Path(__file__).parent / "firebase-key.json"
+            if key_path.exists():
+                cred = credentials.Certificate(str(key_path))
+                firebase_admin.initialize_app(cred, {
+                    "databaseURL": "https://sbc-219bf-default-rtdb.firebaseio.com"
+                })
+            else:
+                firebase_admin.initialize_app()
+        _firebase_initialised = True
+    except Exception as exc:
+        print(f"[firebase_db] Init warning: {exc}")
 
-    # Only initialise the default app if it hasn't been done yet
-    if not firebase_admin._apps:
-        cred = credentials.Certificate(str(KEY_FILE))
-        firebase_admin.initialize_app(cred)
-        print(f"[firebase] Firebase Admin SDK initialised (key: {KEY_FILE.name})")
-    else:
-        print("[firebase] Firebase Admin SDK already initialised -- reusing existing app.")
 
-    _db = firestore.client()
-    print("[firebase] Connected to Cloud Firestore.")
-    return _db
+def _db():
+    _init_firebase()
+    from firebase_admin import firestore
+    return firestore.client()
 
 
 # ---------------------------------------------------------------------------
-# Document ID helper
+# CANDIDATES (existing ATS data)
 # ---------------------------------------------------------------------------
 
-def _make_doc_id(consultant_name: str, candidate_url: str) -> str:
-    """
-    Derive a stable, Firestore-safe document ID from the consultant name and
-    candidate LinkedIn URL so that re-runs upsert (overwrite) instead of
-    creating duplicates.
+def get_candidates() -> list[dict]:
+    """Fetch all candidates from Firestore."""
+    try:
+        db = _db()
+        docs = db.collection("candidates").stream()
+        records = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["_doc_id"] = doc.id
+            records.append(data)
+        return records
+    except Exception as exc:
+        print(f"[firebase_db] get_candidates error: {exc}")
+        return []
 
-    Firestore document IDs must be <= 1500 bytes and cannot contain '/'.
-    We use a short SHA-256 prefix to keep IDs compact and collision-resistant.
-    """
-    raw = f"{consultant_name}::{candidate_url}".lower().strip()
-    digest = hashlib.sha256(raw.encode()).hexdigest()[:16]
-    # Build a human-readable prefix (safe chars only) + hash suffix
-    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in consultant_name[:30])
-    return f"{safe_name}__{digest}"
+
+def upload_candidates_to_firestore(evaluated_data: list[dict]) -> int:
+    """Flatten and upload evaluated consultant/candidate data to Firestore."""
+    try:
+        db = _db()
+        count = 0
+        total = len(evaluated_data)
+
+        for idx, consultant in enumerate(evaluated_data, 1):
+            team = str(consultant.get("Team") or "").strip()
+            area = str(consultant.get("AREA") or "").strip()
+            location = str(consultant.get("Location") or "").strip()
+            consultant_name = str(consultant.get("NAME OF THE CONSULTANT") or "").strip()
+
+            print(f"[firebase] ({idx}/{total}) Uploading 3 candidate(s) for: {consultant_name!r}")
+
+            for candidate in (consultant.get("sourced_candidates") or []):
+                name_title = str(candidate.get("name_title") or "")
+                linkedin_url = str(candidate.get("linkedin_url") or "")
+                score = int(candidate.get("match_score") or 0)
+                reasoning = str(candidate.get("reasoning") or "")
+
+                safe_name = "".join(c if c.isalnum() else "_" for c in consultant_name)
+                hash_part = hashlib.md5(f"{name_title}{linkedin_url}".encode()).hexdigest()[:16]
+                doc_id = f"{safe_name}__{hash_part}"
+
+                db.collection("candidates").document(doc_id).set({
+                    "Team Name": team,
+                    "Target Skill (AREA)": area,
+                    "Target Location": location,
+                    "Consultant Name": consultant_name,
+                    "Candidate Name/Title": name_title,
+                    "Candidate LinkedIn URL": linkedin_url,
+                    "Match Score": score,
+                    "AI Reasoning": reasoning,
+                    "Status": "New",
+                    "updated_at": time.time(),
+                })
+                print(f"  [firebase] Upserted doc {doc_id!r} (score={score}, candidate={name_title})")
+                count += 1
+
+        print(f"[firebase] [OK] Upload complete -- {count} document(s) written to Firestore collection 'candidates'.")
+        return count
+    except Exception as exc:
+        print(f"[firebase_db] upload_candidates error: {exc}")
+        raise
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-def upload_candidates_to_firestore(
-    evaluated_data: list[dict[str, Any]],
-) -> int:
-    """
-    Flatten the nested pipeline output and upsert every sourced candidate
-    into the Firestore 'candidates' collection.
-
-    Parameters
-    ----------
-    evaluated_data : list[dict]
-        Full output from `ai_evaluator.evaluate_candidates()`.  Each element
-        is a consultant dict that contains a `'sourced_candidates'` list.
-
-    Returns
-    -------
-    int
-        Total number of documents written to Firestore.
-    """
-    from google.cloud import firestore as fs  # type: ignore[import]
-
-    db = _init_firebase()
-    collection = db.collection(COLLECTION_NAME)
-
-    total_written = 0
-    total_consultants = len(evaluated_data)
-
-    print(f"[firebase] Starting Firestore upload for {total_consultants} consultant records ...")
-
-    for c_idx, consultant in enumerate(evaluated_data, start=1):
-        consultant_name: str = str(consultant.get("NAME OF THE CONSULTANT") or "").strip()
-        team: str            = str(consultant.get("Team") or "").strip()
-        target_area: str     = str(consultant.get("AREA") or "").strip()
-        location: str        = str(consultant.get("Location") or "").strip()
-
-        candidates: list[dict[str, Any]] = consultant.get("sourced_candidates") or []
-
-        print(
-            f"[firebase] ({c_idx}/{total_consultants}) Uploading {len(candidates)} "
-            f"candidate(s) for: {consultant_name!r}"
-        )
-
-        for candidate in candidates:
-            candidate_url:  str = str(candidate.get("linkedin_url") or "").strip()
-            candidate_name: str = str(candidate.get("name_title") or "").strip()
-            match_score:    int = int(candidate.get("match_score") or 0)
-            reasoning:      str = str(candidate.get("reasoning") or "").strip()
-
-            doc_id = _make_doc_id(consultant_name, candidate_url)
-
-            document_data: dict[str, Any] = {
-                "team":           team,
-                "target_area":    target_area,
-                "location":       location,
-                "candidate_url":  candidate_url,
-                "candidate_name": candidate_name,
-                "match_score":    match_score,
-                "reasoning":      reasoning,
-                # SERVER_TIMESTAMP is set by Firestore on first write;
-                # merge=True preserves it on subsequent upserts.
-                "created_at":     fs.SERVER_TIMESTAMP,
-            }
-
-            try:
-                collection.document(doc_id).set(document_data, merge=True)
-                total_written += 1
-                print(
-                    f"  [firebase] Upserted doc '{doc_id}' "
-                    f"(score={match_score}, candidate={candidate_name[:50]})"
-                )
-            except Exception as exc:  # noqa: BLE001
-                print(f"  [firebase] ERROR writing doc '{doc_id}': {exc}")
-
-    print(
-        f"[firebase] [OK] Upload complete -- {total_written} document(s) written "
-        f"to Firestore collection '{COLLECTION_NAME}'."
-    )
-    return total_written
+def update_candidate_status(candidate_id: str, status: str) -> bool:
+    """Update a candidate's recruiter pipeline status."""
+    try:
+        db = _db()
+        db.collection("candidates").document(candidate_id).update({"Status": status})
+        return True
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------------------
-# Standalone smoke-test
+# SUBMISSIONS (CRM)
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
-    # Minimal fake data – does NOT hit the real Proxycurl / Gemini APIs.
-    SAMPLE: list[dict[str, Any]] = [
-        {
-            "NAME OF THE CONSULTANT": "Test Consultant",
-            "Team": "Test Team",
-            "AREA": "Azure Data Engineer",
-            "Location": "New York, NY",
-            "sourced_candidates": [
-                {
-                    "linkedin_url": "https://www.linkedin.com/in/test-user-1",
-                    "name_title": "Test User 1 -- Azure Data Engineer",
-                    "match_score": 92,
-                    "reasoning": "Strong ADF and Databricks background, direct match.",
-                },
-                {
-                    "linkedin_url": "https://www.linkedin.com/in/test-user-2",
-                    "name_title": "Test User 2 -- Cloud Engineer",
-                    "match_score": 55,
-                    "reasoning": "General cloud skills but limited Azure-specific experience.",
-                },
-            ],
+def add_submission(data: dict) -> str:
+    """Save a new consultant-to-job submission. Returns submission doc ID."""
+    try:
+        db = _db()
+        sub_id = hashlib.md5(
+            f"{data.get('consultant_name')}|{data.get('job_id')}|{time.time()}".encode()
+        ).hexdigest()[:16]
+
+        record = {
+            "consultant_name":  str(data.get("consultant_name", "")),
+            "consultant_skill": str(data.get("consultant_skill", "")),
+            "job_id":           str(data.get("job_id", "")),
+            "job_title":        str(data.get("job_title", "")),
+            "company":          str(data.get("company", "")),
+            "location":         str(data.get("location", "")),
+            "board":            str(data.get("board", "")),
+            "job_url":          str(data.get("job_url", "")),
+            "salary":           str(data.get("salary", "")),
+            "rate_offered":     str(data.get("rate_offered", "")),
+            "vendor_email":     str(data.get("vendor_email", "")),
+            "vendor_name":      str(data.get("vendor_name", "")),
+            "notes":            str(data.get("notes", "")),
+            "status":           "Submitted",
+            "follow_up":        False,
+            "submitted_by":     str(data.get("submitted_by", "Recruiter")),
+            "user_id":          str(data.get("user_id", "")),
+            "created_at":       time.time(),
+            "updated_at":       time.time(),
         }
-    ]
+        db.collection("submissions").document(sub_id).set(record)
+        return sub_id
+    except Exception as exc:
+        print(f"[firebase_db] add_submission error: {exc}")
+        raise
 
-    count = upload_candidates_to_firestore(SAMPLE)
-    print(f"\nSmoke-test complete: {count} document(s) written.")
+
+def get_submissions(user_id: str | None = None, is_admin: bool = False) -> list[dict]:
+    """Get all submissions. Admin sees all; recruiter sees only their own."""
+    try:
+        db = _db()
+        ref = db.collection("submissions")
+        if not is_admin and user_id:
+            ref = ref.where("user_id", "==", user_id)
+        docs = ref.order_by("created_at", direction="DESCENDING").stream()
+        result = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            d["created_at_iso"] = _ts_to_iso(d.get("created_at"))
+            result.append(d)
+        return result
+    except Exception as exc:
+        print(f"[firebase_db] get_submissions error: {exc}")
+        return []
+
+
+def update_submission(sub_id: str, updates: dict) -> bool:
+    """Update status, notes, follow_up flag on a submission."""
+    try:
+        db = _db()
+        updates["updated_at"] = time.time()
+        db.collection("submissions").document(sub_id).update(updates)
+        return True
+    except Exception:
+        return False
+
+
+def delete_submission(sub_id: str) -> bool:
+    try:
+        _db().collection("submissions").document(sub_id).delete()
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# SAVED JOBS (Hotlist)
+# ---------------------------------------------------------------------------
+
+def save_job(job: dict, user_id: str) -> str:
+    try:
+        db = _db()
+        job_id = job.get("id") or hashlib.md5(job.get("url", "").encode()).hexdigest()[:12]
+        doc_id = f"{user_id}_{job_id}"
+        db.collection("saved_jobs").document(doc_id).set({
+            **{k: str(v) for k, v in job.items()},
+            "user_id":  user_id,
+            "saved_at": time.time(),
+        })
+        return doc_id
+    except Exception as exc:
+        print(f"[firebase_db] save_job error: {exc}")
+        raise
+
+
+def get_saved_jobs(user_id: str) -> list[dict]:
+    try:
+        db = _db()
+        docs = db.collection("saved_jobs").where("user_id", "==", user_id) \
+                 .order_by("saved_at", direction="DESCENDING").stream()
+        result = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["doc_id"] = doc.id
+            result.append(d)
+        return result
+    except Exception:
+        return []
+
+
+def remove_saved_job(doc_id: str) -> bool:
+    try:
+        _db().collection("saved_jobs").document(doc_id).delete()
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# VENDOR CONTACTS (CRM)
+# ---------------------------------------------------------------------------
+
+def add_vendor(data: dict) -> str:
+    try:
+        db = _db()
+        vid = hashlib.md5(
+            f"{data.get('email', '')}|{data.get('company', '')}".encode()
+        ).hexdigest()[:12]
+        db.collection("vendors").document(vid).set({
+            "name":            str(data.get("name", "")),
+            "company":         str(data.get("company", "")),
+            "email":           str(data.get("email", "")),
+            "phone":           str(data.get("phone", "")),
+            "skills":          str(data.get("skills", "")),
+            "location":        str(data.get("location", "")),
+            "notes":           str(data.get("notes", "")),
+            "last_contacted":  "",
+            "response_rate":   "Unknown",
+            "created_at":      time.time(),
+        })
+        return vid
+    except Exception as exc:
+        print(f"[firebase_db] add_vendor error: {exc}")
+        raise
+
+
+def get_vendors() -> list[dict]:
+    try:
+        db = _db()
+        docs = db.collection("vendors").order_by("company").stream()
+        result = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            result.append(d)
+        return result
+    except Exception:
+        return []
+
+
+def update_vendor(vid: str, updates: dict) -> bool:
+    try:
+        _db().collection("vendors").document(vid).update(updates)
+        return True
+    except Exception:
+        return False
+
+
+def delete_vendor(vid: str) -> bool:
+    try:
+        _db().collection("vendors").document(vid).delete()
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _ts_to_iso(ts: Any) -> str:
+    if not ts:
+        return ""
+    try:
+        from datetime import datetime, timezone
+        return datetime.fromtimestamp(float(ts), tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    except Exception:
+        return str(ts)

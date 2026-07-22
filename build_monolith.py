@@ -1,195 +1,87 @@
-import json
-from pathlib import Path
+"""
+build_monolith.py
+-----------------
+Compiles index.html by inlining styles.css, app.js, and candidates_data.json
+into a single self-contained file for Vercel static deployment.
 
-def build():
-    base_dir = Path(__file__).parent.resolve()
-    
-    css_path = base_dir / 'styles.css'
-    js_path = base_dir / 'app.js'
-    data_path = base_dir / 'candidates_data.json'
-    out_html_path = base_dir / 'index.html'
-
-    with open(css_path, 'r', encoding='utf-8') as f:
-        css_content = f.read()
-
-    with open(js_path, 'r', encoding='utf-8') as f:
-        js_content = f.read()
-
-    with open(data_path, 'r', encoding='utf-8') as f:
-        cand_json = f.read()
-
-    # Prepend embedded dataset constant to app.js
-    embedded_js = f"const EMBEDDED_CANDIDATES = {cand_json};\n\n" + js_content
-
-    html_document = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise Talent Intelligence ATS</title>
-  <meta name="description" content="Production-grade AI recruitment platform for candidate sourcing, evaluation, and team management.">
-  <style>
-{css_content}
-  </style>
-</head>
-<body>
-
-  <div class="app-container">
-
-    <!-- Navbar Header -->
-    <header class="navbar-header">
-      <div class="brand-wrapper">
-        <div class="brand-logo-box">SBC</div>
-        <div class="brand-titles">
-          <h1>Enterprise Talent Intelligence ATS</h1>
-          <p>Automated Sourcing & AI Recruiter Evaluation Command Center</p>
-        </div>
-      </div>
-
-      <div class="header-controls">
-        <div class="sync-status-pill">
-          <span class="sync-dot"></span>
-          <span>Firestore Live Sync</span>
-        </div>
-
-        <button id="runPipelineBtn" class="btn-primary-action">
-          <span>🚀 Run Pipeline</span>
-        </button>
-        <button id="exportBtn" class="btn-secondary-action">
-          <span>📊 Export Excel</span>
-        </button>
-        <button id="handoffBtn" class="btn-secondary-action">
-          <span>📦 Delivery Guide</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- KPI Metrics Banner -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Total Candidates Sourced</div>
-        <div id="statTotal" class="kpi-value">--</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">High Fit Matches (&ge; 80%)</div>
-        <div id="statTopMatches" class="kpi-value" style="color: #34d399;">--</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">Active Consultant Teams</div>
-        <div id="statTeams" class="kpi-value" style="color: #60a5fa;">--</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">Average AI Fit Score</div>
-        <div id="statAvgScore" class="kpi-value" style="color: #fbbf24;">--</div>
-      </div>
-    </section>
-
-    <!-- Team Performance Yield Section -->
-    <section>
-      <div class="section-heading">Consultant Team Sourcing Performance & Yield</div>
-      <div id="teamsGrid" class="teams-grid-container">
-        <!-- Rendered dynamically by app.js -->
-      </div>
-    </section>
-
-    <!-- Control Toolbar & Search -->
-    <section class="toolbar-container">
-      <div class="search-field-box">
-        <span class="search-icon-inside">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search candidate, role, technology (e.g. SAP MM, Azure, DevOps), location, or team...">
-      </div>
-
-      <div class="controls-row">
-        <div class="tab-button-group" id="scoreTabs">
-          <button class="filter-tab-btn active" data-score="ALL">All Candidates</button>
-          <button class="filter-tab-btn" data-score="HIGH">Top Matches (&ge; 80%)</button>
-          <button class="filter-tab-btn" data-score="MED">Good Fits (50-79%)</button>
-          <button class="filter-tab-btn" data-status="Shortlisted">⭐️ Shortlisted</button>
-        </div>
-
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-          <select id="teamFilter" class="team-dropdown-select">
-            <option value="ALL">All Consultant Teams</option>
-          </select>
-
-          <div class="view-mode-toggle">
-            <button id="viewGridBtn" class="toggle-view-btn active">🪟 Cards View</button>
-            <button id="viewTableBtn" class="toggle-view-btn">📋 Data Table</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Candidate Cards View -->
-    <section id="candidateGrid" class="candidate-cards-grid">
-      <!-- Rendered dynamically by app.js -->
-    </section>
-
-    <!-- Data Table View -->
-    <section id="candidateTableContainer" class="data-table-wrapper">
-      <table class="ats-data-table">
-        <thead>
-          <tr>
-            <th>Candidate Name / Headline</th>
-            <th>Consultant Team</th>
-            <th>Target Skill (Role)</th>
-            <th>Location</th>
-            <th>Match Score</th>
-            <th>Recruiter Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="candidateTableBody">
-          <!-- Rendered dynamically by app.js -->
-        </tbody>
-      </table>
-    </section>
-
-  </div>
-
-  <!-- Terminal Output Modal -->
-  <div id="terminalModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-title-row">
-        <h3>🚀 Pipeline Orchestrator Terminal Output</h3>
-        <button id="closeTerminalBtn" class="modal-close-btn">&times;</button>
-      </div>
-      <div id="terminalOutput" class="terminal-console">Initializing pipeline run execution...</div>
-    </div>
-  </div>
-
-  <!-- Delivery Guide Modal -->
-  <div id="handoffModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-title-row">
-        <h3>🌐 Client & Evaluator Cloud Delivery Guide</h3>
-        <button id="closeHandoffBtn" class="modal-close-btn">&times;</button>
-      </div>
-      <div style="font-size: 0.875rem; color: var(--text-slate-400); line-height: 1.6;">
-        <p style="margin-bottom: 0.75rem; color: var(--text-slate-200); font-weight: 600;">Option 1: Instant Cloud Web Access (Recommended)</p>
-        <p style="margin-bottom: 1rem;">Share the live Vercel URL directly with evaluators: <br><a href="https://3sbc.vercel.app" target="_blank" style="color: var(--cyan-text); font-weight: 700; text-decoration: underline;">https://3sbc.vercel.app</a><br>Evaluators can immediately search candidates, filter by team, update recruiter pipeline statuses (Shortlisted, Hired), and export reports with zero setup.</p>
-        
-        <p style="margin-bottom: 0.75rem; color: var(--text-slate-200); font-weight: 600;">Option 2: Source Code & GitHub Handoff</p>
-        <p style="margin-bottom: 0.5rem;">GitHub Repository: <a href="https://github.com/Tamishsri/3sbc" target="_blank" style="color: var(--cyan-text); font-weight: 700;">github.com/Tamishsri/3sbc</a></p>
-        <p>Or hand over the ZIP containing <code>main.py</code>, <code>server.py</code>, <code>excel_parser.py</code>, <code>linkedin_sourcer.py</code>, <code>ai_evaluator.py</code>, <code>firebase_db.py</code>, and <code>requirements.txt</code>.</p>
-      </div>
-    </div>
-  </div>
-
-  <script>
-{embedded_js}
-  </script>
-</body>
-</html>
+Firebase SDK is loaded from CDN (cannot be inlined), so CDN script tags stay in HTML.
 """
 
-    with open(out_html_path, 'w', encoding='utf-8') as f:
-        f.write(html_document)
+import json
+import re
+from pathlib import Path
 
-    print('[OK] Monolithic index.html built cleanly from styles.css and app.js!')
+BASE = Path(__file__).parent.resolve()
 
-if __name__ == '__main__':
+
+def read(path: Path) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def build():
+    # ── Read source files ──────────────────────────────────────
+    html_path = BASE / "index.html"
+    css_path  = BASE / "styles.css"
+    js_path   = BASE / "app.js"
+    data_path = BASE / "candidates_data.json"
+
+    for p in [html_path, css_path, js_path]:
+        if not p.exists():
+            print(f"[build] ERROR: {p} not found")
+            return
+
+    html = read(html_path)
+    css  = read(css_path)
+    js   = read(js_path)
+
+    # ── Embed candidates_data.json ─────────────────────────────
+    if data_path.exists():
+        try:
+            with open(data_path, "r", encoding="utf-8") as f:
+                candidates = json.load(f)
+            embedded = json.dumps(candidates, ensure_ascii=False)
+            print(f"[build] Embedding {len(candidates)} candidates")
+        except Exception as e:
+            print(f"[build] Warning: could not embed candidates: {e}")
+            embedded = "[]"
+    else:
+        embedded = "[]"
+
+    # Replace EMBEDDED_CANDIDATES placeholder
+    html = html.replace(
+        "window.EMBEDDED_CANDIDATES = []; // populated by build_monolith.py",
+        f"window.EMBEDDED_CANDIDATES = {embedded};"
+    )
+
+    # ── Inline styles.css ──────────────────────────────────────
+    html = html.replace(
+        '<link rel="stylesheet" href="styles.css"/>',
+        f'<style>\n{css}\n</style>'
+    )
+
+    # ── Inline app.js ──────────────────────────────────────────
+    html = html.replace(
+        '<script src="app.js"></script>',
+        f'<script>\n{js}\n</script>'
+    )
+
+    # Remove external CSS/JS link stubs if any remain
+    html = re.sub(r'<link\s+rel="stylesheet"\s+href="styles\.css"[^>]*/>', '', html)
+    html = re.sub(r'<script\s+src="app\.js"[^>]*></script>', '', html)
+
+    # ── Write output ──────────────────────────────────────────
+    out_path = BASE / "index.html"
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    size_kb = round(len(html.encode("utf-8")) / 1024, 1)
+    print(f"[build] [OK] Monolithic index.html compiled -- {size_kb} KB")
+    print(f"[build]    Embedded candidates: {len(candidates) if data_path.exists() else 0}")
+    print(f"[build]    CSS inlined:         {round(len(css.encode())/1024,1)} KB")
+    print(f"[build]    JS inlined:          {round(len(js.encode())/1024,1)} KB")
+    print(f"[build]    Firebase CDN tags:   kept (required for Auth + Firestore)")
+
+
+if __name__ == "__main__":
     build()
