@@ -13,199 +13,231 @@
   <!-- Inlined Styles -->
   <style>
 /* ============================================================
-   3SBC Platform — Minimalist Modern Design System
-   Clean, human-designed aesthetic matching Ashby & Linear
+   3SBC Staffing Platform — Perfectly Aligned Modern UI
+   Fixes all layout, card height, text truncation & alignment issues
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-page:       #0b0f19;
+  --bg-page:       #090d16;
   --bg-surface:    #111827;
-  --bg-card:       #1f2937;
-  --bg-card-hover: #263346;
-  --bg-input:      #0d1322;
+  --bg-card:       #1f293d;
+  --bg-card-hover: #28364f;
+  --bg-input:      #0c1220;
 
-  --border:        #1f2937;
-  --border-light:  #374151;
+  --border:        #1f2d42;
+  --border-bright: #334461;
 
-  --text-primary:  #f9fafb;
-  --text-secondary:#9ca3af;
-  --text-muted:    #6b7280;
+  --text-main:     #f8fafc;
+  --text-sub:      #94a3b8;
+  --text-muted:    #64748b;
 
-  --accent:        #6366f1;
-  --accent-hover:  #4f46e5;
-  --green:         #10b981;
+  --indigo:        #6366f1;
+  --indigo-hover:  #4f46e5;
+  --emerald:       #10b981;
   --blue:          #3b82f6;
   --rose:          #f43f5e;
   --amber:         #f59e0b;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius:        10px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--bg-page);
-  color: var(--text-primary);
+  color: var(--text-main);
   line-height: 1.5;
   font-size: 14px;
   min-height: 100vh;
+  overflow-x: auto;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-page); }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
 
 .hidden { display: none !important; }
 .flex { display: flex; }
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
 
 /* Toast Notifications */
 #toastContainer {
-  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-  display: flex; flex-direction: column; gap: 8px;
+  position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .toast {
-  padding: 12px 18px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500;
-  background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-primary);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: fadeIn 0.2s ease;
+  padding: 14px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 600;
+  background: var(--bg-surface); border: 1px solid var(--border-bright); color: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6);
 }
-.toast-success { border-color: var(--green); color: #34d399; }
-.toast-error { border-color: var(--rose); color: #fb7185; }
+.toast-success { border-color: var(--emerald); color: #34d399; }
+.toast-error   { border-color: var(--rose);    color: #fb7185; }
 
-/* Top Header */
+/* ── Top Header Navigation Bar ─────────────────────────────── */
 .top-header {
-  height: 60px; padding: 0 24px; background: var(--bg-surface);
+  height: 64px; padding: 0 28px; background: var(--bg-surface);
   border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 0; z-index: 100; gap: 20px;
 }
-.logo-box { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
-.logo-icon {
-  width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800;
+.logo-area { display: flex; align-items: center; gap: 12px; }
+.logo-badge {
+  width: 38px; height: 38px; background: var(--indigo); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px;
+}
+.logo-title { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.2; }
+.logo-sub   { font-size: 10px; color: var(--emerald); font-weight: 700; text-transform: uppercase; }
+
+.nav-tabs { display: flex; align-items: center; gap: 6px; }
+.nav-tab {
+  padding: 9px 18px; border-radius: 8px; border: none; background: transparent;
+  color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all 0.15s ease; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.nav-tab:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-tab.active { background: var(--indigo); color: #fff; font-weight: 700; }
+
+.user-area { display: flex; align-items: center; gap: 12px; }
+.user-email { font-size: 12px; color: var(--text-sub); font-weight: 500; }
+
+/* ── Main Container ─────────────────────────────────────────── */
+.main-container {
+  padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; width: 100%;
 }
 
-.nav-tabs { display: flex; gap: 4px; }
-.tab-btn {
-  padding: 8px 16px; border-radius: var(--radius-sm); border: none; background: transparent;
-  color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
-  transition: all 0.15s ease;
-}
-.tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
-.tab-btn.active { background: var(--accent); color: #fff; }
-
-/* Main Container */
-.main-container { padding: 24px; max-width: 1600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-
-/* Search Box */
-.search-card {
+/* ── Search Container (Perfectly Aligned Inputs) ───────────── */
+.search-container {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;
+  border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
 }
-.search-inputs { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-.input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; }
-.input-group label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
-.custom-input, .custom-select {
-  background: var(--bg-input); border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text-primary);
-  font-family: inherit; font-size: 13px; outline: none;
-}
-.custom-input:focus, .custom-select:focus { border-color: var(--accent); }
+.search-form { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 
-.btn-search {
-  padding: 10px 24px; background: var(--accent); border: none; border-radius: var(--radius-sm);
-  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
-  transition: background 0.15s ease; white-space: nowrap;
-}
-.btn-search:hover { background: var(--accent-hover); }
+.field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+.field-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; }
 
-.presets-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
-.preset-btn {
-  background: var(--bg-card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 12px;
-  color: var(--text-secondary); font-size: 12px; cursor: pointer; font-family: inherit;
+.form-input, .form-select {
+  height: 44px; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0 16px; color: #fff;
+  font-family: inherit; font-size: 14px; outline: none; transition: border 0.15s ease;
+  width: 100%;
 }
-.preset-btn:hover { color: var(--text-primary); border-color: var(--border-light); }
+.form-input:focus, .form-select:focus { border-color: var(--indigo); }
+
+.btn-search-main {
+  height: 44px; padding: 0 28px; background: var(--indigo); border: none;
+  border-radius: var(--radius); color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: background 0.15s ease; white-space: nowrap;
+}
+.btn-search-main:hover { background: var(--indigo-hover); }
+
+/* Quick Search Presets */
+.presets-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.preset-pill {
+  background: var(--bg-card); border: 1px solid var(--border); padding: 6px 14px;
+  border-radius: 20px; color: var(--text-sub); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s ease;
+}
+.preset-pill:hover { border-color: var(--indigo); color: #fff; background: rgba(99,102,241,0.15); }
 
 /* Rate Intelligence Banner */
-.rate-box {
+.rate-banner {
   background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: var(--radius-md); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; color: var(--green); font-weight: 600;
+  border-radius: var(--radius); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; color: var(--emerald); font-weight: 600;
 }
 
-/* Kanban Columns */
+/* ── Kanban Grid Layout ─────────────────────────────────────── */
 .kanban-grid {
-  display: grid; grid-template-columns: repeat(5, minmax(260px, 1fr)); gap: 14px; overflow-x: auto;
+  display: grid; grid-template-columns: repeat(5, minmax(280px, 1fr)); gap: 16px;
+  align-items: start; min-width: 1350px;
 }
-.kanban-col {
+.kanban-column {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); display: flex; flex-direction: column; height: calc(100vh - 270px);
+  border-radius: 14px; display: flex; flex-direction: column; max-height: calc(100vh - 270px);
 }
-.kanban-head {
-  padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
-  font-weight: 700; font-size: 14px;
+.kanban-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 15px; font-weight: 700; color: #fff;
 }
-.col-count { background: var(--bg-card); padding: 2px 8px; border-radius: 10px; font-size: 11px; color: var(--text-secondary); }
+.col-count-badge {
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-sub); font-size: 12px; font-weight: 700;
+  padding: 2px 10px; border-radius: 12px;
+}
 
-.kanban-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; }
+.kanban-cards-list {
+  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; flex: 1;
+}
 
-/* Job Cards */
+/* ── Job Cards (Spacious, Beautiful Layout) ──────────────────── */
 .job-card {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px;
+  border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px;
   transition: all 0.15s ease;
 }
-.job-card:hover { border-color: var(--border-light); background: var(--bg-card-hover); }
-.job-title { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.3; }
-.job-company { font-size: 12px; color: var(--accent); font-weight: 600; }
-.job-details { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap; }
-.salary-tag { color: var(--green); font-weight: 700; }
+.job-card:hover { border-color: var(--border-bright); background: var(--bg-card-hover); }
 
-.job-actions { display: flex; gap: 6px; margin-top: 4px; }
-.btn-act {
-  flex: 1; padding: 6px 8px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 600;
-  cursor: pointer; font-family: inherit; text-align: center; border: 1px solid transparent;
+.job-card-title {
+  font-size: 14px; font-weight: 700; color: #fff; line-height: 1.4;
+  word-break: break-word;
 }
-.btn-act-accent { background: var(--accent); color: #fff; }
-.btn-act-accent:hover { background: var(--accent-hover); }
-.btn-act-green { background: var(--green); color: #fff; }
-.btn-act-green:hover { opacity: 0.9; }
-.btn-act-outline { background: transparent; border-color: var(--border-light); color: var(--text-secondary); }
-.btn-act-outline:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+.job-card-company { font-size: 13px; font-weight: 600; color: var(--indigo); }
 
-/* Table View */
-.table-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.job-card-meta {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 12px; color: var(--text-sub); margin-top: 2px;
+}
+.salary-pill {
+  color: var(--emerald); font-weight: 700; background: rgba(16,185,129,0.12);
+  padding: 2px 8px; border-radius: 6px; font-size: 11px;
+}
+
+.job-card-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;
+}
+.btn-action {
+  height: 36px; border-radius: 6px; font-size: 12px; font-weight: 700;
+  cursor: pointer; border: none; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: opacity 0.15s ease;
+}
+.btn-action-indigo { background: var(--indigo); color: #fff; }
+.btn-action-indigo:hover { background: var(--indigo-hover); }
+.btn-action-emerald { background: var(--emerald); color: #fff; }
+.btn-action-emerald:hover { opacity: 0.9; }
+
+/* ── Tables & Views ─────────────────────────────────────────── */
+.table-card {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
 .custom-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-.custom-table th { padding: 14px 18px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-input); }
-.custom-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.custom-table th {
+  padding: 16px 20px; font-size: 11px; font-weight: 700; color: var(--text-sub);
+  text-transform: uppercase; letter-spacing: 0.05em; background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--border);
+}
+.custom-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); color: #fff; }
 .custom-table tr:last-child td { border-bottom: none; }
 
 /* Modals */
-.modal-bg {
-  position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
 }
 .modal-box {
-  background: var(--bg-surface); border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+  background: var(--bg-surface); border: 1px solid var(--border-bright);
+  border-radius: 16px; padding: 28px; width: 100%; max-width: 600px;
+  max-height: 88vh; overflow-y: auto;
 }
-.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.modal-title { font-size: 16px; font-weight: 700; color: #fff; }
-.modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-title { font-size: 18px; font-weight: 700; color: #fff; }
+.modal-close { background: transparent; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; }
 .modal-close:hover { color: #fff; }
-
-@media (max-width: 1100px) {
-  .kanban-grid { grid-template-columns: repeat(3, minmax(250px, 1fr)); }
-}
-@media (max-width: 700px) {
-  .kanban-grid { grid-template-columns: 1fr; }
-}
 
 </style>
 
@@ -218,30 +250,33 @@ body {
 
 <div id="toastContainer"></div>
 
-<!-- MAIN DASHBOARD (No login wall blocking user) -->
+<!-- MAIN APPLICATION -->
 <div id="mainApp">
 
-  <!-- Top Header Bar -->
+  <!-- Top Header Navigation Bar -->
   <header class="top-header">
-    <div class="logo-box">
-      <div class="logo-icon">3S</div>
-      <span>3SBC Platform</span>
+    <div class="logo-area">
+      <div class="logo-badge">3S</div>
+      <div>
+        <div class="logo-title">3SBC Platform</div>
+        <div class="logo-sub">Staffing SaaS</div>
+      </div>
     </div>
 
     <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="jobFinder">🔍 Search Jobs</button>
-      <button class="tab-btn" data-tab="bench">👥 Bench Pool (63)</button>
-      <button class="tab-btn" data-tab="submissions">📋 Submissions CRM</button>
-      <button class="tab-btn" data-tab="vendors">📞 Vendor Contacts</button>
+      <button class="nav-tab active" data-tab="jobFinder">🔍 Search Jobs</button>
+      <button class="nav-tab" data-tab="bench">👥 Bench Pool (63)</button>
+      <button class="nav-tab" data-tab="submissions">📋 Submissions CRM</button>
+      <button class="nav-tab" data-tab="vendors">📞 Vendor Contacts</button>
     </nav>
 
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:12px;color:var(--text-secondary)" id="userLabel">tamishsridhatta.16@gmail.com</span>
-      <button class="btn-act btn-act-outline" onclick="exportData()" style="padding:6px 12px">📊 Export CSV</button>
+    <div class="user-area">
+      <span class="user-email" id="userEmailLabel">tamishsridhatta.16@gmail.com</span>
+      <button class="btn-action btn-action-indigo" onclick="exportCSV()" style="height:36px;padding:0 14px">📊 Export CSV</button>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
+  <!-- Main Container -->
   <main class="main-container">
 
     <!-- ════════════════════════════════════════════════════════
@@ -249,43 +284,44 @@ body {
          ════════════════════════════════════════════════════════ -->
     <section id="jobFinderTab" class="tab-view" style="display:flex;flex-direction:column;gap:18px">
 
-      <!-- Search Card -->
-      <div class="search-card">
-        <form class="search-inputs" id="searchForm">
-          <div class="input-group" style="flex:2">
-            <label for="skillInput">Skill / Keyword</label>
-            <input class="custom-input" id="skillInput" type="text" value="SAP MM" placeholder="e.g. SAP MM, Java Lead, AWS Architect" required/>
+      <!-- Search Form Box -->
+      <div class="search-container">
+        <form class="search-form" id="searchForm">
+          <div class="field-group" style="flex:2">
+            <label class="field-label" for="skillInput">Skill / Role Keyword</label>
+            <input class="form-input" id="skillInput" type="text" value="SAP MM" placeholder="e.g. SAP MM, Java Lead, AWS Architect" required/>
           </div>
-          <div class="input-group" style="flex:1.5">
-            <label for="locationInput">Location</label>
-            <input class="custom-input" id="locationInput" type="text" value="Philadelphia, PA" placeholder="e.g. Philadelphia, PA"/>
+          <div class="field-group" style="flex:1.5">
+            <label class="field-label" for="locationInput">Target Location</label>
+            <input class="form-input" id="locationInput" type="text" value="Philadelphia, PA" placeholder="e.g. Philadelphia, PA"/>
           </div>
-          <div class="input-group" style="max-width:140px">
-            <label for="typeInput">Job Type</label>
-            <select class="custom-select" id="typeInput">
+          <div class="field-group" style="max-width:140px">
+            <label class="field-label" for="typeInput">Job Type</label>
+            <select class="form-select" id="typeInput">
               <option value="contract" selected>Contract</option>
               <option value="full-time">Full-Time</option>
             </select>
           </div>
-          <button type="submit" class="btn-search" id="searchBtn">🔍 Search All 5 Boards</button>
+          <button type="submit" class="btn-search-main" id="searchBtn">🔍 Search All 5 Boards</button>
         </form>
 
+        <!-- Quick Presets -->
         <div class="presets-row">
-          <span>Quick Presets:</span>
-          <button type="button" class="preset-btn" onclick="preset('SAP MM', 'Philadelphia, PA')">SAP MM (Philly)</button>
-          <button type="button" class="preset-btn" onclick="preset('Java Lead', 'New York, NY')">Java Lead (NYC)</button>
-          <button type="button" class="preset-btn" onclick="preset('AWS Architect', 'Remote')">AWS Architect (Remote)</button>
-          <button type="button" class="preset-btn" onclick="preset('Salesforce', 'Dallas, TX')">Salesforce (Dallas)</button>
-          <button type="button" class="preset-btn" onclick="preset('Data Engineer', 'Chicago, IL')">Data Engineer (Chicago)</button>
+          <span style="font-weight:700;color:var(--text-sub)">Quick Presets:</span>
+          <button type="button" class="preset-pill" onclick="preset('SAP MM', 'Philadelphia, PA')">SAP MM (Philly)</button>
+          <button type="button" class="preset-pill" onclick="preset('Java Lead', 'New York, NY')">Java Lead (NYC)</button>
+          <button type="button" class="preset-pill" onclick="preset('AWS Architect', 'Remote')">AWS Architect (Remote)</button>
+          <button type="button" class="preset-pill" onclick="preset('Salesforce', 'Dallas, TX')">Salesforce (Dallas)</button>
+          <button type="button" class="preset-pill" onclick="preset('Data Engineer', 'Chicago, IL')">Data Engineer (Chicago)</button>
         </div>
       </div>
 
       <!-- Rate Intelligence Banner -->
-      <div class="rate-box hidden" id="rateBanner"></div>
+      <div class="rate-banner hidden" id="rateBanner"></div>
 
-      <!-- Kanban Grid (5 Columns) -->
+      <!-- Kanban 5 Columns Grid -->
       <div class="kanban-grid" id="kanbanGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-secondary)">
+        <div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)">
           Loading live job search...
         </div>
       </div>
@@ -296,17 +332,17 @@ body {
          TAB 2: BENCH POOL
          ════════════════════════════════════════════════════════ -->
     <section id="benchTab" class="tab-view" style="display:none">
-      <div class="search-card" style="padding:16px 20px">
+      <div class="search-container" style="padding:16px 20px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <input class="custom-input" id="benchSearch" type="text" placeholder="🔍 Filter consultant by name, skill, location..." style="max-width:350px" oninput="renderBench()"/>
-          <select class="custom-select" id="benchVisa" onchange="renderBench()">
-            <option value="">All Visas / Work Auth</option>
+          <input class="form-input" id="benchSearch" type="text" placeholder="🔍 Filter consultant by name, skill, location..." style="max-width:360px" oninput="renderBench()"/>
+          <select class="form-select" id="benchVisa" onchange="renderBench()" style="max-width:200px">
+            <option value="">All Work Authorizations</option>
             <option value="H1B">H1B Visa</option>
             <option value="Green Card">Green Card</option>
             <option value="US Citizen">US Citizen</option>
             <option value="OPT">OPT / CPT</option>
           </select>
-          <span style="font-weight:700;color:var(--accent)" id="benchCount">63 Consultants</span>
+          <span style="font-weight:700;color:var(--indigo)" id="benchCount">63 Consultants</span>
         </div>
       </div>
 
@@ -319,7 +355,7 @@ body {
               <th>Work Auth</th>
               <th>Location</th>
               <th>Pay Rate</th>
-              <th>Match Rating</th>
+              <th>Match Score</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -335,13 +371,13 @@ body {
     <section id="submissionsTab" class="tab-view" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:18px;font-weight:700">📋 Submissions CRM Queue</h2>
-          <p style="font-size:12px;color:var(--text-secondary)">Track submissions from outreach to placement</p>
+          <h2 style="font-size:18px;font-weight:800;color:#fff">📋 Submissions CRM Queue</h2>
+          <p style="font-size:12px;color:var(--text-sub)">Track submissions from initial outreach to deal placement</p>
         </div>
-        <button class="btn-act btn-act-green" onclick="exportSubmissionsCSV()" style="padding:8px 16px">📊 Export CSV</button>
+        <button class="btn-action btn-action-emerald" onclick="exportSubmissionsCSV()" style="height:38px;padding:0 18px">📊 Export Submissions CSV</button>
       </div>
 
-      <div class="table-card">
+      <div class="table-card" style="margin-top:16px">
         <table class="custom-table">
           <thead>
             <tr>
@@ -353,11 +389,11 @@ body {
               <th>Bill / Pay Rate</th>
               <th>Margin ($/hr)</th>
               <th>Vendor Contact</th>
-              <th>Action</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="submissionsBody">
-            <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-secondary)">No submissions logged yet. Click "Submit" on any job card.</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>
           </tbody>
         </table>
       </div>
@@ -369,14 +405,14 @@ body {
     <section id="vendorsTab" class="tab-view" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:18px;font-weight:700">📞 Vendor Directory</h2>
-          <p style="font-size:12px;color:var(--text-secondary)">Store contacts for auto-filling submissions</p>
+          <h2 style="font-size:18px;font-weight:800;color:#fff">📞 Vendor Contact Directory</h2>
+          <p style="font-size:12px;color:var(--text-sub)">Store vendor contacts for auto-filling submissions</p>
         </div>
-        <button class="btn-search" onclick="openVendorModal()">＋ Add Vendor Contact</button>
+        <button class="btn-search-main" onclick="openVendorModal()">＋ Add Vendor Contact</button>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px" id="vendorGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary)">No vendor contacts added yet.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px" id="vendorGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">No vendor contacts added yet.</div>
       </div>
     </section>
 
@@ -386,18 +422,18 @@ body {
 <!-- ════════════════════════════════════════════════════════
      MODAL: AI MATCH
      ════════════════════════════════════════════════════════ -->
-<div class="modal-bg hidden" id="matchModal">
+<div class="modal-overlay hidden" id="matchModal">
   <div class="modal-box">
-    <div class="modal-head">
+    <div class="modal-header">
       <div>
         <div class="modal-title" id="matchModalTitle">🤖 AI Bench Match</div>
-        <div style="font-size:12px;color:var(--text-secondary)" id="matchModalSub"></div>
+        <div style="font-size:12px;color:var(--text-sub)" id="matchModalSub"></div>
       </div>
       <button class="modal-close" onclick="closeModal('matchModal')">✕</button>
     </div>
     <div id="matchList"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:16px">
-      <button class="btn-act btn-act-outline" onclick="closeModal('matchModal')">Close</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:20px">
+      <button class="btn-action btn-action-indigo" onclick="closeModal('matchModal')" style="height:36px;padding:0 16px">Close</button>
     </div>
   </div>
 </div>
@@ -405,36 +441,36 @@ body {
 <!-- ════════════════════════════════════════════════════════
      MODAL: SUBMIT CONSULTANT & DEAL MARGIN
      ════════════════════════════════════════════════════════ -->
-<div class="modal-bg hidden" id="submitModal">
+<div class="modal-overlay hidden" id="submitModal">
   <div class="modal-box" style="max-width:640px">
-    <div class="modal-head">
+    <div class="modal-header">
       <div>
         <div class="modal-title">✅ Submit Consultant &amp; Deal Margin</div>
-        <div style="font-size:12px;color:var(--text-secondary)" id="submitModalSub"></div>
+        <div style="font-size:12px;color:var(--text-sub)" id="submitModalSub"></div>
       </div>
       <button class="modal-close" onclick="closeModal('submitModal')">✕</button>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="input-group">
-          <label>Consultant Name *</label>
-          <input class="custom-input" id="subConsultant" type="text" placeholder="e.g. Rajitha K."/>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
+          <label class="field-label">Consultant Name *</label>
+          <input class="form-input" id="subConsultant" type="text" placeholder="e.g. Rajitha K."/>
         </div>
-        <div class="input-group">
-          <label>Skill</label>
-          <input class="custom-input" id="subSkill" type="text" placeholder="e.g. SAP MM"/>
+        <div class="field-group">
+          <label class="field-label">Skill</label>
+          <input class="form-input" id="subSkill" type="text" placeholder="e.g. SAP MM"/>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="input-group">
-          <label>Location</label>
-          <input class="custom-input" id="subLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
+          <label class="field-label">Location</label>
+          <input class="form-input" id="subLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
         </div>
-        <div class="input-group">
-          <label>Work Auth</label>
-          <select class="custom-select" id="subVisa">
+        <div class="field-group">
+          <label class="field-label">Work Auth</label>
+          <select class="form-select" id="subVisa">
             <option value="H1B">H1B Visa</option>
             <option value="Green Card">Green Card</option>
             <option value="US Citizen" selected>US Citizen</option>
@@ -444,65 +480,65 @@ body {
       </div>
 
       <!-- Margin Calculator -->
-      <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:14px;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:13px;font-weight:700;color:var(--green)">💰 Deal Profitability &amp; Margin Calculator</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="input-group">
-            <label>Client Bill Rate ($/hr)</label>
-            <input class="custom-input" id="subBill" type="number" value="90" oninput="calcMargin()"/>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;font-weight:700;color:var(--emerald)">💰 Deal Profitability &amp; Margin Calculator</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field-group">
+            <label class="field-label">Client Bill Rate ($/hr)</label>
+            <input class="form-input" id="subBill" type="number" value="90" oninput="calcMargin()"/>
           </div>
-          <div class="input-group">
-            <label>Consultant Pay Rate ($/hr)</label>
-            <input class="custom-input" id="subPay" type="number" value="65" oninput="calcMargin()"/>
+          <div class="field-group">
+            <label class="field-label">Consultant Pay Rate ($/hr)</label>
+            <input class="form-input" id="subPay" type="number" value="65" oninput="calcMargin()"/>
           </div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);padding:8px 12px;border-radius:6px;font-size:12px">
-          <div>Margin: <strong id="marginHr" style="color:var(--green)">$25.00/hr</strong> <span id="marginPct" style="color:var(--accent)">(27.8%)</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);padding:10px 14px;border-radius:8px;font-size:13px">
+          <div>Margin: <strong id="marginHr" style="color:var(--emerald)">$25.00/hr</strong> <span id="marginPct" style="color:var(--indigo)">(27.8%)</span></div>
           <div>Monthly Profit: <strong id="marginMonthly" style="color:var(--amber)">$4,333/mo</strong></div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="input-group">
-          <label>Vendor Contact Name</label>
-          <input class="custom-input" id="subVendorName" type="text" placeholder="John Smith"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
+          <label class="field-label">Vendor Contact Name</label>
+          <input class="form-input" id="subVendorName" type="text" placeholder="John Smith"/>
         </div>
-        <div class="input-group">
-          <label>Vendor Email</label>
-          <input class="custom-input" id="subVendorEmail" type="email" placeholder="john@vendor.com"/>
+        <div class="field-group">
+          <label class="field-label">Vendor Email</label>
+          <input class="form-input" id="subVendorEmail" type="email" placeholder="john@vendor.com"/>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button type="button" class="btn-act btn-act-outline" onclick="genEmail()">✉️ Draft Submission Email</button>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button type="button" class="btn-action btn-action-indigo" onclick="genEmail()" style="height:36px;padding:0 14px">✉️ Draft Submission Email</button>
       </div>
 
-      <div id="emailDraftBox" class="hidden" style="background:var(--bg-input);border:1px solid var(--border-light);padding:12px;border-radius:6px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--text-secondary);max-height:180px;overflow-y:auto"></div>
+      <div id="emailDraftBox" class="hidden" style="background:var(--bg-input);border:1px solid var(--border);padding:14px;border-radius:8px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--text-sub);max-height:180px;overflow-y:auto"></div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">
-      <button class="btn-act btn-act-outline" onclick="closeModal('submitModal')">Cancel</button>
-      <button class="btn-act btn-act-green" onclick="confirmSubmit()">✅ Confirm &amp; Log Submission</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+      <button class="btn-action btn-action-indigo" onclick="closeModal('submitModal')" style="height:38px;padding:0 18px">Cancel</button>
+      <button class="btn-action btn-action-emerald" onclick="confirmSubmit()" style="height:38px;padding:0 18px">✅ Confirm &amp; Log Submission</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: VENDOR -->
-<div class="modal-bg hidden" id="vendorModal">
+<div class="modal-overlay hidden" id="vendorModal">
   <div class="modal-box">
-    <div class="modal-head">
+    <div class="modal-header">
       <div class="modal-title">📞 Add Vendor Contact</div>
       <button class="modal-close" onclick="closeModal('vendorModal')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <input class="custom-input" id="vName" placeholder="Contact Name *"/>
-      <input class="custom-input" id="vCompany" placeholder="Company *"/>
-      <input class="custom-input" id="vEmail" placeholder="Email"/>
-      <input class="custom-input" id="vPhone" placeholder="Phone"/>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <input class="form-input" id="vName" placeholder="Contact Name *"/>
+      <input class="form-input" id="vCompany" placeholder="Company *"/>
+      <input class="form-input" id="vEmail" placeholder="Email"/>
+      <input class="form-input" id="vPhone" placeholder="Phone"/>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
-      <button class="btn-act btn-act-outline" onclick="closeModal('vendorModal')">Cancel</button>
-      <button class="btn-act btn-act-accent" onclick="saveVendor()">Save Contact</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+      <button class="btn-action btn-action-indigo" onclick="closeModal('vendorModal')" style="height:36px;padding:0 16px">Cancel</button>
+      <button class="btn-action btn-action-emerald" onclick="saveVendor()" style="height:36px;padding:0 16px">Save Contact</button>
     </div>
   </div>
 </div>
@@ -512,7 +548,8 @@ window.EMBEDDED_CANDIDATES = [];
 </script>
 <script>
 /**
- * app.js — 3SBC Minimalist Commercial Controller
+ * app.js — 3SBC Staffing Platform Controller
+ * Perfectly aligned card layout & instant 5-column job rendering
  */
 
 const STATE = {
@@ -543,13 +580,13 @@ function esc(str) {
 
 // ── TABS NAVIGATION ───────────────────────────────────────────
 function setupTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 }
 
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-btn').forEach(b => {
+  document.querySelectorAll('.nav-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tabId);
   });
   document.querySelectorAll('.tab-view').forEach(p => {
@@ -562,7 +599,7 @@ function switchTab(tabId) {
   if (tabId === 'vendors') renderVendors();
 }
 
-// ── JOB FINDER ────────────────────────────────────────────────
+// ── JOB FINDER ENGINE ─────────────────────────────────────────
 function setupSearch() {
   const form = document.getElementById('searchForm');
   if (form) {
@@ -592,7 +629,7 @@ async function runSearch() {
 
   const grid = document.getElementById('kanbanGrid');
   if (grid) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary)">Searching 5 job boards...</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Searching 5 job boards...</div>';
   }
 
   try {
@@ -606,7 +643,7 @@ async function runSearch() {
       const banner = document.getElementById('rateBanner');
       if (banner) {
         banner.classList.remove('hidden');
-        banner.innerHTML = `<span>💰 Market Rate: ${esc(data.rate_intelligence.display)}</span>`;
+        banner.innerHTML = `<span>💰 Live Market Rate Intelligence: <strong>${esc(data.rate_intelligence.display)}</strong></span>`;
       }
     }
 
@@ -640,12 +677,12 @@ function renderKanban(data) {
   grid.innerHTML = boards.map(b => {
     const jobs = boardsData[b.key] || [];
     return `
-      <div class="kanban-col">
-        <div class="kanban-head">
+      <div class="kanban-column">
+        <div class="kanban-header">
           <span>${b.name}</span>
-          <span class="col-count">${jobs.length}</span>
+          <span class="col-count-badge">${jobs.length}</span>
         </div>
-        <div class="kanban-list">
+        <div class="kanban-cards-list">
           ${jobs.map(j => renderCard(j)).join('')}
         </div>
       </div>`;
@@ -656,15 +693,16 @@ function renderCard(j) {
   const dataStr = esc(JSON.stringify(j));
   return `
     <div class="job-card">
-      <div class="job-title">${esc(j.title)}</div>
-      <div class="job-company">🏢 ${esc(j.company)}</div>
-      <div class="job-details">
+      <div class="job-card-title">${esc(j.title)}</div>
+      <div class="job-card-company">🏢 ${esc(j.company)}</div>
+      <div class="job-card-meta">
         <span>📍 ${esc(j.location)}</span>
-        <span class="salary-tag">${esc(j.salary || '$75–$95/hr')}</span>
+        <span>🕐 ${esc(j.posted)}</span>
+        <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
-      <div class="job-actions">
-        <button type="button" class="btn-act btn-act-accent" onclick="openMatchModal('${dataStr}')">🤖 Match</button>
-        <button type="button" class="btn-act btn-act-green" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
+      <div class="job-card-actions">
+        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${dataStr}')">🤖 AI Match</button>
+        <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
       </div>
     </div>`;
 }
@@ -678,7 +716,7 @@ async function openMatchModal(dataStr) {
   document.getElementById('matchModalSub').textContent = `${job.company} · ${job.location}`;
 
   const list = document.getElementById('matchList');
-  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">Matching candidates...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sub)">Matching candidates...</div>';
   document.getElementById('matchModal').classList.remove('hidden');
 
   try {
@@ -699,13 +737,13 @@ function renderMatches(matches) {
   if (!list) return;
 
   list.innerHTML = matches.map(m => `
-    <div style="background:var(--bg-card);border:1px solid var(--border-light);padding:12px;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:var(--bg-card);border:1px solid var(--border);padding:14px;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="color:var(--green);font-size:12px">(${m.fit_score}%)</span></div>
-        <div style="font-size:11px;color:var(--text-secondary)">${esc(m.skill)} · ${esc(m.location)}</div>
+        <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="color:var(--emerald);font-size:13px;font-weight:800">(${m.fit_score}%)</span></div>
+        <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
       </div>
-      <button class="btn-act btn-act-green" onclick="selectMatch('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select →</button>
-    </div>`).join('') || '<div style="color:var(--text-secondary)">No matches found.</div>';
+      <button class="btn-action btn-action-emerald" style="height:34px;padding:0 14px" onclick="selectMatch('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select →</button>
+    </div>`).join('') || '<div style="color:var(--text-sub)">No matches found.</div>';
 }
 
 function selectMatch(name, skill, loc) {
@@ -748,7 +786,7 @@ function calcMargin() {
 }
 
 async function genEmail() {
-  const job  = STATE.pendingJob;
+  const job   = STATE.pendingJob;
   const cName = document.getElementById('subConsultant').value.trim();
   const cSkill = document.getElementById('subSkill').value.trim();
   const cBill  = document.getElementById('subBill').value.trim();
@@ -770,7 +808,7 @@ async function genEmail() {
 }
 
 function confirmSubmit() {
-  const job  = STATE.pendingJob;
+  const job   = STATE.pendingJob;
   const cName = document.getElementById('subConsultant').value.trim();
   const bill  = document.getElementById('subBill').value.trim();
   const pay   = document.getElementById('subPay').value.trim();
@@ -831,16 +869,16 @@ function renderBench() {
   tbody.innerHTML = list.map(c => `
     <tr>
       <td style="font-weight:700;color:#fff">${esc(c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || 'Consultant')}</td>
-      <td><span style="color:var(--accent);font-weight:600">${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}</span></td>
-      <td>${esc(c['Visa'] || 'H1B')}</td>
+      <td><span style="color:var(--indigo);font-weight:600">${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}</span></td>
+      <td><span style="background:rgba(99,102,241,0.15);color:var(--indigo);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">${esc(c['Visa'] || 'H1B')}</span></td>
       <td>📍 ${esc(c['Target Location'] || c['Location'] || 'USA')}</td>
-      <td style="color:var(--green);font-weight:700">$${c['PayRate'] || 65}/hr</td>
-      <td style="font-weight:800;color:var(--green)">${c['Match Score'] || 80}%</td>
-      <td><span style="color:var(--green);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
+      <td style="color:var(--emerald);font-weight:700">$${c['PayRate'] || 65}/hr</td>
+      <td style="font-weight:800;color:var(--emerald)">${c['Match Score'] || 80}%</td>
+      <td><span style="color:var(--emerald);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
       <td>
-        <button class="btn-act btn-act-accent" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
+        <button class="btn-action btn-action-indigo" style="height:32px;padding:0 12px" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
       </td>
-    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-secondary)">No matching consultants.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-sub)">No matching consultants.</td></tr>';
 }
 
 // ── SUBMISSIONS & VENDORS ──────────────────────────────────────
@@ -851,15 +889,15 @@ function renderSubmissions() {
   tbody.innerHTML = STATE.submissions.map(s => `
     <tr>
       <td style="font-weight:700;color:#fff">${esc(s.consultant_name)}</td>
-      <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--accent)">${esc(s.company)}</div></td>
-      <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-secondary)">${esc(s.board)}</td>
+      <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div></td>
+      <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-sub)">${esc(s.board)}</td>
       <td>${esc(s.date)}</td>
       <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Submitted</span></td>
       <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
-      <td style="color:var(--green);font-weight:700">$${s.margin_hr}/hr</td>
+      <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
       <td>${esc(s.vendor_email || '—')}</td>
-      <td><button class="btn-act btn-act-outline" onclick="toast('Logged submission details')">👁</button></td>
-    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-secondary)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
+      <td><button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
 }
 
 function exportSubmissionsCSV() {
@@ -873,7 +911,7 @@ function exportSubmissionsCSV() {
   toast('Exported CSV!', 'success');
 }
 
-function exportData() {
+function exportCSV() {
   exportSubmissionsCSV();
 }
 
@@ -883,9 +921,9 @@ function renderVendors() {
   grid.innerHTML = STATE.vendors.map(v => `
     <div class="job-card">
       <div style="font-weight:700;color:#fff">${esc(v.name)}</div>
-      <div style="color:var(--accent);font-weight:600">${esc(v.company)}</div>
-      <div style="font-size:12px;color:var(--text-secondary)">${esc(v.email)} · ${esc(v.phone)}</div>
-    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-secondary)">No vendor contacts added yet.</div>';
+      <div style="color:var(--indigo);font-weight:600">${esc(v.company)}</div>
+      <div style="font-size:12px;color:var(--text-sub)">${esc(v.email)} · ${esc(v.phone)}</div>
+    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
 }
 
 function openVendorModal() { document.getElementById('vendorModal')?.classList.remove('hidden'); }
@@ -906,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupSearch();
   loadBench();
-  runSearch(); // Auto-search on load so user immediately sees live jobs!
+  runSearch(); // Auto-search on load
 });
 
 </script>

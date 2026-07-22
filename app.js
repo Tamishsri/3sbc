@@ -1,5 +1,6 @@
 /**
- * app.js — 3SBC Minimalist Commercial Controller
+ * app.js — 3SBC Staffing Platform Controller
+ * Perfectly aligned card layout & instant 5-column job rendering
  */
 
 const STATE = {
@@ -30,13 +31,13 @@ function esc(str) {
 
 // ── TABS NAVIGATION ───────────────────────────────────────────
 function setupTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 }
 
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-btn').forEach(b => {
+  document.querySelectorAll('.nav-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tabId);
   });
   document.querySelectorAll('.tab-view').forEach(p => {
@@ -49,7 +50,7 @@ function switchTab(tabId) {
   if (tabId === 'vendors') renderVendors();
 }
 
-// ── JOB FINDER ────────────────────────────────────────────────
+// ── JOB FINDER ENGINE ─────────────────────────────────────────
 function setupSearch() {
   const form = document.getElementById('searchForm');
   if (form) {
@@ -79,7 +80,7 @@ async function runSearch() {
 
   const grid = document.getElementById('kanbanGrid');
   if (grid) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary)">Searching 5 job boards...</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Searching 5 job boards...</div>';
   }
 
   try {
@@ -93,7 +94,7 @@ async function runSearch() {
       const banner = document.getElementById('rateBanner');
       if (banner) {
         banner.classList.remove('hidden');
-        banner.innerHTML = `<span>💰 Market Rate: ${esc(data.rate_intelligence.display)}</span>`;
+        banner.innerHTML = `<span>💰 Live Market Rate Intelligence: <strong>${esc(data.rate_intelligence.display)}</strong></span>`;
       }
     }
 
@@ -127,12 +128,12 @@ function renderKanban(data) {
   grid.innerHTML = boards.map(b => {
     const jobs = boardsData[b.key] || [];
     return `
-      <div class="kanban-col">
-        <div class="kanban-head">
+      <div class="kanban-column">
+        <div class="kanban-header">
           <span>${b.name}</span>
-          <span class="col-count">${jobs.length}</span>
+          <span class="col-count-badge">${jobs.length}</span>
         </div>
-        <div class="kanban-list">
+        <div class="kanban-cards-list">
           ${jobs.map(j => renderCard(j)).join('')}
         </div>
       </div>`;
@@ -143,15 +144,16 @@ function renderCard(j) {
   const dataStr = esc(JSON.stringify(j));
   return `
     <div class="job-card">
-      <div class="job-title">${esc(j.title)}</div>
-      <div class="job-company">🏢 ${esc(j.company)}</div>
-      <div class="job-details">
+      <div class="job-card-title">${esc(j.title)}</div>
+      <div class="job-card-company">🏢 ${esc(j.company)}</div>
+      <div class="job-card-meta">
         <span>📍 ${esc(j.location)}</span>
-        <span class="salary-tag">${esc(j.salary || '$75–$95/hr')}</span>
+        <span>🕐 ${esc(j.posted)}</span>
+        <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
-      <div class="job-actions">
-        <button type="button" class="btn-act btn-act-accent" onclick="openMatchModal('${dataStr}')">🤖 Match</button>
-        <button type="button" class="btn-act btn-act-green" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
+      <div class="job-card-actions">
+        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${dataStr}')">🤖 AI Match</button>
+        <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
       </div>
     </div>`;
 }
@@ -165,7 +167,7 @@ async function openMatchModal(dataStr) {
   document.getElementById('matchModalSub').textContent = `${job.company} · ${job.location}`;
 
   const list = document.getElementById('matchList');
-  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">Matching candidates...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sub)">Matching candidates...</div>';
   document.getElementById('matchModal').classList.remove('hidden');
 
   try {
@@ -186,13 +188,13 @@ function renderMatches(matches) {
   if (!list) return;
 
   list.innerHTML = matches.map(m => `
-    <div style="background:var(--bg-card);border:1px solid var(--border-light);padding:12px;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:var(--bg-card);border:1px solid var(--border);padding:14px;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="color:var(--green);font-size:12px">(${m.fit_score}%)</span></div>
-        <div style="font-size:11px;color:var(--text-secondary)">${esc(m.skill)} · ${esc(m.location)}</div>
+        <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="color:var(--emerald);font-size:13px;font-weight:800">(${m.fit_score}%)</span></div>
+        <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
       </div>
-      <button class="btn-act btn-act-green" onclick="selectMatch('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select →</button>
-    </div>`).join('') || '<div style="color:var(--text-secondary)">No matches found.</div>';
+      <button class="btn-action btn-action-emerald" style="height:34px;padding:0 14px" onclick="selectMatch('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select →</button>
+    </div>`).join('') || '<div style="color:var(--text-sub)">No matches found.</div>';
 }
 
 function selectMatch(name, skill, loc) {
@@ -235,7 +237,7 @@ function calcMargin() {
 }
 
 async function genEmail() {
-  const job  = STATE.pendingJob;
+  const job   = STATE.pendingJob;
   const cName = document.getElementById('subConsultant').value.trim();
   const cSkill = document.getElementById('subSkill').value.trim();
   const cBill  = document.getElementById('subBill').value.trim();
@@ -257,7 +259,7 @@ async function genEmail() {
 }
 
 function confirmSubmit() {
-  const job  = STATE.pendingJob;
+  const job   = STATE.pendingJob;
   const cName = document.getElementById('subConsultant').value.trim();
   const bill  = document.getElementById('subBill').value.trim();
   const pay   = document.getElementById('subPay').value.trim();
@@ -318,16 +320,16 @@ function renderBench() {
   tbody.innerHTML = list.map(c => `
     <tr>
       <td style="font-weight:700;color:#fff">${esc(c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || 'Consultant')}</td>
-      <td><span style="color:var(--accent);font-weight:600">${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}</span></td>
-      <td>${esc(c['Visa'] || 'H1B')}</td>
+      <td><span style="color:var(--indigo);font-weight:600">${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}</span></td>
+      <td><span style="background:rgba(99,102,241,0.15);color:var(--indigo);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">${esc(c['Visa'] || 'H1B')}</span></td>
       <td>📍 ${esc(c['Target Location'] || c['Location'] || 'USA')}</td>
-      <td style="color:var(--green);font-weight:700">$${c['PayRate'] || 65}/hr</td>
-      <td style="font-weight:800;color:var(--green)">${c['Match Score'] || 80}%</td>
-      <td><span style="color:var(--green);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
+      <td style="color:var(--emerald);font-weight:700">$${c['PayRate'] || 65}/hr</td>
+      <td style="font-weight:800;color:var(--emerald)">${c['Match Score'] || 80}%</td>
+      <td><span style="color:var(--emerald);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
       <td>
-        <button class="btn-act btn-act-accent" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
+        <button class="btn-action btn-action-indigo" style="height:32px;padding:0 12px" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
       </td>
-    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-secondary)">No matching consultants.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-sub)">No matching consultants.</td></tr>';
 }
 
 // ── SUBMISSIONS & VENDORS ──────────────────────────────────────
@@ -338,15 +340,15 @@ function renderSubmissions() {
   tbody.innerHTML = STATE.submissions.map(s => `
     <tr>
       <td style="font-weight:700;color:#fff">${esc(s.consultant_name)}</td>
-      <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--accent)">${esc(s.company)}</div></td>
-      <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-secondary)">${esc(s.board)}</td>
+      <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div></td>
+      <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-sub)">${esc(s.board)}</td>
       <td>${esc(s.date)}</td>
       <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Submitted</span></td>
       <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
-      <td style="color:var(--green);font-weight:700">$${s.margin_hr}/hr</td>
+      <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
       <td>${esc(s.vendor_email || '—')}</td>
-      <td><button class="btn-act btn-act-outline" onclick="toast('Logged submission details')">👁</button></td>
-    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-secondary)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
+      <td><button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
 }
 
 function exportSubmissionsCSV() {
@@ -360,7 +362,7 @@ function exportSubmissionsCSV() {
   toast('Exported CSV!', 'success');
 }
 
-function exportData() {
+function exportCSV() {
   exportSubmissionsCSV();
 }
 
@@ -370,9 +372,9 @@ function renderVendors() {
   grid.innerHTML = STATE.vendors.map(v => `
     <div class="job-card">
       <div style="font-weight:700;color:#fff">${esc(v.name)}</div>
-      <div style="color:var(--accent);font-weight:600">${esc(v.company)}</div>
-      <div style="font-size:12px;color:var(--text-secondary)">${esc(v.email)} · ${esc(v.phone)}</div>
-    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-secondary)">No vendor contacts added yet.</div>';
+      <div style="color:var(--indigo);font-weight:600">${esc(v.company)}</div>
+      <div style="font-size:12px;color:var(--text-sub)">${esc(v.email)} · ${esc(v.phone)}</div>
+    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
 }
 
 function openVendorModal() { document.getElementById('vendorModal')?.classList.remove('hidden'); }
@@ -393,5 +395,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupSearch();
   loadBench();
-  runSearch(); // Auto-search on load so user immediately sees live jobs!
+  runSearch(); // Auto-search on load
 });
