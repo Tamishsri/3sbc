@@ -337,6 +337,66 @@ Senior Talent Partner | 3SBC Staffing Solutions
         return jsonify({"error": str(e)}), 500
 
 
+# ---------------------------------------------------------------------------
+# CRM STATE PERSISTENCE (Submissions & Vendors & Saved Jobs)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/submissions", methods=["GET", "POST"])
+def api_submissions():
+    import firebase_db
+    if request.method == "GET":
+        try:
+            return jsonify(firebase_db.get_submissions(is_admin=True))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    if request.method == "POST":
+        try:
+            data = request.get_json(force=True)
+            sub_id = firebase_db.add_submission(data)
+            return jsonify({"success": True, "id": sub_id})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/vendors", methods=["GET", "POST"])
+def api_vendors():
+    import firebase_db
+    if request.method == "GET":
+        try:
+            return jsonify(firebase_db.get_vendors())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+            
+    if request.method == "POST":
+        try:
+            data = request.get_json(force=True)
+            vid = firebase_db.add_vendor(data)
+            return jsonify({"success": True, "id": vid})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/jobs/saved", methods=["GET", "POST"])
+def api_saved_jobs():
+    import firebase_db
+    user_id = "default_user" # For now, simple auth
+    if request.method == "GET":
+        try:
+            return jsonify(firebase_db.get_saved_jobs(user_id))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+            
+    if request.method == "POST":
+        try:
+            job = request.get_json(force=True)
+            doc_id = firebase_db.save_job(job, user_id)
+            return jsonify({"success": True, "id": doc_id})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+
+
 app_handler = app
 
 if __name__ == "__main__":

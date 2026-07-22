@@ -283,7 +283,8 @@ body {
 
     <nav class="nav-tabs">
       <button class="nav-tab active" data-tab="jobFinder">🔍 Search Jobs</button>
-      <button class="nav-tab" data-tab="bench">👥 Bench Pool (63)</button>
+      <button class="nav-tab" data-tab="savedJobs">⭐ Saved Jobs</button>
+      <button class="nav-tab" data-tab="bench">👥 Bench Pool <span id="navBenchCount">(...)</span></button>
       <button class="nav-tab" data-tab="submissions">📋 Submissions CRM</button>
       <button class="nav-tab" data-tab="vendors">📞 Vendor Contacts</button>
     </nav>
@@ -350,6 +351,21 @@ body {
     </section>
 
     <!-- ════════════════════════════════════════════════════════
+         TAB 1.5: SAVED JOBS (HOTLIST)
+         ════════════════════════════════════════════════════════ -->
+    <section id="savedJobsTab" class="tab-view" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2 style="font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.02em">⭐ Saved Jobs Hotlist</h2>
+          <p style="font-size:12px;color:var(--text-sub)">Jobs you've saved from the Kanban board for later review.</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px" id="savedJobsGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Loading saved jobs...</div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
          TAB 2: BENCH POOL
          ════════════════════════════════════════════════════════ -->
     <section id="benchTab" class="tab-view" style="display:none;">
@@ -390,12 +406,29 @@ body {
          TAB 3: SUBMISSIONS CRM
          ════════════════════════════════════════════════════════ -->
     <section id="submissionsTab" class="tab-view" style="display:none;">
+      
+      <!-- CRM Dashboard -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px">
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Total Submissions</div>
+          <div style="font-size:24px;font-weight:700;color:#fff" id="crmTotalCount">0</div>
+        </div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Avg Margin ($/hr)</div>
+          <div style="font-size:24px;font-weight:700;color:var(--emerald)" id="crmAvgMargin">$0.00</div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(99,102,241,0.02) 100%);border:1px solid var(--indigo);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;font-weight:600;color:var(--indigo);text-transform:uppercase">Potential Monthly Pipeline</div>
+          <div style="font-size:24px;font-weight:700;color:#fff" id="crmTotalMonthly">$0</div>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:18px;font-weight:800;color:#fff">📋 Submissions CRM Queue</h2>
+          <h2 style="font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.02em">📋 Submissions Queue</h2>
           <p style="font-size:12px;color:var(--text-sub)">Track submissions from initial outreach to deal placement</p>
         </div>
-        <button class="btn-action btn-action-emerald" onclick="exportSubmissionsCSV()" style="height:38px;padding:0 18px">📊 Export Submissions CSV</button>
+        <button class="btn-action btn-action-emerald" onclick="exportSubmissionsCSV()" style="height:36px;padding:0 16px">📊 Export CSV</button>
       </div>
 
       <div class="table-card" style="margin-top:16px">
@@ -619,6 +652,7 @@ function switchTab(tabId) {
   if (tabId === 'bench') renderBench();
   if (tabId === 'submissions') renderSubmissions();
   if (tabId === 'vendors') renderVendors();
+  if (tabId === 'savedJobs') renderSavedJobs();
 }
 
 // ── JOB FINDER ENGINE ─────────────────────────────────────────
@@ -723,9 +757,10 @@ function renderCard(j) {
         <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
       <div class="job-card-actions">
-        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${dataStr}')">🤖 AI Match</button>
+        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${dataStr}')">🤖 Match</button>
         <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
       </div>
+      <button class="btn-action" style="width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px" onclick="saveToHotlist(JSON.parse('${dataStr}'.replace(/&quot;/g, '\\"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')))">⭐ Save to Hotlist</button>
     </div>`;
 }
 
@@ -852,11 +887,12 @@ async function genResumePresentation() {
   }
 }
 
-function confirmSubmit() {
+async function confirmSubmit() {
   const job   = STATE.pendingJob;
   const cName = document.getElementById('subConsultant').value.trim();
   const bill  = document.getElementById('subBill').value.trim();
   const pay   = document.getElementById('subPay').value.trim();
+  const vEmail = document.getElementById('subVendorEmail').value.trim();
 
   if (!cName || !job) {
     toast('Enter consultant name', 'error');
@@ -864,8 +900,9 @@ function confirmSubmit() {
   }
 
   const marginHr = (parseFloat(bill) - parseFloat(pay)).toFixed(2);
-  STATE.submissions.unshift({
+  const payload = {
     consultant_name: cName,
+    job_id: job.id || job.url,
     job_title: job.title,
     company: job.company,
     board: job.board,
@@ -874,11 +911,23 @@ function confirmSubmit() {
     bill_rate: bill,
     pay_rate: pay,
     margin_hr: marginHr,
-    vendor_email: document.getElementById('subVendorEmail').value.trim()
-  });
+    vendor_email: vEmail
+  };
 
-  toast(`✅ ${cName} submitted to ${job.company}!`, 'success');
-  closeModal('submitModal');
+  try {
+    await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    // Add locally for instant UI update
+    STATE.submissions.unshift(payload);
+    toast(`✅ ${cName} submitted to ${job.company}!`, 'success');
+    closeModal('submitModal');
+    renderSubmissions();
+  } catch(e) {
+    toast('Failed to save submission to cloud', 'error');
+  }
 }
 
 // ── BENCH POOL ────────────────────────────────────────────────
@@ -927,17 +976,42 @@ function renderBench() {
 }
 
 // ── SUBMISSIONS & VENDORS ──────────────────────────────────────
+async function loadSubmissions() {
+  try {
+    const res = await fetch('/api/submissions');
+    STATE.submissions = await res.json();
+    renderSubmissions();
+  } catch(e) {}
+}
+
 function renderSubmissions() {
   const tbody = document.getElementById('submissionsBody');
   if (!tbody) return;
+
+  // Update Dashboard
+  const count = STATE.submissions.length;
+  let totalMargin = 0;
+  STATE.submissions.forEach(s => {
+    totalMargin += parseFloat(s.margin_hr || 0);
+  });
+  const avgMargin = count ? (totalMargin / count).toFixed(2) : '0.00';
+  // Assume 160 hours per month for monthly pipeline
+  const monthlyPipeline = Math.round(totalMargin * 160);
+
+  const dCount = document.getElementById('crmTotalCount');
+  if (dCount) dCount.textContent = count;
+  const dAvg = document.getElementById('crmAvgMargin');
+  if (dAvg) dAvg.textContent = `$${avgMargin}/hr`;
+  const dPipe = document.getElementById('crmTotalMonthly');
+  if (dPipe) dPipe.textContent = `$${monthlyPipeline.toLocaleString()}`;
 
   tbody.innerHTML = STATE.submissions.map(s => `
     <tr>
       <td style="font-weight:700;color:#fff">${esc(s.consultant_name)}</td>
       <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div></td>
       <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-sub)">${esc(s.board)}</td>
-      <td>${esc(s.date)}</td>
-      <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Submitted</span></td>
+      <td>${esc(s.date || s.created_at_iso?.split(' ')[0] || '')}</td>
+      <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">${esc(s.status || 'Submitted')}</span></td>
       <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
       <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
       <td>${esc(s.vendor_email || '—')}</td>
@@ -948,8 +1022,15 @@ function renderSubmissions() {
 function exportSubmissionsCSV() {
   if (!STATE.submissions.length) { toast('No submissions to export', 'error'); return; }
   const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Bill Rate', 'Pay Rate', 'Margin $/hr'];
-  const rows = STATE.submissions.map(s => [s.consultant_name, s.job_title, s.company, s.board, s.date, s.status, s.bill_rate, s.pay_rate, s.margin_hr]);
-  const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+  
+  const escapeCsv = (str) => {
+    if (str === null || str === undefined) return '""';
+    return `"${String(str).replace(/"/g, '""')}"`;
+  };
+
+  const rows = STATE.submissions.map(s => [s.consultant_name, s.job_title, s.company, s.board, s.date || s.created_at_iso, s.status, s.bill_rate, s.pay_rate, s.margin_hr]);
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\n');
+  
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = '3SBC_Submissions.csv'; a.click();
@@ -971,15 +1052,77 @@ function renderVendors() {
     </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
 }
 
+async function loadVendors() {
+  try {
+    const res = await fetch('/api/vendors');
+    STATE.vendors = await res.json();
+    renderVendors();
+  } catch(e) {}
+}
+
 function openVendorModal() { document.getElementById('vendorModal')?.classList.remove('hidden'); }
-function saveVendor() {
+async function saveVendor() {
   const name = document.getElementById('vName').value.trim();
   const company = document.getElementById('vCompany').value.trim();
+  const email = document.getElementById('vEmail').value.trim();
+  const phone = document.getElementById('vPhone').value.trim();
   if (!name || !company) return;
-  STATE.vendors.push({ name, company, email: document.getElementById('vEmail').value.trim(), phone: document.getElementById('vPhone').value.trim() });
-  toast('Added vendor contact!', 'success');
-  closeModal('vendorModal');
-  renderVendors();
+  
+  const payload = { name, company, email, phone };
+  try {
+    await fetch('/api/vendors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    STATE.vendors.push(payload);
+    toast('Added vendor contact!', 'success');
+    closeModal('vendorModal');
+    renderVendors();
+  } catch(e) {
+    toast('Failed to save vendor to cloud', 'error');
+  }
+}
+
+// ── SAVED JOBS (HOTLIST) ──────────────────────────────────────
+async function loadSavedJobs() {
+  try {
+    const res = await fetch('/api/jobs/saved');
+    STATE.savedJobs = await res.json();
+    renderSavedJobs();
+  } catch(e) {}
+}
+
+function renderSavedJobs() {
+  const grid = document.getElementById('savedJobsGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = (STATE.savedJobs || []).map(j => `
+    <div class="job-card" style="border-left: 3px solid var(--emerald)">
+      <div style="font-size:10px;text-transform:uppercase;color:var(--indigo);font-weight:700;margin-bottom:4px">${esc(j.board)}</div>
+      <div style="font-weight:700;color:#fff;font-size:15px">${esc(j.title)}</div>
+      <div style="color:var(--text-sub);font-size:13px">${esc(j.company)}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-main)">📍 ${esc(j.location)}</div>
+      ${j.salary ? `<div style="margin-top:4px;font-size:12px;color:var(--emerald);font-weight:700">💰 ${esc(j.salary)}</div>` : ''}
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmit('${esc(j.title)}','${esc(j.company)}','${esc(j.board)}','${esc(j.url)}')">🚀 Submit</button>
+      </div>
+    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
+}
+
+async function saveToHotlist(job) {
+  try {
+    await fetch('/api/jobs/saved', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(job)
+    });
+    if (!STATE.savedJobs) STATE.savedJobs = [];
+    STATE.savedJobs.unshift(job);
+    toast('⭐ Job saved to Hotlist!', 'success');
+  } catch(e) {
+    toast('Failed to save job', 'error');
+  }
 }
 
 function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
@@ -989,6 +1132,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupSearch();
   loadBench();
+  loadSubmissions();
+  loadVendors();
+  loadSavedJobs();
   runSearch(); // Auto-search on load
 });
 
