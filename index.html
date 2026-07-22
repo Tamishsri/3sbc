@@ -1122,10 +1122,14 @@ function renderSavedJobs() {
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
 }
 
-async function removeSavedJob(docId) {
+async function removeSavedJob(docId, btnEl) {
   if(!docId) return;
+  if(btnEl) btnEl.disabled = true;
   const job = STATE.savedJobs.find(j => j.doc_id === docId);
-  if (!job) return;
+  if (!job) {
+    if(btnEl) btnEl.disabled = false;
+    return;
+  }
 
   try {
     await fetch(`/api/jobs/saved/${docId}`, { method: 'DELETE' });
@@ -1145,22 +1149,26 @@ async function removeSavedJob(docId) {
           toggleBtn.style.background = 'rgba(255,255,255,0.05)';
           toggleBtn.style.color = 'var(--text-main)';
           toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+          toggleBtn.disabled = false;
         }
       }
     }
   } catch(e) {
     toast('Failed to remove job', 'error');
     console.error(e);
+  } finally {
+    if(btnEl) btnEl.disabled = false;
   }
 }
 
 async function toggleHotlist(b64, btnEl) {
+  if (btnEl) btnEl.disabled = true;
   const job = JSON.parse(decodeURIComponent(atob(b64)));
   const savedJob = (STATE.savedJobs || []).find(sj => sj.url === job.url);
 
   if (savedJob) {
     // Already saved: Remove it
-    await removeSavedJob(savedJob.doc_id);
+    await removeSavedJob(savedJob.doc_id, btnEl);
   } else {
     // Not saved: Save it
     try {
@@ -1191,6 +1199,8 @@ async function toggleHotlist(b64, btnEl) {
       }
     } catch(e) {
       toast('Failed to save job', 'error');
+    } finally {
+      if (btnEl) btnEl.disabled = false;
     }
   }
 }
