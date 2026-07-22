@@ -6,12 +6,133 @@
   <title>Enterprise Talent ATS & Candidate Match Platform</title>
   <meta name="description" content="Production Enterprise Recruitment Platform integrating Excel parser, LinkedIn sourcer, Gemini AI scoring, and Google Cloud Firestore.">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg-main: #090d16;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-surface: #1a2234;
+      --bg-input: #0f172a;
+      
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(59, 130, 246, 0.5);
+
+      --brand-blue: #3b82f6;
+      --brand-blue-hover: #2563eb;
+
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --emerald-text: #34d399;
+      --emerald-border: rgba(16, 185, 129, 0.3);
+
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      --amber-text: #fbbf24;
+      --amber-border: rgba(245, 158, 11, 0.3);
+
+      --purple-bg: rgba(168, 85, 247, 0.12);
+      --purple-text: #c084fc;
+      --cyan-bg: rgba(6, 182, 212, 0.12);
+      --cyan-text: #38bdf8;
+
+      --text-main: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); min-height: 100vh; line-height: 1.5; }
+    .app-wrapper { max-width: 1440px; margin: 0 auto; padding: 1.5rem 2rem 4rem 2rem; }
+
+    .top-navbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .brand-group { display: flex; align-items: center; gap: 1rem; }
+    .brand-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #fff; font-weight: 800; }
+    .brand-text h1 { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; }
+    .brand-text p { font-size: 0.8rem; color: var(--text-secondary); }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+
+    .status-badge-live { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.9rem; background: var(--emerald-bg); border: 1px solid var(--emerald-border); border-radius: var(--radius-full); font-size: 0.8rem; color: var(--emerald-text); font-weight: 600; }
+    .dot-pulse { width: 7px; height: 7px; background-color: var(--emerald-text); border-radius: 50%; box-shadow: 0 0 8px var(--emerald-text); }
+
+    .btn-primary { padding: 0.6rem 1.25rem; background: var(--brand-blue); color: #fff; border-radius: var(--radius-md); border: none; font-family: var(--font-body); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s ease; text-decoration: none; }
+    .btn-primary:hover { background: var(--brand-blue-hover); }
+    .btn-secondary { padding: 0.6rem 1.25rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); color: var(--text-main); border-radius: var(--radius-md); font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .metrics-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .metric-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.35rem 1.5rem; }
+    .metric-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+    .metric-value { font-family: var(--font-heading); font-size: 2.1rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+
+    .teams-section { margin-bottom: 2rem; }
+    .section-title { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .team-summary-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem 1.25rem; }
+    .team-summary-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; }
+    .team-stats-row { display: flex; justify-content: space-between; font-size: 0.825rem; color: var(--text-secondary); }
+
+    .toolbar-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1.1rem; }
+    .search-input-wrapper { position: relative; }
+    .search-input-wrapper input { width: 100%; padding: 0.8rem 1.25rem 0.8rem 3rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-main); font-family: var(--font-body); font-size: 0.9rem; outline: none; }
+    .search-input-wrapper input:focus { border-color: var(--brand-blue); }
+    .search-icon-svg { position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+    .filters-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .tabs-group { display: flex; gap: 0.5rem; }
+    .tab-btn { padding: 0.45rem 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.825rem; font-weight: 500; cursor: pointer; }
+    .tab-btn.active { background: var(--brand-blue); border-color: var(--brand-blue); color: #ffffff; font-weight: 600; }
+    .view-switcher { display: flex; gap: 0.35rem; background: var(--bg-input); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); }
+    .view-btn { padding: 0.35rem 0.75rem; background: none; border: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; }
+    .view-btn.active { background: var(--bg-card); color: var(--text-main); }
+
+    .candidate-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem; }
+    .candidate-card-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+    .candidate-card-box:hover { border-color: var(--border-focus); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .team-pill-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--cyan-text); border-radius: var(--radius-full); }
+    .score-badge { font-family: var(--font-heading); font-weight: 800; font-size: 1.05rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); }
+    .score-high { background: var(--emerald-bg); color: var(--emerald-text); border: 1px solid var(--emerald-border); }
+    .score-med { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber-border); }
+    .cand-name-title { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .cand-role-sub { font-size: 0.85rem; color: var(--cyan-text); margin-bottom: 0.75rem; font-weight: 500; }
+
+    .verdict-container { background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.825rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem; }
+    .verdict-header { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; color: var(--brand-blue); margin-bottom: 0.35rem; }
+
+    .card-bottom { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
+    .linkedin-btn-link { font-size: 0.825rem; font-weight: 600; color: var(--cyan-text); text-decoration: none; padding: 0.4rem 0.85rem; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: var(--radius-sm); transition: all 0.2s ease; }
+    .linkedin-btn-link:hover { background: var(--cyan-text); color: #000; }
+    .status-dropdown { background: var(--bg-input); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.78rem; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); outline: none; cursor: pointer; }
+
+    .table-container { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow-x: auto; display: none; }
+    .ats-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    .ats-table th { background: var(--bg-surface); padding: 0.9rem 1.25rem; font-family: var(--font-heading); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-subtle); }
+    .ats-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
+    .ats-table tr:hover td { background: var(--bg-card-hover); }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-window { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 2rem; width: 90%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
+    .modal-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .modal-header-row h3 { font-family: var(--font-heading); font-size: 1.25rem; }
+    .btn-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+    .terminal-logs { background: #020617; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-family: var(--font-mono); font-size: 0.825rem; color: #38bdf8; height: 320px; overflow-y: auto; white-space: pre-wrap; }
+  </style>
 </head>
 <body>
 
   <div class="app-wrapper">
 
-    <!-- Navbar -->
+    <!-- Top Header -->
     <header class="top-navbar">
       <div class="brand-group">
         <div class="brand-icon">SBC</div>
@@ -39,7 +160,7 @@
       </div>
     </header>
 
-    <!-- Metrics Summary Banner -->
+    <!-- Metrics Summary Bar -->
     <section class="metrics-banner">
       <div class="metric-card">
         <div class="metric-title">Total Candidates Sourced</div>
@@ -57,7 +178,7 @@
       </div>
 
       <div class="metric-card">
-        <div class="metric-title">Average AI Match Score</div>
+        <div class="metric-title">Average Match Score</div>
         <div id="statAvgScore" class="metric-value" style="color: #fbbf24;">--</div>
       </div>
     </section>
@@ -125,7 +246,7 @@
 
   </div>
 
-  <!-- Terminal Log Modal -->
+  <!-- Terminal Output Modal -->
   <div id="terminalModal" class="modal-overlay">
     <div class="modal-window">
       <div class="modal-header-row">
