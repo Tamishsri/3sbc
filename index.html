@@ -1116,19 +1116,22 @@ function renderSavedJobs() {
       ${j.salary ? `<div style="margin-top:4px;font-size:12px;color:var(--emerald);font-weight:700">💰 ${esc(j.salary)}</div>` : ''}
       <div style="margin-top:16px;display:flex;gap:8px">
         <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmitModal('${b64}')">🚀 Submit</button>
-        <button class="btn-action" style="flex:0.5;background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)" onclick="removeSavedJob('${j.doc_id}')">🗑️ Remove</button>
+        <button class="btn-action" style="flex:0.5;background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)" onclick="removeSavedJobB64('${b64}')">🗑️ Remove</button>
       </div>
     </div>`;
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
 }
 
-async function removeSavedJob(docId) {
-  if(!docId) return;
-  const job = STATE.savedJobs.find(j => j.doc_id === docId);
+async function removeSavedJobB64(b64) {
+  if(!b64) return;
+  const targetJob = JSON.parse(decodeURIComponent(atob(b64)));
+  const job = STATE.savedJobs.find(j => j.url === targetJob.url);
   if (!job) return;
+  
+  const docId = job.doc_id;
 
   // Optimistic UI updates
-  STATE.savedJobs = STATE.savedJobs.filter(j => j.doc_id !== docId);
+  STATE.savedJobs = STATE.savedJobs.filter(j => j.url !== job.url);
   renderSavedJobs();
   
   // Sync with Kanban board safely
@@ -1173,7 +1176,8 @@ async function toggleHotlist(b64, btnEl) {
         card.style.boxShadow = '';
       }
     }
-    await removeSavedJob(savedJob.doc_id);
+    const b64 = btoa(encodeURIComponent(JSON.stringify(savedJob)));
+    await removeSavedJobB64(b64);
   } else {
     // Not saved: Save it (Optimistic)
     if (btnEl) {
