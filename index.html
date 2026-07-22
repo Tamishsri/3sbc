@@ -747,8 +747,16 @@ function renderKanban(data) {
 
 function renderCard(j) {
   const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
+  const isSaved = (STATE.savedJobs || []).some(sj => sj.url === j.url);
+  
+  const cardStyle = isSaved ? 'border: 1px solid var(--emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);' : '';
+  const btnStyle = isSaved 
+    ? 'width:100%;margin-top:8px;background:rgba(16, 185, 129, 0.1);color:var(--emerald);border:1px solid var(--emerald);font-size:12px;transition:all 0.3s ease'
+    : 'width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px;transition:all 0.3s ease';
+  const btnText = isSaved ? '✅ Saved' : '⭐ Save to Hotlist';
+
   return `
-    <div class="job-card">
+    <div class="job-card" data-job-url="${esc(j.url)}" style="${cardStyle}">
       <div class="job-card-title">${esc(j.title)}</div>
       <div class="job-card-company">🏢 ${esc(j.company)}</div>
       <div class="job-card-meta">
@@ -760,7 +768,7 @@ function renderCard(j) {
         <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${b64}')">🤖 Match</button>
         <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${b64}')">✅ Submit</button>
       </div>
-      <button class="btn-action" style="width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px;transition:all 0.3s ease" onclick="saveToHotlist('${b64}', this)">⭐ Save to Hotlist</button>
+      <button class="btn-action btn-toggle-hotlist" style="${btnStyle}" onclick="toggleHotlist('${b64}', this)">${btnText}</button>
     </div>`;
 }
 
@@ -1116,42 +1124,71 @@ function renderSavedJobs() {
 
 async function removeSavedJob(docId) {
   if(!docId) return;
+  const job = STATE.savedJobs.find(j => j.doc_id === docId);
+  if (!job) return;
+
   try {
     await fetch(`/api/jobs/saved/${docId}`, { method: 'DELETE' });
     STATE.savedJobs = STATE.savedJobs.filter(j => j.doc_id !== docId);
     toast('Job removed from Hotlist', 'success');
     renderSavedJobs();
+    
+    // Sync with Kanban board if it is currently rendered
+    const card = document.querySelector(`.job-card[data-job-url="${job.url.replace(/"/g, '\\"')}"]`);
+    if (card) {
+      card.style.border = '';
+      card.style.boxShadow = '';
+      const toggleBtn = card.querySelector('.btn-toggle-hotlist');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = '⭐ Save to Hotlist';
+        toggleBtn.style.background = 'rgba(255,255,255,0.05)';
+        toggleBtn.style.color = 'var(--text-main)';
+        toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+      }
+    }
   } catch(e) {
     toast('Failed to remove job', 'error');
   }
 }
 
-async function saveToHotlist(b64, btnEl) {
-  if (btnEl) {
-    btnEl.innerHTML = '✅ Saved';
-    btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
-    btnEl.style.color = 'var(--emerald)';
-    btnEl.style.borderColor = 'var(--emerald)';
-    const card = btnEl.closest('.job-card');
-    if (card) {
-      card.style.border = '1px solid var(--emerald)';
-      card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
-    }
-  }
-
+async function toggleHotlist(b64, btnEl) {
   const job = JSON.parse(decodeURIComponent(atob(b64)));
-  try {
-    await fetch('/api/jobs/saved', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(job)
-    });
-    if (!STATE.savedJobs) STATE.savedJobs = [];
-    STATE.savedJobs.unshift(job);
-    toast('⭐ Job saved to Hotlist!', 'success');
-    renderSavedJobs();
-  } catch(e) {
-    toast('Failed to save job', 'error');
+  const savedJob = (STATE.savedJobs || []).find(sj => sj.url === job.url);
+
+  if (savedJob) {
+    // Already saved: Remove it
+    await removeSavedJob(savedJob.doc_id);
+  } else {
+    // Not saved: Save it
+    try {
+      const res = await fetch('/api/jobs/saved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job)
+      });
+      const data = await res.json();
+      job.doc_id = data.id;
+      
+      if (!STATE.savedJobs) STATE.savedJobs = [];
+      STATE.savedJobs.unshift(job);
+      toast('⭐ Job saved to Hotlist!', 'success');
+      renderSavedJobs();
+      
+      // Sync UI
+      if (btnEl) {
+        btnEl.innerHTML = '✅ Saved';
+        btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
+        btnEl.style.color = 'var(--emerald)';
+        btnEl.style.borderColor = 'var(--emerald)';
+        const card = btnEl.closest('.job-card');
+        if (card) {
+          card.style.border = '1px solid var(--emerald)';
+          card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
+        }
+      }
+    } catch(e) {
+      toast('Failed to save job', 'error');
+    }
   }
 }
 
