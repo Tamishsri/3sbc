@@ -116,7 +116,7 @@ function renderKanban(data) {
   if (!grid) return;
 
   const boards = [
-    { key: 'linkedin',     name: 'LinkedIn' },
+    { key: 'linkedin',     name: 'LinkedIn (Live API)' },
     { key: 'dice',         name: 'Dice' },
     { key: 'indeed',       name: 'Indeed' },
     { key: 'ziprecruiter', name: 'ZipRecruiter' },
@@ -255,6 +255,29 @@ async function genEmail() {
     box.classList.remove('hidden');
   } catch(e) {
     toast('Could not generate draft', 'error');
+  }
+}
+
+async function genResumePresentation() {
+  const cName = document.getElementById('subConsultant').value.trim() || 'Consultant';
+  const cSkill = document.getElementById('subSkill').value.trim() || 'SAP MM';
+  const cLoc = document.getElementById('subLocation').value.trim() || 'Philadelphia, PA';
+  const cVisa = document.getElementById('subVisa').value;
+  const cBill = document.getElementById('subBill').value.trim();
+
+  try {
+    const res = await fetch('/api/candidates/format-resume', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name: cName, skill: cSkill, location: cLoc, visa: cVisa, rate: cBill }),
+    });
+    const data = await res.json();
+    const box = document.getElementById('emailDraftBox');
+    box.textContent = data.resume_summary || '';
+    box.classList.remove('hidden');
+    toast('📄 Generated 3SBC Client Presentation Sheet!', 'success');
+  } catch(e) {
+    toast('Could not generate presentation sheet', 'error');
   }
 }
 

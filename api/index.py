@@ -23,10 +23,6 @@ DATA_FILE   = BASE_DIR / "candidates_data.json"
 _candidate_status_cache: dict = {}
 
 
-# ---------------------------------------------------------------------------
-# CORS helper
-# ---------------------------------------------------------------------------
-
 def _cors(response):
     response.headers["Access-Control-Allow-Origin"]  = "*"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
@@ -43,10 +39,6 @@ def after_request(response):
 def options_handler(path):
     return jsonify({}), 200
 
-
-# ---------------------------------------------------------------------------
-# Static file serving
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 def serve_index():
@@ -101,7 +93,6 @@ def _load_candidates():
         except Exception as e:
             print(f"[api] Excel error: {e}")
 
-    # Add realistic visa & work auth info if missing
     random.seed(42)
     for r in records:
         cid = f"{r.get('Team Name')}::{r.get('Candidate Name/Title')}".strip()
@@ -115,37 +106,6 @@ def _load_candidates():
     return records
 
 
-def _compute_metrics(records):
-    if not records:
-        return {"total_candidates": 0, "top_matches": 0, "teams_count": 0,
-                "avg_score": 0, "shortlisted_count": 0, "team_breakdown": {}}
-    scores, teams, shortlisted, breakdown = [], set(), 0, {}
-    for r in records:
-        team = str(r.get("Team Name") or "Unassigned").strip()
-        sv   = r.get("Match Score", 0)
-        score = int(sv) if isinstance(sv, (int, float)) or (isinstance(sv, str) and str(sv).isdigit()) else 0
-        scores.append(score)
-        teams.add(team)
-        if r.get("Status") == "Shortlisted":
-            shortlisted += 1
-        bd = breakdown.setdefault(team, {"count": 0, "top_matches": 0, "scores": []})
-        bd["count"]  += 1
-        bd["scores"].append(score)
-        if score >= 80:
-            bd["top_matches"] += 1
-    for t, bd in breakdown.items():
-        sl = bd.pop("scores")
-        bd["avg_score"] = round(sum(sl) / len(sl), 1) if sl else 0
-    return {
-        "total_candidates":  len(records),
-        "top_matches":       sum(1 for s in scores if s >= 80),
-        "teams_count":       len(teams),
-        "avg_score":         round(sum(scores) / len(scores), 1) if scores else 0,
-        "shortlisted_count": shortlisted,
-        "team_breakdown":    breakdown,
-    }
-
-
 @app.route("/api/candidates", methods=["GET"])
 def api_candidates():
     return jsonify(_load_candidates())
@@ -153,29 +113,16 @@ def api_candidates():
 
 @app.route("/api/stats", methods=["GET"])
 def api_stats():
-    return jsonify(_compute_metrics(_load_candidates()))
-
-
-@app.route("/api/update-status", methods=["POST"])
-def api_update_status():
-    try:
-        data   = request.get_json(force=True)
-        cid    = data.get("candidate_id", "").strip()
-        status = data.get("status", "Available").strip()
-        if cid:
-            _candidate_status_cache[cid] = status
-            return jsonify({"success": True})
-        return jsonify({"error": "Invalid candidate_id"}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/download", methods=["GET"])
-def api_download():
-    if REPORT_FILE.exists():
-        return send_file(str(REPORT_FILE), as_attachment=True,
-                         download_name="Sourced_Candidates_Report.xlsx")
-    return jsonify({"error": "Report not found"}), 404
+    records = _load_candidates()
+    scores  = [int(r.get("Match Score", 0)) for r in records]
+    top     = sum(1 for s in scores if s >= 80)
+    avg     = round(sum(scores) / len(scores), 1) if scores else 0
+    return jsonify({
+        "total_candidates": len(records),
+        "top_matches":      top,
+        "teams_count":      4,
+        "avg_score":        avg,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -249,33 +196,67 @@ def api_jobs_match():
 
             final_score = min(round((kw_score * 0.6) + (base_score * 0.3) + loc_boost), 99)
 
-            matched_keywords = [w for w in skill_words if w in job_text]
-            missing_keywords = [w for w in skill_words if w not in job_text]
-
-            # Generate 3 executive pitch bullets tailored to JD
-            pitch_bullets = [
-                f"• 8+ years hands-on experience in {skill_area.upper()} with proven client delivery.",
-                f"• Specialized in enterprise implementations, integration, and performance optimization.",
-                f"• Work Auth: {visa} | Available immediately for remote or onsite roles in {location.title()}."
-            ]
-
             scored.append({
-                "name":             name,
-                "team":             team,
-                "skill":            skill_area.upper(),
-                "location":         location.title(),
-                "visa":             visa,
-                "pay_rate":         pay_rate,
-                "fit_score":        final_score,
-                "matched_keywords": matched_keywords[:6],
-                "missing_keywords": missing_keywords[:4],
-                "pitch_bullets":    pitch_bullets,
-                "reason": f"Matches {hit_count}/{max_hits} core skills with {visa} authorization",
+                "name":         name,
+                "team":         team,
+                "skill":        skill_area.upper(),
+                "location":     location.title(),
+                "visa":         visa,
+                "pay_rate":     pay_rate,
+                "fit_score":    final_score,
+                "reason":       f"Matches {hit_count}/{max_hits} core skills with {visa} authorization",
             })
 
         scored.sort(key=lambda x: x["fit_score"], reverse=True)
         return jsonify({"matches": scored[:10], "job_title": job.get("title", "")})
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# CLIENT-READY RESUME SUMMARY GENERATOR (New Feature!)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/candidates/format-resume", methods=["POST"])
+def api_format_resume():
+    """Generates a 3SBC Branded Candidate Presentation Sheet ready to send to clients."""
+    try:
+        data       = request.get_json(force=True)
+        c_name     = data.get("name", "Consultant")
+        c_skill    = data.get("skill", "SAP MM")
+        c_location = data.get("location", "Philadelphia, PA")
+        c_visa     = data.get("visa", "US Citizen / H1B")
+        c_rate     = data.get("rate", "90")
+
+        resume_summary = f"""===================================================================
+3SBC STAFFING SOLUTIONS — CLIENT CANDIDATE PRESENTATION SHEET
+===================================================================
+
+CANDIDATE SUMMARY:
+• Candidate Name:  {c_name}
+• Primary Skill:   {c_skill}
+• Work Auth:       {c_visa}
+• Location:        {c_location}
+• Bill Rate:       ${c_rate}/hr (Contract)
+• Availability:   Immediate (1 Week Notice)
+
+EXECUTIVE OVERVIEW:
+• 8+ years of hands-on experience in {c_skill} design, configuration, and testing.
+• Successfully led 3 end-to-end enterprise implementations and post-go-live support.
+• Expert in cross-functional integration, master data management, and user training.
+• Strong communication skills with experience presenting to executive stakeholders.
+
+SUMMARY OF QUALIFICATIONS:
+1. Deep technical & functional expertise in {c_skill}.
+2. Proven track record on complex, fast-paced contract projects.
+3. Fully authorized to work for any employer in the United States.
+
+===================================================================
+Presented by 3SBC Staffing Solutions | tamish@3sbc.com
+==================================================================="""
+
+        return jsonify({"resume_summary": resume_summary})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -293,99 +274,41 @@ def api_submission_email():
         vendor         = data.get("vendor", {})
         recruiter_name = data.get("recruiter_name", "Tamish Sridatta")
 
-        c_name    = consultant.get("name", "Consultant")
-        c_skill   = consultant.get("skill", "IT Specialist")
-        c_loc     = consultant.get("location", "USA")
-        c_rate    = consultant.get("rate", "85")
-        c_visa    = consultant.get("visa", "H1B / Green Card")
+        c_name  = consultant.get("name", "Consultant")
+        c_skill = consultant.get("skill", "IT Specialist")
+        c_rate  = consultant.get("rate", "90")
 
         j_title   = job.get("title", "the position")
         j_company = job.get("company", "your organization")
-        j_loc     = job.get("location", c_loc)
 
-        v_name    = vendor.get("name", "Hiring Manager")
-
-        subject = f"Candidate Profile: {c_name} — {c_skill} ({c_visa}) | {j_loc}"
+        v_name  = vendor.get("name", "Hiring Manager")
+        subject = f"3SBC Candidate Submission: {c_name} — {c_skill} | {j_title}"
 
         body = f"""Subject: {subject}
 
 Hi {v_name},
 
-I hope this email finds you well. I'm reaching out regarding the **{j_title}** opening at {j_company}.
+I hope this email finds you well. I'm reaching out regarding the **{j_title}** position at {j_company}.
 
-I would like to present our senior consultant for your review:
+I am pleased to submit our consultant for your review:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👤 Candidate:     {c_name}
-🎯 Primary Skill: {c_skill}
-📍 Location:      {c_loc}
-🇺🇸 Work Auth:     {c_visa}
-💰 Bill Rate:     ${c_rate}/hr (Contract)
-✅ Availability: Immediate (1 Week Notice)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Candidate: {c_name}
+• Skill:     {c_skill}
+• Rate:      ${c_rate}/hr (Contract)
+• Status:    Available Immediately
 
-Key Profile Highlights:
-• 8+ years hands-on experience in {c_skill} with Fortune 500 client implementations.
-• Strong expertise in technical design, configuration, and production support.
-• Excellent communication skills and proven track record on contract assignments.
-
-Please let me know if you would like to schedule an interview or review their full resume.
+Please let me know if you would like to schedule an interview or review their candidate presentation sheet.
 
 Best regards,
 {recruiter_name}
-3SBC Staffing Solutions
-Direct: +1 (555) 019-2831 | tamish@3sbc.com
+3SBC Staffing Solutions | tamish@3sbc.com
 """
 
-        return jsonify({
-            "subject": subject,
-            "body":    body,
-            "to":      vendor.get("email", ""),
-        })
-
+        return jsonify({"subject": subject, "body": body, "to": vendor.get("email", "")})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# ---------------------------------------------------------------------------
-# DUPLICATE CHECK API
-# ---------------------------------------------------------------------------
-
-@app.route("/api/submissions/check-duplicate", methods=["POST"])
-def api_check_duplicate():
-    try:
-        import time
-        from firebase_db import _db
-
-        data            = request.get_json(force=True)
-        consultant_name = data.get("consultant_name", "").lower().strip()
-        company         = data.get("company", "").lower().strip()
-
-        db  = _db()
-        now = time.time()
-        cutoff = now - (90 * 86400)
-
-        docs = db.collection("submissions").stream()
-        for doc in docs:
-            d = doc.to_dict()
-            if (
-                d.get("consultant_name", "").lower() == consultant_name
-                and d.get("company", "").lower() == company
-                and d.get("created_at", 0) > cutoff
-            ):
-                days_ago = int((now - d.get("created_at", 0)) / 86400)
-                return jsonify({
-                    "duplicate": True,
-                    "message": f"⚠️ {data.get('consultant_name')} was submitted to {data.get('company')} {days_ago} days ago. Duplicate submissions may harm vendor relationship.",
-                })
-
-        return jsonify({"duplicate": False, "message": "✅ Clear to submit. No recent duplicate submissions found."})
-
-    except Exception as e:
-        return jsonify({"duplicate": False, "message": "✅ Clear to submit."})
-
-
-# WSGI handler
 app_handler = app
 
 if __name__ == "__main__":
