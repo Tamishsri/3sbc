@@ -3,32 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise Recruitment Platform & Candidate ATS</title>
-  <meta name="description" content="Production-grade AI recruitment automation platform integrating Excel parsing, candidate sourcing, Gemini AI evaluation, and Google Cloud Firestore.">
+  <title>Enterprise Talent ATS & Candidate Match Platform</title>
+  <meta name="description" content="Production Enterprise Recruitment Platform integrating Excel parser, LinkedIn sourcer, Gemini AI scoring, and Google Cloud Firestore.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <div class="app-layout">
+  <div class="app-wrapper">
 
-    <!-- Top Header -->
-    <header class="top-header">
-      <div class="brand-section">
-        <div class="brand-logo">SBC</div>
-        <div class="brand-info">
-          <h1>Enterprise Talent Intelligence Platform</h1>
-          <p>Candidate Matching & Sourcing Command Center</p>
+    <!-- Navbar -->
+    <header class="top-navbar">
+      <div class="brand-group">
+        <div class="brand-icon">SBC</div>
+        <div class="brand-text">
+          <h1>Enterprise Talent Intelligence ATS</h1>
+          <p>Automated Sourcing & AI Recruiter Evaluation System</p>
         </div>
       </div>
 
-      <div class="header-badges">
-        <div class="live-badge">
-          <span class="badge-dot"></span>
+      <div class="header-right">
+        <div class="status-badge-live">
+          <span class="dot-pulse"></span>
           <span>Firestore Live Sync</span>
         </div>
-      </div>
 
-      <div class="header-actions">
         <button id="runPipelineBtn" class="btn-primary">
           <span>🚀 Run Pipeline</span>
         </button>
@@ -41,85 +39,116 @@
       </div>
     </header>
 
-    <!-- Metrics Summary Bar -->
+    <!-- Metrics Summary Banner -->
     <section class="metrics-banner">
-      <div class="stat-box">
-        <div class="stat-title">Total Candidates Sourced</div>
-        <div id="statTotal" class="stat-val">--</div>
+      <div class="metric-card">
+        <div class="metric-title">Total Candidates Sourced</div>
+        <div id="statTotal" class="metric-value">--</div>
       </div>
 
-      <div class="stat-box">
-        <div class="stat-title">High Fit Matches (&ge; 80%)</div>
-        <div id="statTopMatches" class="stat-val" style="color: #34d399;">--</div>
+      <div class="metric-card">
+        <div class="metric-title">High Fit Matches (&ge; 80%)</div>
+        <div id="statTopMatches" class="metric-value" style="color: #34d399;">--</div>
       </div>
 
-      <div class="stat-box">
-        <div class="stat-title">Active Consultant Teams</div>
-        <div id="statTeams" class="stat-val" style="color: #60a5fa;">--</div>
+      <div class="metric-card">
+        <div class="metric-title">Active Consultant Teams</div>
+        <div id="statTeams" class="metric-value" style="color: #60a5fa;">--</div>
       </div>
 
-      <div class="stat-box">
-        <div class="stat-title">Average Match Score</div>
-        <div id="statAvgScore" class="stat-val" style="color: #fbbf24;">--</div>
+      <div class="metric-card">
+        <div class="metric-title">Average AI Match Score</div>
+        <div id="statAvgScore" class="metric-value" style="color: #fbbf24;">--</div>
       </div>
     </section>
 
-    <!-- Toolbar & Filters -->
-    <section class="toolbar-section">
-      <div class="search-bar-row">
-        <div class="input-container">
-          <span class="search-icon-fixed">🔍</span>
-          <input type="text" id="searchInput" placeholder="Search candidate, role, technology (e.g. SAP MM, Azure, DevOps), location, or team...">
-        </div>
+    <!-- Team Performance Analytics Summary -->
+    <section class="teams-section">
+      <div class="section-title">Consultant Team Analytics & Sourcing Yield</div>
+      <div id="teamsGrid" class="teams-grid">
+        <!-- Generated via app.js -->
+      </div>
+    </section>
+
+    <!-- Controls & View Switcher Toolbar -->
+    <section class="toolbar-card">
+      <div class="search-input-wrapper">
+        <span class="search-icon-svg">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search candidate, role, technology (e.g. SAP MM, Azure, DevOps), location, or team...">
       </div>
 
       <div class="filters-row">
         <div class="tabs-group" id="scoreTabs">
           <button class="tab-btn active" data-score="ALL">All Candidates</button>
           <button class="tab-btn" data-score="HIGH">Top Matches (&ge; 80%)</button>
-          <button class="tab-btn" data-score="MED">Good Fits (50% - 79%)</button>
+          <button class="tab-btn" data-score="MED">Good Fits (50-79%)</button>
           <button class="tab-btn" data-status="Shortlisted">⭐️ Shortlisted</button>
         </div>
 
-        <div class="dropdown-group">
-          <select id="teamFilter" class="select-box">
-            <option value="ALL">All Consultant Teams</option>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <select id="teamFilter" class="select-box" style="padding: 0.4rem 0.9rem; background: var(--bg-input); border: 1px solid var(--border-subtle); color: var(--text-main); border-radius: var(--radius-sm); outline: none;">
+            <option value="ALL">All Teams</option>
           </select>
+
+          <div class="view-switcher">
+            <button id="viewGridBtn" class="view-btn active">🪟 Cards View</button>
+            <button id="viewTableBtn" class="view-btn">📋 Data Table</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Candidate Grid -->
-    <section id="candidateGrid" class="candidate-grid">
-      <!-- Generated via app.js -->
+    <!-- Cards View Grid -->
+    <section id="candidateGrid" class="candidate-grid-view">
+      <!-- Cards generated via app.js -->
+    </section>
+
+    <!-- Data Table View -->
+    <section id="candidateTableContainer" class="table-container">
+      <table class="ats-table">
+        <thead>
+          <tr>
+            <th>Candidate Name / Headline</th>
+            <th>Consultant Team</th>
+            <th>Target Skill (Role)</th>
+            <th>Location</th>
+            <th>Match Score</th>
+            <th>Recruiter Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="candidateTableBody">
+          <!-- Rows generated via app.js -->
+        </tbody>
+      </table>
     </section>
 
   </div>
 
-  <!-- Terminal Output Modal -->
+  <!-- Terminal Log Modal -->
   <div id="terminalModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-window">
+      <div class="modal-header-row">
         <h3>🚀 Pipeline Orchestrator Terminal Output</h3>
-        <button id="closeTerminalBtn" class="close-x">&times;</button>
+        <button id="closeTerminalBtn" class="btn-close">&times;</button>
       </div>
-      <div id="terminalOutput" class="log-box">Initializing pipeline run execution...</div>
+      <div id="terminalOutput" class="terminal-logs">Initializing pipeline run execution...</div>
     </div>
   </div>
 
   <!-- Handoff Modal -->
   <div id="handoffModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-window">
+      <div class="modal-header-row">
         <h3>📦 Client & Evaluator Delivery Guide</h3>
-        <button id="closeHandoffBtn" class="close-x">&times;</button>
+        <button id="closeHandoffBtn" class="btn-close">&times;</button>
       </div>
-      <div style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
-        <p style="margin-bottom: 1rem;">To deliver this solution to clients or evaluators:</p>
+      <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
+        <p style="margin-bottom: 1rem;">To hand over this platform to clients or evaluators:</p>
         <ol style="margin-left: 1.25rem; margin-bottom: 1rem;">
           <li><strong>ZIP the project folder</strong> containing <code>main.py</code>, <code>server.py</code>, <code>excel_parser.py</code>, <code>linkedin_sourcer.py</code>, <code>ai_evaluator.py</code>, <code>firebase_db.py</code>, <code>report_generator.py</code>, <code>requirements.txt</code>, and <code>firebase-key.json</code>.</li>
-          <li>The evaluator installs dependencies: <code>pip install -r requirements.txt</code></li>
-          <li>They launch the system: <code>python main.py</code> or launch the Web UI: <code>python server.py</code> (opens on <code>http://localhost:5000</code>).</li>
+          <li>Receiver installs dependencies: <code>pip install -r requirements.txt</code></li>
+          <li>Receiver launches the Enterprise ATS Web Server: <code>python server.py</code> (opens on <code>http://localhost:5000</code>).</li>
         </ol>
       </div>
     </div>

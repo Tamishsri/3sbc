@@ -1,16 +1,24 @@
 /**
- * app.js — Enterprise Talent Platform Frontend Logic
+ * app.js — Production Enterprise ATS Dashboard Logic
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   let allCandidates = [];
   let currentScoreFilter = 'ALL';
+  let activeViewMode = 'GRID'; // 'GRID' or 'TABLE'
 
   // DOM Elements
-  const grid = document.getElementById('candidateGrid');
+  const cardGrid = document.getElementById('candidateGrid');
+  const tableContainer = document.getElementById('candidateTableContainer');
+  const tableBody = document.getElementById('candidateTableBody');
+
   const searchInput = document.getElementById('searchInput');
   const teamFilter = document.getElementById('teamFilter');
   const scoreTabs = document.getElementById('scoreTabs');
+  const teamsGrid = document.getElementById('teamsGrid');
+
+  const viewGridBtn = document.getElementById('viewGridBtn');
+  const viewTableBtn = document.getElementById('viewTableBtn');
 
   const statTotal = document.getElementById('statTotal');
   const statTopMatches = document.getElementById('statTopMatches');
@@ -38,11 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const stats = await statsRes.json();
 
       updateStats(stats);
+      renderTeamAnalytics(stats.team_breakdown || {});
       populateTeamFilter(allCandidates);
       applyFilters();
     } catch (err) {
       console.error('Error loading dashboard data:', err);
-      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">Unable to connect to server API. Ensure python server.py is running.</div>';
+      cardGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">Unable to connect to server API. Ensure python server.py is running.</div>';
     }
   }
 
@@ -54,10 +63,33 @@ document.addEventListener('DOMContentLoaded', () => {
     statAvgScore.textContent = (stats.avg_score || 0) + '%';
   }
 
+  // Render Team Performance Analytics Summary Cards
+  function renderTeamAnalytics(breakdown) {
+    const teams = Object.keys(breakdown).sort();
+    if (!teams.length) {
+      teamsGrid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No team metrics available.</div>';
+      return;
+    }
+
+    teamsGrid.innerHTML = teams.map(t => {
+      const data = breakdown[t];
+      return `
+        <div class="team-summary-card">
+          <h4>${escapeHtml(t)}</h4>
+          <div class="team-stats-row">
+            <span>Candidates: <strong>${data.count}</strong></span>
+            <span>Top Matches: <strong>${data.top_matches}</strong></span>
+            <span>Avg Fit: <strong style="color: var(--emerald-text);">${data.avg_score}%</strong></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   // Populate Teams Dropdown
   function populateTeamFilter(candidates) {
     const teams = Array.from(new Set(candidates.map(c => c['Team Name']).filter(Boolean))).sort();
-    teamFilter.innerHTML = '<option value="ALL">All Consultant Teams</option>';
+    teamFilter.innerHTML = '<option value="ALL">All Teams</option>';
     teams.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t;
@@ -66,14 +98,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Render Candidate Cards Grid
+  // Render Candidates Cards & Table
   function renderCandidates(list) {
     if (!list.length) {
-      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">No matching candidate records found.</div>';
+      cardGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">No matching candidate records found.</div>';
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">No matching candidate records found.</td></tr>';
       return;
     }
 
-    grid.innerHTML = list.map(c => {
+    // Render Cards View
+    cardGrid.innerHTML = list.map(c => {
       const score = parseInt(c['Match Score']) || 0;
       const scoreClass = score >= 80 ? 'score-high' : 'score-med';
 
@@ -87,27 +121,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const candId = `${team}::${nameTitle}`.trim();
 
       return `
-        <article class="candidate-card">
+        <article class="candidate-card-box">
           <div>
-            <div class="card-header">
-              <span class="team-pill">${escapeHtml(team)}</span>
+            <div class="card-top">
+              <span class="team-pill-badge">${escapeHtml(team)}</span>
               <div class="score-badge ${scoreClass}">${score}% Match</div>
             </div>
 
-            <h3 class="cand-name">${escapeHtml(nameTitle)}</h3>
-            <div class="cand-role">🎯 ${escapeHtml(role)}</div>
-            <div class="location-tag">📍 ${escapeHtml(location)}</div>
+            <h3 class="cand-name-title">${escapeHtml(nameTitle)}</h3>
+            <div class="cand-role-sub">🎯 Target Role: ${escapeHtml(role)}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 0.85rem;">📍 Location: ${escapeHtml(location)}</div>
 
-            <div class="verdict-box">
-              <strong>AI Recruiter Evaluation</strong>
+            <div class="verdict-container">
+              <div class="verdict-header">AI Recruiter Evaluation</div>
               ${escapeHtml(reasoning)}
             </div>
           </div>
 
-          <div class="card-footer">
-            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="btn-link">🔗 LinkedIn Profile</a>` : '<span style="font-size:0.8rem; color:var(--text-dim);">Profile Link</span>'}
+          <div class="card-bottom">
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-btn-link">🔗 LinkedIn Profile</a>` : '<span style="font-size:0.8rem; color:var(--text-muted);">Profile Link</span>'}
             
-            <select class="status-selector" data-id="${escapeHtml(candId)}">
+            <select class="status-dropdown" data-id="${escapeHtml(candId)}">
               <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
               <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
               <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
@@ -118,8 +152,42 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
 
-    // Attach Status Change Handlers
-    document.querySelectorAll('.status-selector').forEach(sel => {
+    // Render Data Table View
+    tableBody.innerHTML = list.map(c => {
+      const score = parseInt(c['Match Score']) || 0;
+      const scoreClass = score >= 80 ? 'score-high' : 'score-med';
+      const nameTitle = c['Candidate Name/Title'] || 'Candidate';
+      const role = c['Target Skill (AREA)'] || 'General Role';
+      const team = c['Team Name'] || 'Unassigned';
+      const location = c['Target Location'] || 'USA';
+      const linkedinUrl = c['Candidate LinkedIn URL'] || '#';
+      const status = c['Status'] || 'New';
+      const candId = `${team}::${nameTitle}`.trim();
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(nameTitle)}</strong></td>
+          <td><span class="team-pill-badge">${escapeHtml(team)}</span></td>
+          <td>${escapeHtml(role)}</td>
+          <td>${escapeHtml(location)}</td>
+          <td><span class="score-badge ${scoreClass}">${score}%</span></td>
+          <td>
+            <select class="status-dropdown" data-id="${escapeHtml(candId)}">
+              <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
+              <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
+              <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
+              <option value="Hired" ${status === 'Hired' ? 'selected' : ''}>✅ Hired</option>
+            </select>
+          </td>
+          <td>
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-btn-link" style="padding: 0.25rem 0.6rem;">LinkedIn</a>` : '-'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Attach Status Selectors Handlers
+    document.querySelectorAll('.status-dropdown').forEach(sel => {
       sel.addEventListener('change', async (e) => {
         const candId = e.target.getAttribute('data-id');
         const newStatus = e.target.value;
@@ -179,6 +247,23 @@ document.addEventListener('DOMContentLoaded', () => {
       currentScoreFilter = e.target.getAttribute('data-score') || e.target.getAttribute('data-status');
       applyFilters();
     }
+  });
+
+  // View Mode Switcher
+  viewGridBtn.addEventListener('click', () => {
+    activeViewMode = 'GRID';
+    viewGridBtn.classList.add('active');
+    viewTableBtn.classList.remove('active');
+    cardGrid.style.display = 'grid';
+    tableContainer.style.display = 'none';
+  });
+
+  viewTableBtn.addEventListener('click', () => {
+    activeViewMode = 'TABLE';
+    viewTableBtn.classList.add('active');
+    viewGridBtn.classList.remove('active');
+    cardGrid.style.display = 'none';
+    tableContainer.style.display = 'block';
   });
 
   searchInput.addEventListener('input', applyFilters);

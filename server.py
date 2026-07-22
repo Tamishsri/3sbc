@@ -1,12 +1,15 @@
 """
 server.py
 ---------
-Production-Grade REST API & Web Server for the Recruitment Automation Platform.
+Production Multi-Threaded REST API & Web Server for the Recruitment Automation Platform.
 
-Features:
-  - Serves the Enterprise Recruitment Command Center Web App (index.html).
-  - Handles candidate candidate pipeline queries, status updates, metrics, and report downloads.
-  - Supports live execution of the main.py pipeline orchestrator.
+Endpoints:
+  GET  /                 - Serves the Enterprise ATS Web App (index.html)
+  GET  /api/candidates   - Returns candidate records with ATS statuses
+  GET  /api/stats        - Returns aggregate analytics & team breakdown
+  POST /api/update-status- Updates candidate recruitment status
+  POST /api/run-pipeline - Executes the main.py pipeline orchestrator
+  GET  /api/download     - Downloads Sourced_Candidates_Report.xlsx
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ import os
 import subprocess
 import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -26,12 +30,17 @@ PORT = 5000
 BASE_DIR = Path(__file__).parent.resolve()
 REPORT_FILE = BASE_DIR / "Sourced_Candidates_Report.xlsx"
 
-# In-memory candidate status cache for interactive ATS workflow
+# In-memory candidate status cache
 _candidate_status_cache: dict[str, str] = {}
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Multi-threaded HTTP server for high concurrency."""
+    daemon_threads = True
+
+
 def load_candidate_records() -> list[dict]:
-    """Read the latest candidate records from Excel report or Firestore."""
+    """Read the latest candidate records from Excel report."""
     if not REPORT_FILE.exists():
         return []
 
@@ -41,18 +50,17 @@ def load_candidate_records() -> list[dict]:
         df.fillna("", inplace=True)
         records = df.to_dict(orient="records")
 
-        # Inject ATS candidate status
         for r in records:
             cand_id = f"{r.get('Team Name')}::{r.get('Candidate Name/Title')}".strip()
             r["Status"] = _candidate_status_cache.get(cand_id, "New")
         return records
     except Exception as exc:
-        print(f"[server] Error reading candidate report: {exc}")
+        print(f"[server] Error loading records: {exc}")
         return []
 
 
 def compute_metrics(records: list[dict]) -> dict:
-    """Compute enterprise dashboard metrics."""
+    """Compute rich metrics including team breakdown."""
     if not records:
         return {
             "total_candidates": 0,
@@ -60,20 +68,37 @@ def compute_metrics(records: list[dict]) -> dict:
             "teams_count": 0,
             "avg_score": 0,
             "shortlisted_count": 0,
+            "team_breakdown": {},
         }
 
     scores = []
     teams = set()
     shortlisted = 0
+    team_breakdown: dict[str, dict] = {}
 
     for r in records:
+        team_name = str(r.get("Team Name") or "Unassigned").strip()
         score_val = r.get("Match Score")
-        if isinstance(score_val, (int, float)) or (isinstance(score_val, str) and score_val.isdigit()):
-            scores.append(int(score_val))
-        if r.get("Team Name"):
-            teams.add(str(r.get("Team Name")).strip())
+        score = int(score_val) if isinstance(score_val, (int, float)) or (isinstance(score_val, str) and str(score_val).isdigit()) else 0
+
+        scores.append(score)
+        teams.add(team_name)
+
         if r.get("Status") == "Shortlisted":
             shortlisted += 1
+
+        if team_name not in team_breakdown:
+            team_breakdown[team_name] = {"count": 0, "top_matches": 0, "scores": []}
+        
+        team_breakdown[team_name]["count"] += 1
+        team_breakdown[team_name]["scores"].append(score)
+        if score >= 80:
+            team_breakdown[team_name]["top_matches"] += 1
+
+    # Calculate average per team
+    for t, data in team_breakdown.items():
+        s_list = data.pop("scores")
+        data["avg_score"] = round(sum(s_list) / len(s_list), 1) if s_list else 0
 
     top_count = sum(1 for s in scores if s >= 80)
     avg_score = round(sum(scores) / len(scores), 1) if scores else 0
@@ -84,11 +109,12 @@ def compute_metrics(records: list[dict]) -> dict:
         "teams_count": len(teams),
         "avg_score": avg_score,
         "shortlisted_count": shortlisted,
+        "team_breakdown": team_breakdown,
     }
 
 
 class EnterpriseRecruitmentHandler(SimpleHTTPRequestHandler):
-    """Production HTTP Handler for static assets and REST API endpoints."""
+    """Production Handler for REST API and Static Assets."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
@@ -135,7 +161,7 @@ class EnterpriseRecruitmentHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         if parsed.path == "/api/run-pipeline":
-            print("[server] Triggering pipeline run via main.py ...")
+            print("[server] Triggering main.py execution ...")
             try:
                 proc = subprocess.run(
                     [sys.executable, str(BASE_DIR / "main.py")],
@@ -148,7 +174,7 @@ class EnterpriseRecruitmentHandler(SimpleHTTPRequestHandler):
                 self._send_json({
                     "success": success,
                     "output": output,
-                    "message": "Pipeline completed successfully." if success else "Pipeline execution completed with warnings."
+                    "message": "Pipeline run completed successfully." if success else "Pipeline execution completed."
                 })
             except Exception as exc:
                 self._send_json({"success": False, "error": str(exc)}, status=500)
@@ -180,10 +206,10 @@ def run_server():
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     server_address = ("", PORT)
-    httpd = HTTPServer(server_address, EnterpriseRecruitmentHandler)
+    httpd = ThreadedHTTPServer(server_address, EnterpriseRecruitmentHandler)
     print("=" * 65)
-    print(f"  [OK] RECRUITMENT PLATFORM WEB SERVER RUNNING")
-    print(f"  [OK] Access URL: http://localhost:{PORT}")
+    print(f"  [OK] PRODUCTION MULTI-THREADED WEB SERVER RUNNING")
+    print(f"  [OK] Access Platform UI: http://localhost:{PORT}")
     print("=" * 65)
     try:
         httpd.serve_forever()
