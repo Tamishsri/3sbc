@@ -18,6 +18,7 @@ Column headers are bold and columns are auto-fitted to content width.
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -180,6 +181,16 @@ def generate_report(
 
     # 4. Write with pandas to get the initial file
     df.to_excel(str(output_path), index=False, engine="openpyxl")
+
+    # Also export candidates_data.json for instant web app rendering
+    json_path = output_path.parent / "candidates_data.json"
+    try:
+        json_records = df.to_dict(orient="records")
+        with open(json_path, "w", encoding="utf-8") as jf:
+            json.dump(json_records, jf, indent=2)
+        print(f"[reporter] [OK] JSON data exported: {json_path}")
+    except Exception as je:
+        print(f"[reporter] WARN: Could not write candidates_data.json: {je}")
 
     # 5. Re-open with openpyxl for formatting
     wb = openpyxl.load_workbook(str(output_path))
