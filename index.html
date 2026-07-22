@@ -746,7 +746,7 @@ function renderKanban(data) {
 }
 
 function renderCard(j) {
-  const dataStr = esc(JSON.stringify(j));
+  const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
   return `
     <div class="job-card">
       <div class="job-card-title">${esc(j.title)}</div>
@@ -757,16 +757,16 @@ function renderCard(j) {
         <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
       <div class="job-card-actions">
-        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${dataStr}')">🤖 Match</button>
-        <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${dataStr}')">✅ Submit</button>
+        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${b64}')">🤖 Match</button>
+        <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${b64}')">✅ Submit</button>
       </div>
-      <button class="btn-action" style="width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px" onclick="saveToHotlist(JSON.parse('${dataStr}'.replace(/&quot;/g, '\\"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')))">⭐ Save to Hotlist</button>
+      <button class="btn-action" style="width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px" onclick="saveToHotlist('${b64}')">⭐ Save to Hotlist</button>
     </div>`;
 }
 
 // ── AI MATCH MODAL ───────────────────────────────────────────
-async function openMatchModal(dataStr) {
-  const job = JSON.parse(dataStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+async function openMatchModal(b64) {
+  const job = JSON.parse(decodeURIComponent(atob(b64)));
   STATE.pendingJob = job;
 
   document.getElementById('matchModalTitle').textContent = `🤖 AI Bench Match — ${job.title}`;
@@ -808,9 +808,9 @@ function selectMatch(name, skill, loc) {
   if (STATE.pendingJob) openSubmitModalWithCandidate(STATE.pendingJob, name, skill, loc);
 }
 
-// ── SUBMIT & MARGIN CALCULATOR MODAL ─────────────────────────
-function openSubmitModal(dataStr) {
-  const job = JSON.parse(dataStr.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+// ── SUBMIT MODAL ──────────────────────────────────────────────
+function openSubmitModal(b64) {
+  const job = JSON.parse(decodeURIComponent(atob(b64)));
   openSubmitModalWithCandidate(job, '', '', '');
 }
 
@@ -1097,7 +1097,9 @@ function renderSavedJobs() {
   const grid = document.getElementById('savedJobsGrid');
   if (!grid) return;
   
-  grid.innerHTML = (STATE.savedJobs || []).map(j => `
+  grid.innerHTML = (STATE.savedJobs || []).map(j => {
+    const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
+    return `
     <div class="job-card" style="border-left: 3px solid var(--emerald)">
       <div style="font-size:10px;text-transform:uppercase;color:var(--indigo);font-weight:700;margin-bottom:4px">${esc(j.board)}</div>
       <div style="font-weight:700;color:#fff;font-size:15px">${esc(j.title)}</div>
@@ -1105,12 +1107,14 @@ function renderSavedJobs() {
       <div style="margin-top:8px;font-size:12px;color:var(--text-main)">📍 ${esc(j.location)}</div>
       ${j.salary ? `<div style="margin-top:4px;font-size:12px;color:var(--emerald);font-weight:700">💰 ${esc(j.salary)}</div>` : ''}
       <div style="margin-top:16px;display:flex;gap:8px">
-        <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmit('${esc(j.title)}','${esc(j.company)}','${esc(j.board)}','${esc(j.url)}')">🚀 Submit</button>
+        <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmitModal('${b64}')">🚀 Submit</button>
       </div>
-    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
+    </div>`;
+  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
 }
 
-async function saveToHotlist(job) {
+async function saveToHotlist(b64) {
+  const job = JSON.parse(decodeURIComponent(atob(b64)));
   try {
     await fetch('/api/jobs/saved', {
       method: 'POST',
@@ -1120,6 +1124,7 @@ async function saveToHotlist(job) {
     if (!STATE.savedJobs) STATE.savedJobs = [];
     STATE.savedJobs.unshift(job);
     toast('⭐ Job saved to Hotlist!', 'success');
+    renderSavedJobs();
   } catch(e) {
     toast('Failed to save job', 'error');
   }
