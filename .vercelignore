@@ -1,10 +1,6 @@
-main.py
-server.py
-excel_parser.py
-linkedin_sourcer.py
-ai_evaluator.py
-firebase_db.py
-report_generator.py
-setup_env.py
-build_monolith.py
-*.py
+.env
+.gitignore
+venv/
+.venv/
+__pycache__/
+*.pyc
