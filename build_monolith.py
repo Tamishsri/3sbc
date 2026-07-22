@@ -165,16 +165,16 @@ def build():
   <div id="handoffModal" class="modal-backdrop">
     <div class="modal-box">
       <div class="modal-title-row">
-        <h3>📦 Client & Evaluator Delivery Guide</h3>
+        <h3>🌐 Client & Evaluator Cloud Delivery Guide</h3>
         <button id="closeHandoffBtn" class="modal-close-btn">&times;</button>
       </div>
       <div style="font-size: 0.875rem; color: var(--text-slate-400); line-height: 1.6;">
-        <p style="margin-bottom: 1rem;">To deliver this solution to clients or evaluators:</p>
-        <ol style="margin-left: 1.25rem; margin-bottom: 1rem;">
-          <li><strong>ZIP the project folder</strong> containing <code>main.py</code>, <code>server.py</code>, <code>excel_parser.py</code>, <code>linkedin_sourcer.py</code>, <code>ai_evaluator.py</code>, <code>firebase_db.py</code>, <code>report_generator.py</code>, <code>requirements.txt</code>, and <code>firebase-key.json</code>.</li>
-          <li>The evaluator installs dependencies: <code>pip install -r requirements.txt</code></li>
-          <li>They launch the Web UI: <code>python server.py</code> (opens on <code>http://localhost:5000</code>).</li>
-        </ol>
+        <p style="margin-bottom: 0.75rem; color: var(--text-slate-200); font-weight: 600;">Option 1: Instant Cloud Web Access (Recommended)</p>
+        <p style="margin-bottom: 1rem;">Share the live Vercel URL directly with evaluators: <br><a href="https://3sbc.vercel.app" target="_blank" style="color: var(--cyan-text); font-weight: 700; text-decoration: underline;">https://3sbc.vercel.app</a><br>Evaluators can immediately search candidates, filter by team, update recruiter pipeline statuses (Shortlisted, Hired), and export reports with zero setup.</p>
+        
+        <p style="margin-bottom: 0.75rem; color: var(--text-slate-200); font-weight: 600;">Option 2: Source Code & GitHub Handoff</p>
+        <p style="margin-bottom: 0.5rem;">GitHub Repository: <a href="https://github.com/Tamishsri/3sbc" target="_blank" style="color: var(--cyan-text); font-weight: 700;">github.com/Tamishsri/3sbc</a></p>
+        <p>Or hand over the ZIP containing <code>main.py</code>, <code>server.py</code>, <code>excel_parser.py</code>, <code>linkedin_sourcer.py</code>, <code>ai_evaluator.py</code>, <code>firebase_db.py</code>, and <code>requirements.txt</code>.</p>
       </div>
     </div>
   </div>
