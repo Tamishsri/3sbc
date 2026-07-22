@@ -1207,6 +1207,7 @@ async function toggleHotlist(b64, btnEl) {
       const savedRef = STATE.savedJobs.find(sj => sj.doc_id === tempDocId);
       if (savedRef) {
         savedRef.doc_id = data.id;
+        renderSavedJobs(); // Re-render to update the HTML buttons with the real doc_id
       }
       toast('⭐ Job saved to Hotlist!', 'success');
     } catch(e) {
