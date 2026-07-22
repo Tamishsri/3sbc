@@ -1,5 +1,5 @@
 /**
- * app.js — Production Enterprise ATS Dashboard Logic (Local + Vercel Cloud Fallback)
+ * app.js — Production Talent Intelligence ATS Frontend Logic
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -34,22 +34,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const closeTerminalBtn = document.getElementById('closeTerminalBtn');
   const terminalOutput = document.getElementById('terminalOutput');
 
-  // Static Fallback Data for Vercel Static Hosting
-  let fallbackCandidates = [];
-  try {
-    const staticRes = await fetch('candidates_data.json');
-    if (staticRes.ok) {
-      fallbackCandidates = await staticRes.json();
-    }
-  } catch (e) {
-    console.log('Static JSON load notice:', e);
-  }
-
-  // Load Dashboard Data (Tries Live API first, falls back to static data on Vercel)
+  // Load Dashboard Data (Tries live API first, falls back to candidates_data.json)
   async function loadDashboard() {
     try {
       const candRes = await fetch('/api/candidates');
-      if (!candRes.ok) throw new Error('API not available on static host');
+      if (!candRes.ok) throw new Error('Static host fallback');
       allCandidates = await candRes.json();
 
       const statsRes = await fetch('/api/stats');
@@ -57,8 +46,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateStats(stats);
       renderTeamAnalytics(stats.team_breakdown || {});
     } catch (err) {
-      console.log('Using static Vercel cloud dataset...');
-      allCandidates = fallbackCandidates;
+      try {
+        const staticRes = await fetch('candidates_data.json');
+        if (staticRes.ok) {
+          allCandidates = await staticRes.json();
+        }
+      } catch (staticErr) {
+        console.error('Static data load error:', staticErr);
+      }
 
       const computedStats = computeLocalStats(allCandidates);
       updateStats(computedStats);
@@ -69,9 +64,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyFilters();
   }
 
-  // Compute stats on static Vercel deployment
+  // Compute stats for static fallback
   function computeLocalStats(records) {
-    if (!records || !records.length) return { total_candidates: 0, top_matches: 0, teams_count: 0, avg_score: 0, team_breakdown: {} };
+    if (!records || !records.length) {
+      return { total_candidates: 0, top_matches: 0, teams_count: 0, avg_score: 0, team_breakdown: {} };
+    }
 
     const scores = [];
     const teams = new Set();
@@ -80,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     records.forEach(r => {
       const team_name = (r['Team Name'] || 'Unassigned').trim();
       const score = parseInt(r['Match Score']) || 0;
-      scores.append ? scores.push(score) : scores.push(score);
+      scores.push(score);
       teams.add(team_name);
 
       if (!team_breakdown[team_name]) {
@@ -120,17 +117,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderTeamAnalytics(breakdown) {
     const teams = Object.keys(breakdown).sort();
     if (!teams.length) {
-      teamsGrid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No team metrics available.</div>';
+      teamsGrid.innerHTML = '<div style="color: var(--text-slate-400); font-size: 0.85rem;">No team metrics available.</div>';
       return;
     }
 
     teamsGrid.innerHTML = teams.map(t => {
       const data = breakdown[t];
       return `
-        <div class="team-summary-card">
+        <div class="team-stat-card">
           <h4>${escapeHtml(t)}</h4>
-          <div class="team-stats-row">
-            <span>Candidates: <strong>${data.count}</strong></span>
+          <div class="team-metrics-row">
+            <span>Sourced: <strong>${data.count}</strong></span>
             <span>Top Matches: <strong>${data.top_matches}</strong></span>
             <span>Avg Fit: <strong style="color: var(--emerald-text);">${data.avg_score}%</strong></span>
           </div>
@@ -142,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Populate Teams Dropdown
   function populateTeamFilter(candidates) {
     const teams = Array.from(new Set(candidates.map(c => c['Team Name']).filter(Boolean))).sort();
-    teamFilter.innerHTML = '<option value="ALL">All Teams</option>';
+    teamFilter.innerHTML = '<option value="ALL">All Consultant Teams</option>';
     teams.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t;
@@ -154,15 +151,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Render Candidates Cards & Table
   function renderCandidates(list) {
     if (!list.length) {
-      cardGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">No matching candidate records found.</div>';
-      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">No matching candidate records found.</td></tr>';
+      cardGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-slate-400); padding: 4rem;">No matching candidate records found.</div>';
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-slate-400); padding: 3rem;">No matching candidate records found.</td></tr>';
       return;
     }
 
     // Render Cards View
     cardGrid.innerHTML = list.map(c => {
       const score = parseInt(c['Match Score']) || 0;
-      const scoreClass = score >= 80 ? 'score-high' : 'score-med';
+      const scoreClass = score >= 80 ? 'score-high' : 'score-medium';
 
       const nameTitle = c['Candidate Name/Title'] || 'Candidate';
       const role = c['Target Skill (AREA)'] || 'General Role';
@@ -174,27 +171,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       const candId = `${team}::${nameTitle}`.trim();
 
       return `
-        <article class="candidate-card-box">
+        <article class="candidate-card">
           <div>
-            <div class="card-top">
-              <span class="team-pill-badge">${escapeHtml(team)}</span>
-              <div class="score-badge ${scoreClass}">${score}% Match</div>
+            <div class="card-header-row">
+              <span class="team-tag-pill">${escapeHtml(team)}</span>
+              <div class="score-badge-box ${scoreClass}">${score}% Match</div>
             </div>
 
-            <h3 class="cand-name-title">${escapeHtml(nameTitle)}</h3>
-            <div class="cand-role-sub">🎯 Target Role: ${escapeHtml(role)}</div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 0.85rem;">📍 Location: ${escapeHtml(location)}</div>
+            <h3 class="candidate-name">${escapeHtml(nameTitle)}</h3>
+            <div class="candidate-role">🎯 Target Role: ${escapeHtml(role)}</div>
+            <div class="candidate-location">📍 Location: ${escapeHtml(location)}</div>
 
-            <div class="verdict-container">
-              <div class="verdict-header">AI Recruiter Evaluation</div>
+            <div class="evaluation-box">
+              <div class="evaluation-title">AI Recruiter Evaluation</div>
               ${escapeHtml(reasoning)}
             </div>
           </div>
 
-          <div class="card-bottom">
-            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-btn-link">🔗 LinkedIn Profile</a>` : '<span style="font-size:0.8rem; color:var(--text-muted);">Profile Link</span>'}
+          <div class="card-footer-row">
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-link-btn">🔗 LinkedIn Profile</a>` : '<span style="font-size:0.775rem; color:var(--text-slate-400);">Profile Link</span>'}
             
-            <select class="status-dropdown" data-id="${escapeHtml(candId)}">
+            <select class="status-select-control" data-id="${escapeHtml(candId)}">
               <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
               <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
               <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
@@ -208,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Render Data Table View
     tableBody.innerHTML = list.map(c => {
       const score = parseInt(c['Match Score']) || 0;
-      const scoreClass = score >= 80 ? 'score-high' : 'score-med';
+      const scoreClass = score >= 80 ? 'score-high' : 'score-medium';
       const nameTitle = c['Candidate Name/Title'] || 'Candidate';
       const role = c['Target Skill (AREA)'] || 'General Role';
       const team = c['Team Name'] || 'Unassigned';
@@ -220,12 +217,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       return `
         <tr>
           <td><strong>${escapeHtml(nameTitle)}</strong></td>
-          <td><span class="team-pill-badge">${escapeHtml(team)}</span></td>
+          <td><span class="team-tag-pill">${escapeHtml(team)}</span></td>
           <td>${escapeHtml(role)}</td>
           <td>${escapeHtml(location)}</td>
-          <td><span class="score-badge ${scoreClass}">${score}%</span></td>
+          <td><span class="score-badge-box ${scoreClass}">${score}%</span></td>
           <td>
-            <select class="status-dropdown" data-id="${escapeHtml(candId)}">
+            <select class="status-select-control" data-id="${escapeHtml(candId)}">
               <option value="New" ${status === 'New' ? 'selected' : ''}>New</option>
               <option value="Shortlisted" ${status === 'Shortlisted' ? 'selected' : ''}>⭐️ Shortlisted</option>
               <option value="Interviewing" ${status === 'Interviewing' ? 'selected' : ''}>📅 Interviewing</option>
@@ -233,14 +230,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             </select>
           </td>
           <td>
-            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-btn-link" style="padding: 0.25rem 0.6rem;">LinkedIn</a>` : '-'}
+            ${linkedinUrl !== '#' ? `<a href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener" class="linkedin-link-btn" style="padding: 0.25rem 0.6rem;">LinkedIn</a>` : '-'}
           </td>
         </tr>
       `;
     }).join('');
 
     // Attach Status Selectors Handlers
-    document.querySelectorAll('.status-dropdown').forEach(sel => {
+    document.querySelectorAll('.status-select-control').forEach(sel => {
       sel.addEventListener('change', async (e) => {
         const candId = e.target.getAttribute('data-id');
         const newStatus = e.target.value;
@@ -251,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             body: JSON.stringify({ candidate_id: candId, status: newStatus })
           });
         } catch (err) {
-          console.log('Status updated in local view');
+          console.log('Status updated in local client state');
         }
         const found = allCandidates.find(c => `${c['Team Name']}::${c['Candidate Name/Title']}`.trim() === candId);
         if (found) found['Status'] = newStatus;
@@ -294,8 +291,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Tab Switcher
   scoreTabs.addEventListener('click', (e) => {
-    if (e.target.classList.contains('tab-btn')) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (e.target.classList.contains('filter-tab-btn')) {
+      document.querySelectorAll('.filter-tab-btn').forEach(btn => btn.classList.remove('active'));
       e.target.classList.add('active');
       currentScoreFilter = e.target.getAttribute('data-score') || e.target.getAttribute('data-status');
       applyFilters();
@@ -340,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         terminalOutput.textContent = '⚠️ Pipeline Output:\n\n' + (data.output || data.error);
       }
     } catch (err) {
-      terminalOutput.textContent = 'ℹ️ Pipeline triggered on local server. Check local console or rerun python main.py.';
+      terminalOutput.textContent = 'ℹ️ Pipeline execution triggered. If running on Vercel static, run python main.py locally to update cloud records.';
     } finally {
       runBtn.disabled = false;
       runBtn.innerHTML = '🚀 Run Pipeline';
