@@ -1,0 +1,8 @@
+pandas
+openpyxl
+python-dotenv
+google-generativeai
+google-genai
+requests
+duckduckgo-search
+firebase-admin
