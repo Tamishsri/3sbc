@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statAvgScore = document.getElementById('statAvgScore');
 
   const runBtn = document.getElementById('runPipelineBtn');
+  const exportBtn = document.getElementById('exportBtn');
   const handoffBtn = document.getElementById('handoffBtn');
   const handoffModal = document.getElementById('handoffModal');
   const closeHandoffBtn = document.getElementById('closeHandoffBtn');
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const closeTerminalBtn = document.getElementById('closeTerminalBtn');
   const terminalOutput = document.getElementById('terminalOutput');
 
-  // Load Dashboard Data (Tries live API first, falls back to candidates_data.json)
+  // Load Dashboard Data (Tries live API first, falls back to embedded candidates data on Vercel)
   async function loadDashboard() {
     try {
       const candRes = await fetch('/api/candidates');
@@ -46,13 +47,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateStats(stats);
       renderTeamAnalytics(stats.team_breakdown || {});
     } catch (err) {
-      try {
-        const staticRes = await fetch('candidates_data.json');
-        if (staticRes.ok) {
-          allCandidates = await staticRes.json();
-        }
-      } catch (staticErr) {
-        console.error('Static data load error:', staticErr);
+      if (typeof EMBEDDED_CANDIDATES !== 'undefined' && EMBEDDED_CANDIDATES.length) {
+        allCandidates = EMBEDDED_CANDIDATES;
+      } else {
+        try {
+          const staticRes = await fetch('candidates_data.json');
+          if (staticRes.ok) {
+            allCandidates = await staticRes.json();
+          }
+        } catch (e) {}
       }
 
       const computedStats = computeLocalStats(allCandidates);
@@ -248,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             body: JSON.stringify({ candidate_id: candId, status: newStatus })
           });
         } catch (err) {
-          console.log('Status updated in local client state');
+          console.log('Status updated in client view');
         }
         const found = allCandidates.find(c => `${c['Team Name']}::${c['Candidate Name/Title']}`.trim() === candId);
         if (found) found['Status'] = newStatus;
@@ -287,6 +290,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Helper XSS prevention
   function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // CSV Export Download directly in browser
+  if (exportBtn) {
+    exportBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!allCandidates.length) {
+        alert('No candidate records available to export.');
+        return;
+      }
+
+      const headers = ['Team Name', 'Target Skill (AREA)', 'Target Location', 'Candidate Name/Title', 'Candidate LinkedIn URL', 'Match Score', 'AI Reasoning', 'Status'];
+      const csvRows = [headers.join(',')];
+
+      allCandidates.forEach(c => {
+        const row = headers.map(h => {
+          let val = String(c[h] || '').replace(/"/g, '""');
+          return `"${val}"`;
+        });
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'Sourced_Candidates_Report.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   }
 
   // Tab Switcher
@@ -337,7 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         terminalOutput.textContent = '⚠️ Pipeline Output:\n\n' + (data.output || data.error);
       }
     } catch (err) {
-      terminalOutput.textContent = 'ℹ️ Pipeline execution triggered. If running on Vercel static, run python main.py locally to update cloud records.';
+      terminalOutput.textContent = 'ℹ️ Pipeline run requested. If running on Vercel static host, run python main.py on your computer to update cloud Firestore records.';
     } finally {
       runBtn.disabled = false;
       runBtn.innerHTML = '🚀 Run Pipeline';
