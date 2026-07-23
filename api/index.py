@@ -22,8 +22,8 @@ sys.path.insert(0, str(BASE_DIR))
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6JJtrn4tls4bF9v" + "p4hsE0B5Kd94" + "o1MACo-VEwHn0GSwoA")
-GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6I4fnW-VsEaRjngK9" + "QMMXSeS4MOV4lI" + "McqcPyI7-gFyvw")
+GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
@@ -98,14 +98,27 @@ def serve_data():
 
 def _gemini(prompt: str, system: str = "") -> str:
     """Call Gemini API and return text response. Raises on failure."""
-    from google import genai
-    from google.genai import types as gt
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    cfg = gt.GenerateContentConfig(temperature=0.7)
-    if system:
-        cfg = gt.GenerateContentConfig(system_instruction=system, temperature=0.7)
-    resp = client.models.generate_content(model=GEMINI_MODEL, contents=prompt, config=cfg)
-    return resp.text.strip()
+    import requests
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}]
+        }
+        if system:
+            payload["system_instruction"] = {"parts": [{"text": system}]}
+            
+        res = requests.post(url, headers=headers, json=payload)
+        data = res.json()
+        
+        if res.status_code != 200:
+            print(f"[gemini] API Error: {data}")
+            return "{}"
+            
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"[gemini] error: {e}")
+        raise e
 
 
 # ---------------------------------------------------------------------------
