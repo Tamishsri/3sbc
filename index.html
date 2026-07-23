@@ -208,6 +208,25 @@ body {
 }
 .job-card-company { font-size: 12px; font-weight: 500; color: var(--text-sub); display: flex; align-items: center; gap: 6px; }
 
+/* Skeleton Loaders */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+.skeleton-card {
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-surface); display: flex; flex-direction: column; gap: 12px;
+}
+.skeleton-text { height: 14px; width: 100%; border-radius: 4px; }
+.skeleton-text.short { width: 60%; }
+.skeleton-title { height: 18px; width: 80%; border-radius: 4px; margin-bottom: 4px; }
+
 .job-card-meta {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500;
@@ -328,6 +347,7 @@ body {
             </select>
           </div>
           <button type="submit" class="btn-search-main" id="searchBtn">🔍 Search All 5 Boards</button>
+          <button type="button" class="btn-search-main" id="refreshBtn" style="background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border);" onclick="runSearch(true)">🔄 Force Refresh</button>
         </form>
 
         <!-- Quick Presets -->
@@ -683,24 +703,44 @@ function preset(skill, location) {
   runSearch();
 }
 
-async function runSearch() {
+async function runSearch(forceRefresh = false) {
   const skill    = document.getElementById('skillInput')?.value.trim() || 'SAP MM';
   const location = document.getElementById('locationInput')?.value.trim() || 'Philadelphia, PA';
   const jobType  = document.getElementById('typeInput')?.value || 'contract';
   const btn      = document.getElementById('searchBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
 
   if (btn) {
     btn.disabled = true;
     btn.textContent = '⏳ Searching...';
   }
+  if (refreshBtn) refreshBtn.disabled = true;
 
   const grid = document.getElementById('kanbanGrid');
   if (grid) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Searching 5 job boards...</div>';
+    // Elegant Skeleton Loading State
+    const columns = ['LinkedIn', 'Dice', 'Indeed', 'ZipRecruiter', 'Monster'];
+    grid.innerHTML = columns.map(c => `
+      <div class="kanban-column">
+        <div class="kanban-header">
+          <div style="display:flex;align-items:center;gap:6px">${c}</div>
+        </div>
+        <div class="kanban-cards-list">
+          ${[1, 2, 3].map(() => `
+            <div class="skeleton-card">
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-text short"></div>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
   }
 
   try {
-    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}`);
+    const cacheParam = forceRefresh ? '&cache=0' : '';
+    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`);
     const data = await res.json();
 
     STATE.jobResults = data.boards || {};
@@ -724,6 +764,7 @@ async function runSearch() {
       btn.disabled = false;
       btn.textContent = '🔍 Search All 5 Boards';
     }
+    if (refreshBtn) refreshBtn.disabled = false;
   }
 }
 

@@ -216,7 +216,7 @@ def api_jobs_match():
         job_desc     = job.get("description", "")
 
         scored = []
-        for c in candidates[:15]:  # Cap at 15 to avoid timeout
+        for c in candidates:
             skill_area = str(c.get("Target Skill (AREA)") or c.get("AREA") or "").strip()
             name       = str(c.get("Consultant Name") or c.get("NAME OF THE CONSULTANT") or "").strip()
             location   = str(c.get("Target Location") or c.get("Location") or "").strip()
@@ -228,7 +228,7 @@ def api_jobs_match():
             if not name:
                 continue
 
-            # --- Multi-factor algorithmic score (fast, unique per candidate) ---
+            # --- Multi-factor algorithmic score (fast, pre-calculated) ---
             skill_words = [w.lower() for w in skill_area.split() if len(w) > 2]
             job_text    = f"{job_title} {job_desc}".lower()
             hits        = sum(1 for w in skill_words if w in job_text)
@@ -241,47 +241,6 @@ def api_jobs_match():
             raw_score = (kw_pct * 0.55) + (base_score * 0.30) + loc_boost + visa_boost + rate_penalty
             final_score = min(max(int(raw_score), 35), 98)
 
-            # --- Gemini AI reasoning (unique per candidate) ---
-            reasoning = ""
-            if GEMINI_API_KEY:
-                try:
-                    prompt = (
-                        f"You are a senior IT staffing recruiter writing a brief, professional match analysis.\n\n"
-                        f"JOB: {job_title} at {job_company} ({job_location})\n"
-                        f"JOB DESCRIPTION: {job_desc[:300]}\n\n"
-                        f"CANDIDATE: {name}\n"
-                        f"CANDIDATE SKILLS: {skill_area}\n"
-                        f"CANDIDATE LOCATION: {location}\n"
-                        f"VISA STATUS: {visa}\n"
-                        f"MATCH SCORE: {final_score}/100\n\n"
-                        f"Write exactly 2 sentences explaining WHY this specific candidate is or isn't a good fit "
-                        f"for this specific job. Be specific about their skills vs job requirements. "
-                        f"Do NOT use generic phrases. Do not use markdown. Plain text only."
-                    )
-                    reasoning = _gemini(prompt)
-                except Exception as e:
-                    print(f"[match] Gemini error for {name}: {e}")
-
-            if not reasoning:
-                # Deterministic fallback — unique per candidate based on their actual data
-                gaps = [w for w in ["SAP", "Oracle", "AWS", "Java", "Python", "React", "Azure", "GCP"]
-                        if w.lower() not in skill_area.lower() and w.lower() in job_text]
-                if final_score >= 80:
-                    reasoning = (
-                        f"{name} brings direct {skill_area} expertise that aligns strongly with the {job_title} requirements at {job_company}. "
-                        f"Their {visa} status and {location} base make them an immediate, low-friction placement."
-                    )
-                elif final_score >= 60:
-                    reasoning = (
-                        f"{name}'s background in {skill_area} covers the core technical requirements for this {job_title} role. "
-                        f"{'Potential gap in: ' + ', '.join(gaps[:2]) + '.' if gaps else 'Strong alignment overall with minor domain differences.'}"
-                    )
-                else:
-                    reasoning = (
-                        f"{name} has foundational IT skills but their {skill_area} focus shows limited overlap with {job_title} at {job_company}. "
-                        f"{'Missing key experience in: ' + ', '.join(gaps[:3]) + '.' if gaps else 'Would require upskilling for this specific role.'}"
-                    )
-
             scored.append({
                 "name":      name,
                 "team":      team,
@@ -290,11 +249,57 @@ def api_jobs_match():
                 "visa":      visa,
                 "pay_rate":  pay_rate,
                 "fit_score": final_score,
-                "reason":    reasoning,
+                "reason":    "",
             })
 
+        # Sort by fit_score first to find the best candidates
         scored.sort(key=lambda x: x["fit_score"], reverse=True)
-        return jsonify({"matches": scored[:10], "job_title": job_title})
+        top_candidates = scored[:10]
+
+        # --- Gemini AI reasoning (only for the Top 5 to prevent Vercel Timeout) ---
+        for i, c in enumerate(top_candidates):
+            reasoning = ""
+            if GEMINI_API_KEY and i < 5:
+                try:
+                    prompt = (
+                        f"You are a senior IT staffing recruiter writing a brief, professional match analysis.\n\n"
+                        f"JOB: {job_title} at {job_company} ({job_location})\n"
+                        f"JOB DESCRIPTION: {job_desc[:300]}\n\n"
+                        f"CANDIDATE: {c['name']}\n"
+                        f"CANDIDATE SKILLS: {c['skill']}\n"
+                        f"CANDIDATE LOCATION: {c['location']}\n"
+                        f"VISA STATUS: {c['visa']}\n"
+                        f"MATCH SCORE: {c['fit_score']}/100\n\n"
+                        f"Write exactly 2 sentences explaining WHY this specific candidate is or isn't a good fit "
+                        f"for this specific job. Be specific about their skills vs job requirements. "
+                        f"Do NOT use generic phrases. Do not use markdown. Plain text only."
+                    )
+                    reasoning = _gemini(prompt)
+                except Exception as e:
+                    print(f"[match] Gemini error for {c['name']}: {e}")
+
+            if not reasoning:
+                # Deterministic fallback
+                gaps = [w for w in ["SAP", "Oracle", "AWS", "Java", "Python", "React", "Azure", "GCP"]
+                        if w.lower() not in c['skill'].lower() and w.lower() in job_text]
+                if c['fit_score'] >= 80:
+                    reasoning = (
+                        f"{c['name']} brings direct {c['skill']} expertise that aligns strongly with the {job_title} requirements at {job_company}. "
+                        f"Their {c['visa']} status and {c['location']} base make them an immediate, low-friction placement."
+                    )
+                elif c['fit_score'] >= 60:
+                    reasoning = (
+                        f"{c['name']}'s background in {c['skill']} covers the core technical requirements for this {job_title} role. "
+                        f"{'Potential gap in: ' + ', '.join(gaps[:2]) + '.' if gaps else 'Strong alignment overall with minor domain differences.'}"
+                    )
+                else:
+                    reasoning = (
+                        f"{c['name']} has foundational IT skills but their {c['skill']} focus shows limited overlap with {job_title} at {job_company}. "
+                        f"{'Missing key experience in: ' + ', '.join(gaps[:3]) + '.' if gaps else 'Would require upskilling for this specific role.'}"
+                    )
+            c["reason"] = reasoning
+
+        return jsonify({"matches": top_candidates, "job_title": job_title})
 
     except Exception as e:
         print(f"[api/match] ERROR: {e}")

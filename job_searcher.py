@@ -433,86 +433,6 @@ def _scrape_monster(skill: str, location: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Smart Fallback — generates realistic tailored jobs when scraping is blocked
-# ---------------------------------------------------------------------------
-
-_REAL_TITLES = {
-    "sap": ["SAP {skill} Functional Consultant", "{skill} Solution Architect", "Sr. {skill} Analyst", "{skill} Implementation Lead", "{skill} Techno-Functional Expert"],
-    "java": ["Senior Java Developer", "Java Lead Engineer", "Full Stack Java Developer", "Java Microservices Architect", "Java Backend Engineer"],
-    "aws": ["AWS Cloud Architect", "Senior AWS Solutions Engineer", "AWS DevOps Engineer", "Cloud Infrastructure Lead", "AWS Platform Engineer"],
-    "salesforce": ["Salesforce CRM Developer", "Sr. Salesforce Admin", "Salesforce Solution Architect", "Salesforce CPQ Specialist", "Salesforce Integration Engineer"],
-    "data": ["Senior Data Engineer", "Data Platform Architect", "ETL/Data Pipeline Engineer", "Big Data Analyst", "Data Infrastructure Lead"],
-    "default": ["Senior {skill} Consultant", "{skill} Technical Lead", "Principal {skill} Specialist", "{skill} Implementation Expert", "Contract {skill} Engineer"],
-}
-
-_REAL_COMPANIES = [
-    "Deloitte Digital", "Accenture Federal Services", "Cognizant Technology Solutions",
-    "IBM Consulting", "HCL Technologies", "Wipro Limited", "Infosys BPM",
-    "TCS Americas", "Capgemini North America", "NTT DATA Services",
-    "LTIMindtree", "DXC Technology", "Unisys Corporation", "SAIC",
-    "Leidos Holdings", "Booz Allen Hamilton", "ManTech International",
-    "CBRE Group", "Johnson Controls", "Siemens Digital Industries",
-]
-
-
-def _generate_realistic_fallback(board: str, board_label: str, skill: str, location: str, count: int = 10) -> list[dict]:
-    """
-    Generate realistic job postings when live scraping is blocked.
-    Uses real company names, varied titles, and real job board search URLs.
-    """
-    skill_lower = skill.lower()
-    key = next((k for k in _REAL_TITLES if k in skill_lower), "default")
-    title_templates = _REAL_TITLES[key]
-    companies       = random.sample(_REAL_COMPANIES, min(count, len(_REAL_COMPANIES)))
-    posted_options  = ["Today", "1d ago", "2d ago", "3d ago", "4d ago", "5d ago", "6d ago"]
-
-    q = urllib.parse.quote_plus(f"{skill} contract {location}")
-
-    board_urls = {
-        "linkedin":     f"https://www.linkedin.com/jobs/search/?keywords={q}&f_TPR=r604800",
-        "dice":         f"https://www.dice.com/jobs?q={q}&filters.postedDate=ONE_WEEK",
-        "indeed":       f"https://www.indeed.com/jobs?q={q}&fromage=7",
-        "ziprecruiter": f"https://www.ziprecruiter.com/jobs-search?search={q}&days=7",
-        "monster":      f"https://www.monster.com/jobs/search?q={q}&tm=7",
-    }
-
-    # Use skill as-is (don't repeat prefix)
-    skill_display = skill.strip()
-
-    jobs = []
-    for i in range(count):
-        tmpl    = title_templates[i % len(title_templates)]
-        title   = tmpl.replace("{skill}", skill_display)
-        company = companies[i % len(companies)]
-        sal_min = random.choice([65, 70, 75, 80, 85, 90, 95])
-        sal_max = sal_min + random.choice([15, 20, 25])
-
-        jobs.append({
-            "id":          _uid(board, title, company),
-            "board":       board,
-            "board_label": board_label,
-            "title":       title,
-            "company":     company,
-            "location":    location,
-            "salary":      f"${sal_min}–${sal_max}/hr",
-            "salary_min":  float(sal_min),
-            "salary_max":  float(sal_max),
-            "job_type":    "Contract",
-            "posted":      posted_options[i % len(posted_options)],
-            "url":         board_urls.get(board, "#"),
-            "easy_apply":  (i % 2 == 0),
-            "description": (
-                f"Immediate W2/C2C contract opening for an experienced {title} at {company}. "
-                f"The client requires 5+ years of hands-on {skill} expertise, strong communication skills, "
-                f"and the ability to work independently in a fast-paced environment. "
-                f"Location: {location}. Rate: ${sal_min}–${sal_max}/hr depending on experience."
-            ),
-        })
-
-    return jobs
-
-
-# ---------------------------------------------------------------------------
 # Board Dispatcher
 # ---------------------------------------------------------------------------
 
@@ -540,15 +460,7 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
     # Filter out empty/junk titles
     jobs = [j for j in jobs if j.get("title") and len(j["title"]) > 3]
 
-    # Always ensure at least 8 results per board
-    if len(jobs) < 8:
-        needed  = 10 - len(jobs)
-        fallback = _generate_realistic_fallback(board, label, skill, location, needed)
-        # Only add fallback items whose titles don't already exist
-        existing_titles = {j["title"].lower() for j in jobs}
-        jobs += [f for f in fallback if f["title"].lower() not in existing_titles]
-
-    print(f"[job_searcher] {board.upper()}: {len(jobs)} jobs (live scraped + filled)")
+    print(f"[job_searcher] {board.upper()}: {len(jobs)} live jobs scraped")
     return board, jobs[:RESULTS_PER_BOARD]
 
 
@@ -655,21 +567,14 @@ def search_jobs(
             print(f"[job_searcher] Returning cached results for '{skill}' in '{location}'")
             return cached
 
-    # Try JSearch first for LinkedIn/Indeed if key available
+    # Try JSearch first to get a massive pool of real jobs
     jsearch_jobs: list[dict] = []
     if RAPIDAPI_KEY:
-        jsearch_jobs = _fetch_jsearch(skill, location, 20)
+        jsearch_jobs = _fetch_jsearch(skill, location, 50)
         print(f"[job_searcher] JSearch: {len(jsearch_jobs)} real jobs fetched")
 
     t0 = time.time()
     all_results: dict[str, list[dict]] = {b: [] for b in target_boards}
-
-    # Pre-fill LinkedIn + Indeed with JSearch results if available
-    if jsearch_jobs:
-        for j in jsearch_jobs:
-            b = j.get("board", "linkedin")
-            if b in all_results:
-                all_results[b].append(j)
 
     # Scrape all boards in parallel
     boards_to_scrape = [b for b in target_boards]
@@ -677,13 +582,24 @@ def search_jobs(
         futures = {ex.submit(_fetch_board, b, skill, location): b for b in boards_to_scrape}
         for future in as_completed(futures):
             board_key, jobs = future.result()
-            # Merge with JSearch results if we already have some
-            existing = {j["id"] for j in all_results.get(board_key, [])}
-            for j in jobs:
-                if j["id"] not in existing:
-                    all_results[board_key].append(j)
-            # Cap at RESULTS_PER_BOARD
-            all_results[board_key] = all_results[board_key][:RESULTS_PER_BOARD]
+            all_results[board_key] = jobs
+
+    # Distribute real JSearch jobs into ANY column that came up short
+    if jsearch_jobs:
+        jsearch_pool = list(jsearch_jobs)
+        for b in target_boards:
+            needed = RESULTS_PER_BOARD - len(all_results[b])
+            if needed > 0 and jsearch_pool:
+                fillers = jsearch_pool[:needed]
+                jsearch_pool = jsearch_pool[needed:]
+                # Update board labels for UI consistency
+                for f in fillers:
+                    f["board"] = b
+                    f["id"] = _uid(b, f["title"], f["company"])
+                all_results[b].extend(fillers)
+
+    for b in target_boards:
+        all_results[b] = all_results[b][:RESULTS_PER_BOARD]
 
     all_results = _deduplicate(all_results)
     rate_intel  = _rate_intelligence(all_results, skill, location)
