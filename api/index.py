@@ -79,11 +79,6 @@ def serve_js():
     f = BASE_DIR / "app.js"
     return (open(f).read(), 200, {"Content-Type": "application/javascript"}) if f.exists() else ("", 404)
 
-@app.route("/")
-def serve_index():
-    f = BASE_DIR / "index.html"
-    return (open(f).read(), 200, {"Content-Type": "text/html"}) if f.exists() else ("index.html not found", 404)
-
 @app.route("/apply")
 def serve_apply():
     f = BASE_DIR / "apply.html"
