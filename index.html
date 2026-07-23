@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Inlined Styles -->
   <style>
@@ -359,6 +362,7 @@ body {
           <h2 style="font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.02em">⭐ Saved Jobs Hotlist</h2>
           <p style="font-size:12px;color:var(--text-sub)">Jobs you've saved from the Kanban board for later review.</p>
         </div>
+        <button class="btn-action btn-action-emerald" onclick="exportSavedJobsCSV()" style="height:36px;padding:0 16px">📊 Export Hotlist</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px" id="savedJobsGrid">
         <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Loading saved jobs...</div>
@@ -379,7 +383,10 @@ body {
             <option value="US Citizen">US Citizen</option>
             <option value="OPT">OPT / CPT</option>
           </select>
-          <span style="font-weight:700;color:var(--indigo)" id="benchCount">63 Consultants</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-weight:700;color:var(--indigo)" id="benchCount">63 Consultants</span>
+            <button class="btn-action btn-action-indigo" onclick="exportBenchCSV()" style="height:36px;padding:0 16px">📊 Export Bench</button>
+          </div>
         </div>
       </div>
 
@@ -408,18 +415,20 @@ body {
     <section id="submissionsTab" class="tab-view" style="display:none;">
       
       <!-- CRM Dashboard -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px">
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
-          <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Total Submissions</div>
-          <div style="font-size:24px;font-weight:700;color:#fff" id="crmTotalCount">0</div>
+      <div style="display:grid;grid-template-columns:3fr 1fr;gap:16px;margin-bottom:16px">
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-sub);text-transform:uppercase;margin-bottom:12px">Pipeline Analytics</div>
+          <div style="height:140px;width:100%"><canvas id="analyticsChart"></canvas></div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
-          <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Avg Margin ($/hr)</div>
-          <div style="font-size:24px;font-weight:700;color:var(--emerald)" id="crmAvgMargin">$0.00</div>
-        </div>
-        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(99,102,241,0.02) 100%);border:1px solid var(--indigo);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:4px">
-          <div style="font-size:11px;font-weight:600;color:var(--indigo);text-transform:uppercase">Potential Monthly Pipeline</div>
-          <div style="font-size:24px;font-weight:700;color:#fff" id="crmTotalMonthly">$0</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;flex:1;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Total Submissions</div>
+            <div style="font-size:28px;font-weight:700;color:#fff" id="crmTotalCount">0</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(99,102,241,0.02) 100%);border:1px solid var(--indigo);border-radius:var(--radius);padding:16px;flex:1;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:11px;font-weight:600;color:var(--indigo);text-transform:uppercase">Avg Deal Margin</div>
+            <div style="font-size:28px;font-weight:700;color:#fff" id="crmAvgMargin">$0.00/hr</div>
+          </div>
         </div>
       </div>
 
@@ -611,8 +620,10 @@ const STATE = {
   candidates:  [],
   submissions: [],
   vendors:     [],
+  savedJobs:   [],
   jobResults:  {},
   pendingJob:  null,
+  chartInst:   null,
 };
 
 function toast(msg, type = 'info') {
@@ -1045,24 +1056,99 @@ function renderSubmissions() {
       <td>${esc(s.vendor_email || '—')}</td>
       <td><button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button></td>
     </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
+    
+  updateAnalyticsChart();
+}
+
+function updateAnalyticsChart() {
+  const ctx = document.getElementById('analyticsChart');
+  if (!ctx) return;
+  
+  // Aggregate data by date
+  const dateCounts = {};
+  [...STATE.submissions].reverse().forEach(s => {
+    const d = s.date || (s.created_at_iso ? s.created_at_iso.split(' ')[0] : 'Unknown');
+    dateCounts[d] = (dateCounts[d] || 0) + 1;
+  });
+  const labels = Object.keys(dateCounts);
+  const data = Object.values(dateCounts);
+
+  if (STATE.chartInst) {
+    STATE.chartInst.data.labels = labels;
+    STATE.chartInst.data.datasets[0].data = data;
+    STATE.chartInst.update();
+  } else {
+    STATE.chartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Submissions',
+          data: data,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#10b981'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false, color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', stepSize: 1 } }
+        }
+      }
+    });
+  }
+}
+
+function escapeCsv(str) {
+  if (str === null || str === undefined) return '""';
+  return `"${String(str).replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename, headers, rows) {
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
 }
 
 function exportSubmissionsCSV() {
   if (!STATE.submissions.length) { toast('No submissions to export', 'error'); return; }
   const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Bill Rate', 'Pay Rate', 'Margin $/hr'];
-  
-  const escapeCsv = (str) => {
-    if (str === null || str === undefined) return '""';
-    return `"${String(str).replace(/"/g, '""')}"`;
-  };
-
   const rows = STATE.submissions.map(s => [s.consultant_name, s.job_title, s.company, s.board, s.date || s.created_at_iso, s.status, s.bill_rate, s.pay_rate, s.margin_hr]);
-  const csv = [headers.map(escapeCsv).join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\n');
-  
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = '3SBC_Submissions.csv'; a.click();
-  toast('Exported CSV!', 'success');
+  downloadCsv('3SBC_Submissions.csv', headers, rows);
+  toast('Exported Submissions!', 'success');
+}
+
+function exportBenchCSV() {
+  if (!STATE.candidates.length) { toast('No candidates to export', 'error'); return; }
+  const headers = ['Consultant Name', 'Target Skill', 'Visa', 'Location', 'Pay Rate', 'Match Score', 'Status'];
+  const rows = STATE.candidates.map(c => [
+    c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || '',
+    c['Target Skill (AREA)'] || c['AREA'] || '',
+    c['Visa'] || 'H1B',
+    c['Target Location'] || c['Location'] || '',
+    c['PayRate'] || 65,
+    c['Match Score'] || 75,
+    c['Status'] || 'Available'
+  ]);
+  downloadCsv('3SBC_Bench_Pool.csv', headers, rows);
+  toast('Exported Bench Pool!', 'success');
+}
+
+function exportSavedJobsCSV() {
+  if (!STATE.savedJobs.length) { toast('No saved jobs to export', 'error'); return; }
+  const headers = ['Job Title', 'Company', 'Board', 'Location', 'Salary', 'URL', 'Date Saved'];
+  const rows = STATE.savedJobs.map(j => [j.title, j.company, j.board_label || j.board, j.location, j.salary, j.url, j.created_at_iso || '']);
+  downloadCsv('3SBC_Saved_Jobs.csv', headers, rows);
+  toast('Exported Saved Jobs!', 'success');
 }
 
 function exportCSV() {
