@@ -249,8 +249,11 @@ def api_jobs_match():
             location   = str(c.get("Target Location") or c.get("Location") or "").strip()
             team       = str(c.get("Team Name") or "").strip()
             visa       = str(c.get("Visa") or "H1B").strip()
-            pay_rate   = c.get("PayRate", 65)
-            base_score = int(c.get("Match Score") or 75)
+            raw_pay = c.get("PayRate")
+            pay_rate = float(raw_pay) if raw_pay not in (None, "") else 65.0
+            
+            raw_score = c.get("Match Score")
+            base_score = int(raw_score) if raw_score not in (None, "") else 75
 
             if not name:
                 continue
