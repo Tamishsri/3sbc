@@ -325,6 +325,46 @@ body {
          ════════════════════════════════════════════════════════ -->
     <section id="jobFinderTab" class="tab-view" style="display:flex;">
 
+    <!-- Add Candidate Modal -->
+    <div class="modal-overlay hidden" id="addCandidateModal">
+      <div class="modal-box" style="max-width:500px">
+        <div class="modal-header">
+          <div style="font-size:16px;font-weight:700;color:#fff">➕ Add to Bench</div>
+          <button class="modal-close" onclick="closeModal('addCandidateModal')">×</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+          <div class="field-group">
+            <label class="field-label">Consultant Name</label>
+            <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Target Skill</label>
+            <input type="text" class="form-input" id="acSkill" placeholder="e.g. Java Developer">
+          </div>
+          <div style="display:flex;gap:16px">
+            <div class="field-group" style="flex:1">
+              <label class="field-label">Visa Status</label>
+              <select class="form-select" id="acVisa">
+                <option value="H1B">H1B</option>
+                <option value="Green Card">Green Card</option>
+                <option value="US Citizen">US Citizen</option>
+                <option value="OPT">OPT / CPT</option>
+              </select>
+            </div>
+            <div class="field-group" style="flex:1">
+              <label class="field-label">Pay Rate ($/hr)</label>
+              <input type="number" class="form-input" id="acPay" value="65">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Location</label>
+            <input type="text" class="form-input" id="acLocation" placeholder="e.g. Dallas, TX">
+          </div>
+          <button class="btn-search-main" style="width:100%" onclick="saveCandidate()">Save to Bench</button>
+        </div>
+      </div>
+    </div>
+
       <!-- Search Form Box -->
       <div class="search-container">
         <form class="search-form" id="searchForm">
@@ -405,6 +445,7 @@ body {
           </select>
           <div style="display:flex;align-items:center;gap:12px">
             <span style="font-weight:700;color:var(--indigo)" id="benchCount">63 Consultants</span>
+            <button class="btn-action btn-action-emerald" onclick="openAddCandidateModal()" style="height:36px;padding:0 16px">➕ Add Candidate</button>
             <button class="btn-action btn-action-indigo" onclick="exportBenchCSV()" style="height:36px;padding:0 16px">📊 Export Bench</button>
           </div>
         </div>
@@ -1095,7 +1136,10 @@ function renderSubmissions() {
       <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
       <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
       <td>${esc(s.vendor_email || '—')}</td>
-      <td><button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button>
+        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteSubmission('${esc(s.id)}')">🗑</button>
+      </td>
     </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
     
   updateAnalyticsChart();
@@ -1200,10 +1244,11 @@ function renderVendors() {
   const grid = document.getElementById('vendorGrid');
   if (!grid) return;
   grid.innerHTML = STATE.vendors.map(v => `
-    <div class="job-card">
+    <div class="job-card" style="position:relative;">
       <div style="font-weight:700;color:#fff">${esc(v.name)}</div>
       <div style="color:var(--indigo);font-weight:600">${esc(v.company)}</div>
       <div style="font-size:12px;color:var(--text-sub)">${esc(v.email)} · ${esc(v.phone)}</div>
+      <button class="btn-action" style="position:absolute;top:16px;right:16px;height:24px;width:24px;padding:0;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteVendor('${esc(v.id)}')">🗑</button>
     </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
 }
 
@@ -1236,6 +1281,59 @@ async function saveVendor() {
     renderVendors();
   } catch(e) {
     toast('Failed to save vendor to cloud', 'error');
+  }
+}
+
+async function deleteVendor(vid) {
+  if(!confirm("Are you sure you want to delete this vendor?")) return;
+  try {
+    await fetch(`/api/vendors/${vid}`, { method: 'DELETE' });
+    STATE.vendors = STATE.vendors.filter(v => v.id !== vid);
+    renderVendors();
+    toast('Vendor deleted', 'info');
+  } catch(e) {}
+}
+
+async function deleteSubmission(subId) {
+  if(!confirm("Are you sure you want to delete this submission?")) return;
+  try {
+    await fetch(`/api/submissions/${subId}`, { method: 'DELETE' });
+    STATE.submissions = STATE.submissions.filter(s => s.id !== subId);
+    renderSubmissions();
+    toast('Submission deleted', 'info');
+  } catch(e) {}
+}
+
+function openAddCandidateModal() { document.getElementById('addCandidateModal')?.classList.remove('hidden'); }
+
+async function saveCandidate() {
+  const name = document.getElementById('acName').value.trim();
+  const skill = document.getElementById('acSkill').value.trim();
+  const visa = document.getElementById('acVisa').value;
+  const pay = document.getElementById('acPay').value;
+  const loc = document.getElementById('acLocation').value.trim();
+
+  if(!name || !skill) return toast('Name and Skill required', 'error');
+
+  const payload = {
+    "Consultant Name": name,
+    "Target Skill (AREA)": skill,
+    "Visa": visa,
+    "PayRate": parseInt(pay) || 65,
+    "Target Location": loc
+  };
+
+  try {
+    await fetch('/api/candidates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    toast('Candidate added to bench!', 'success');
+    closeModal('addCandidateModal');
+    loadCandidates();
+  } catch(e) {
+    toast('Failed to add candidate', 'error');
   }
 }
 

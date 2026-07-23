@@ -113,21 +113,40 @@ VISAS = ["H1B", "Green Card", "US Citizen", "OPT", "TN Visa"]
 
 def _load_candidates():
     records = []
+    
+    # 1. Fetch live dynamic candidates from Firestore
+    try:
+        import firebase_db
+        fs_cands = firebase_db.get_candidates()
+        if fs_cands:
+            records.extend(fs_cands)
+    except Exception as e:
+        print(f"[api] firestore candidates error: {e}")
+
+    # 2. Fetch local static candidates (fallback/legacy)
+    local_records = []
     if DATA_FILE.exists():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                records = json.load(f)
+                local_records = json.load(f)
         except Exception as e:
             print(f"[api] candidates_data.json error: {e}")
 
-    if not records and REPORT_FILE.exists():
+    if not local_records and REPORT_FILE.exists():
         try:
             import pandas as pd
             df = pd.read_excel(REPORT_FILE)
             df.fillna("", inplace=True)
-            records = df.to_dict(orient="records")
+            local_records = df.to_dict(orient="records")
         except Exception as e:
             print(f"[api] Excel error: {e}")
+
+    # Merge unique
+    existing_names = {r.get("Consultant Name", "").lower() for r in records if r.get("Consultant Name")}
+    for lr in local_records:
+        name = str(lr.get("Consultant Name") or lr.get("NAME OF THE CONSULTANT") or "").lower()
+        if name and name not in existing_names:
+            records.append(lr)
 
     random.seed(42)
     for r in records:
@@ -142,8 +161,16 @@ def _load_candidates():
     return records
 
 
-@app.route("/api/candidates", methods=["GET"])
+@app.route("/api/candidates", methods=["GET", "POST"])
 def api_candidates():
+    if request.method == "POST":
+        try:
+            data = request.get_json(force=True)
+            import firebase_db
+            doc_id = firebase_db.add_candidate(data)
+            return jsonify({"success": True, "id": doc_id})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
     return jsonify(_load_candidates())
 
 
@@ -519,6 +546,15 @@ def api_submissions():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+@app.route("/api/submissions/<sub_id>", methods=["DELETE"])
+def api_delete_submission(sub_id):
+    import firebase_db
+    try:
+        success = firebase_db.delete_submission(sub_id)
+        return jsonify({"success": success})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/vendors", methods=["GET", "POST"])
 def api_vendors():
@@ -536,6 +572,15 @@ def api_vendors():
             return jsonify({"success": True, "id": vid})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+@app.route("/api/vendors/<vid>", methods=["DELETE"])
+def api_delete_vendor(vid):
+    import firebase_db
+    try:
+        success = firebase_db.delete_vendor(vid)
+        return jsonify({"success": success})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/jobs/saved", methods=["GET", "POST"])

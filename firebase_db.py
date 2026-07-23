@@ -145,6 +145,29 @@ def update_candidate_status(candidate_id: str, status: str) -> bool:
     except Exception:
         return False
 
+def add_candidate(data: dict) -> str:
+    """Manually add a consultant to the bench pool."""
+    try:
+        db = _db()
+        name = str(data.get("Consultant Name", "")).strip()
+        skill = str(data.get("Target Skill (AREA)", "")).strip()
+        doc_id = hashlib.md5(f"{name}|{skill}|{time.time()}".encode()).hexdigest()[:16]
+        
+        record = {
+            "Consultant Name": name,
+            "Target Skill (AREA)": skill,
+            "Target Location": str(data.get("Target Location", "")).strip(),
+            "Visa": str(data.get("Visa", "H1B")).strip(),
+            "PayRate": int(data.get("PayRate", 65)),
+            "Status": "Available",
+            "Match Score": int(data.get("Match Score", 75)),
+            "created_at": time.time(),
+        }
+        db.collection("candidates").document(doc_id).set(record)
+        return doc_id
+    except Exception as exc:
+        print(f"[firebase_db] add_candidate error: {exc}")
+        raise
 
 # ---------------------------------------------------------------------------
 # SUBMISSIONS (CRM)
