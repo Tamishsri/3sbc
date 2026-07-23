@@ -22,7 +22,7 @@ sys.path.insert(0, str(BASE_DIR))
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6KSt2Y2nNkDW" + "6bwC2lSGfr67u1Dx" + "NiRSlsbOWrmifahQg")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6JJtrn4tls4bF9v" + "p4hsE0B5Kd94" + "o1MACo-VEwHn0GSwoA")
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 
