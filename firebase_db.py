@@ -45,7 +45,8 @@ def _init_firebase() -> None:
                 }
                 cred = credentials.Certificate(cert_dict)
                 firebase_admin.initialize_app(cred, {
-                    "databaseURL": "https://sbc-219bf-default-rtdb.firebaseio.com"
+                    "databaseURL": "https://sbc-219bf-default-rtdb.firebaseio.com",
+                    "storageBucket": "sbc-219bf.appspot.com"
                 })
             else:
                 # 2. Fallback to local JSON file
@@ -53,11 +54,14 @@ def _init_firebase() -> None:
                 if key_path.exists():
                     cred = credentials.Certificate(str(key_path))
                     firebase_admin.initialize_app(cred, {
-                        "databaseURL": "https://sbc-219bf-default-rtdb.firebaseio.com"
+                        "databaseURL": "https://sbc-219bf-default-rtdb.firebaseio.com",
+                        "storageBucket": "sbc-219bf.appspot.com"
                     })
                 else:
                     # 3. Last resort (ADC)
-                    firebase_admin.initialize_app()
+                    firebase_admin.initialize_app(options={
+                        "storageBucket": "sbc-219bf.appspot.com"
+                    })
         _firebase_initialised = True
     except Exception as exc:
         print(f"[firebase_db] Init warning: {exc}")

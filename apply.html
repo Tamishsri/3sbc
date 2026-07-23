@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3SBC | Apply to Bench</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    :root {
+      --bg-dark: #0a0a0b;
+      --bg-card: #121214;
+      --border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --indigo: #6366f1;
+      --indigo-hover: #4f46e5;
+    }
+    body {
+      margin: 0; font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-dark); color: var(--text-main);
+      display: flex; justify-content: center; align-items: center; min-height: 100vh;
+    }
+    .container {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px; width: 100%; max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    h1 { margin: 0 0 10px; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    p { margin: 0 0 30px; color: var(--text-sub); font-size: 14px; line-height: 1.5; }
+    .dropzone {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px;
+      text-align: center; cursor: pointer; transition: all 0.2s ease;
+      background: rgba(255,255,255,0.02); margin-bottom: 20px;
+    }
+    .dropzone:hover, .dropzone.active { border-color: var(--indigo); background: rgba(99, 102, 241, 0.05); }
+    .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
+    .dropzone-text { font-size: 14px; font-weight: 600; }
+    .dropzone-sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+    textarea {
+      width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+      color: #fff; font-family: inherit; font-size: 14px; margin-bottom: 20px;
+      resize: vertical; min-height: 80px;
+    }
+    textarea:focus { outline: none; border-color: var(--indigo); }
+    button {
+      width: 100%; background: var(--indigo); color: #fff; border: none;
+      padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: 0.2s;
+    }
+    button:hover { background: var(--indigo-hover); }
+    button:disabled { background: #374151; cursor: not-allowed; color: #9ca3af; }
+    
+    #successState { display: none; text-align: center; }
+    #successState h2 { color: #10b981; margin: 20px 0 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="formState">
+    <h1>🚀 Join the 3SBC Bench</h1>
+    <p>Upload your resume. Our AI will automatically parse your skills and match you with our premium vendor network.</p>
+
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">📄</div>
+      <div class="dropzone-text" id="dzText">Drag & Drop Resume (PDF)</div>
+      <div class="dropzone-sub">or click to browse files</div>
+      <input type="file" id="fileInput" accept="application/pdf" style="display:none">
+    </div>
+
+    <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:8px">Additional Preferences (Optional)</label>
+    <textarea id="prefs" placeholder="e.g. Looking for $90/hr, W2 only, remote preferred..."></textarea>
+
+    <button id="submitBtn" disabled>Upload & Apply</button>
+  </div>
+
+  <div class="container" id="successState">
+    <div style="font-size:48px">🎉</div>
+    <h2>Application Received!</h2>
+    <p>Our AI has successfully analyzed your profile and added you to our active bench. You will be automatically submitted when a matching role is found.</p>
+    <button onclick="location.reload()" style="background:#1f2937">Submit Another</button>
+  </div>
+
+  <script>
+    const dz = document.getElementById('dropzone');
+    const input = document.getElementById('fileInput');
+    const dzText = document.getElementById('dzText');
+    const submitBtn = document.getElementById('submitBtn');
+    let selectedFile = null;
+
+    dz.addEventListener('click', () => input.click());
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('active'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('active');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', e => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+      if (file.type !== 'application/pdf') {
+        alert('Please upload a PDF file.'); return;
+      }
+      selectedFile = file;
+      dzText.textContent = file.name;
+      dzText.style.color = '#10b981';
+      submitBtn.disabled = false;
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = '🤖 AI is analyzing resume...';
+
+      const formData = new FormData();
+      formData.append('resume', selectedFile);
+      formData.append('preferences', document.getElementById('prefs').value);
+
+      try {
+        const res = await fetch('/api/candidates/apply', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('formState').style.display = 'none';
+          document.getElementById('successState').style.display = 'block';
+        } else {
+          alert('Error: ' + data.error);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Apply';
+        }
+      } catch(e) {
+        alert('Connection error.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload & Apply';
+      }
+    });
+  </script>
+</body>
+</html>

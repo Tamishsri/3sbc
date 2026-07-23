@@ -79,6 +79,15 @@ def serve_js():
     f = BASE_DIR / "app.js"
     return (open(f).read(), 200, {"Content-Type": "application/javascript"}) if f.exists() else ("", 404)
 
+@app.route("/")
+def serve_index():
+    f = BASE_DIR / "index.html"
+    return (open(f).read(), 200, {"Content-Type": "text/html"}) if f.exists() else ("index.html not found", 404)
+
+@app.route("/apply")
+def serve_apply():
+    f = BASE_DIR / "apply.html"
+    return (open(f).read(), 200, {"Content-Type": "text/html"}) if f.exists() else ("apply.html not found", 404)
 
 @app.route("/candidates_data.json")
 def serve_data():
@@ -172,6 +181,61 @@ def api_candidates():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
     return jsonify(_load_candidates())
+
+
+@app.route("/api/candidates/apply", methods=["POST"])
+def api_candidate_apply():
+    """Public portal intake: Parse Resume, Upload to Storage, Extract AI profile."""
+    try:
+        import json
+        if 'resume' not in request.files:
+            return jsonify({"error": "No resume file provided"}), 400
+        file = request.files['resume']
+        preferences = request.form.get('preferences', '')
+
+        # 1. Parse text from PDF
+        import PyPDF2
+        from io import BytesIO
+        pdf_bytes = file.read()
+        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes))
+        text = "".join(page.extract_text() for page in pdf_reader.pages)
+        if not text.strip():
+            return jsonify({"error": "Could not extract text from PDF"}), 400
+
+        # 2. Extract Candidate Data via Gemini
+        prompt = (
+            f"Extract the following information from this resume into a strict JSON format:\n"
+            f"1. Consultant Name\n2. Target Skill (AREA) (e.g. Java, SAP MM, React)\n"
+            f"3. Target Location (City, State)\n4. Visa (guess US Citizen if implied, else H1B)\n"
+            f"5. PayRate (integer hourly rate, guess based on experience if missing, e.g. 75)\n"
+            f"Additional user preferences: {preferences}\n\n"
+            f"RESUME TEXT:\n{text[:4000]}\n\n"
+            f"Return ONLY valid JSON like this: {{\"Consultant Name\": \"John Doe\", \"Target Skill (AREA)\": \"Python\", \"Target Location\": \"Austin, TX\", \"Visa\": \"US Citizen\", \"PayRate\": 90}}"
+        )
+        try:
+            res = _gemini(prompt)
+            if "```json" in res: res = res.split("```json")[1].split("```")[0].strip()
+            if "```" in res: res = res.split("```")[1].strip()
+            extracted = json.loads(res)
+        except Exception as e:
+            print(f"[apply] AI extract error: {e}")
+            return jsonify({"error": "Failed to parse resume using AI"}), 500
+
+        # 3. Upload file to Firebase Storage
+        import firebase_db
+        url = firebase_db.upload_resume(pdf_bytes, file.filename)
+        
+        # 4. Save to Firestore
+        extracted["Resume_URL"] = url
+        extracted["Match Score"] = 85  # default high score for manual applicants
+        doc_id = firebase_db.add_candidate(extracted)
+        extracted["id"] = doc_id
+        
+        return jsonify({"success": True, "candidate": extracted}), 200
+
+    except Exception as e:
+        print(f"[api/apply] Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/stats", methods=["GET"])
@@ -548,6 +612,70 @@ def api_submissions():
             return jsonify({"success": True, "id": sub_id})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+@app.route("/api/submissions/forward", methods=["POST"])
+def api_auto_forward():
+    """Fully automated action: Send emails to vendor and candidate, then log submission."""
+    try:
+        data = request.get_json(force=True)
+        job = data.get("job", {})
+        cand = data.get("candidate", {})
+        vendor_email = data.get("vendor_email", "").strip()
+        
+        job_title = job.get("title", "Open Role")
+        company = job.get("company", "Company")
+        cand_name = cand.get("name", "Consultant")
+        resume_url = cand.get("Resume_URL", "Resume available upon request.")
+        cand_email = cand.get("Email", "") # From the apply portal if they provided it
+
+        if not vendor_email:
+            return jsonify({"error": "Vendor email is required to auto-forward."}), 400
+
+        # Generate hyper-human vendor email reasoning
+        prompt_vendor = (
+            f"You are a Senior IT Recruiter. Write exactly 2 highly conversational, human-sounding sentences explaining "
+            f"to a vendor why {cand_name} (who knows {cand.get('skill', 'IT')}) is the perfect fit for their {job_title} role. "
+            f"Do not sound like a robot. Be casual but professional."
+        )
+        vendor_reasoning = _gemini(prompt_vendor)
+
+        # Generate human candidate email reasoning
+        prompt_cand = (
+            f"You are a friendly Recruiter. Write 2 short sentences to the candidate {cand_name}, explaining that we just "
+            f"submitted their profile for a {job_title} role at {company} because their {cand.get('skill')} skills match perfectly."
+        )
+        cand_reasoning = _gemini(prompt_cand)
+
+        import email_engine
+        import firebase_db
+
+        # 1. Send Emails
+        email_engine.send_vendor_email(vendor_email, "", cand_name, job_title, vendor_reasoning, resume_url)
+        if cand_email:
+            email_engine.send_candidate_email(cand_email, cand_name, job_title, company, job.get("location", ""), cand_reasoning)
+
+        # 2. Log Submission
+        sub_record = {
+            "consultant_name": cand_name,
+            "job_id": job.get("id", job.get("url", "")),
+            "job_title": job_title,
+            "company": company,
+            "board": job.get("board", "Internal"),
+            "date": "Today",
+            "vendor_name": "Auto-Forwarded",
+            "vendor_email": vendor_email,
+            "bill_rate": 90,
+            "pay_rate": cand.get("pay_rate", 65),
+            "margin_hr": 25,
+            "margin_pct": 27.7,
+            "margin_monthly": 4333
+        }
+        firebase_db.add_submission(sub_record)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[api/forward] Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/submissions/<sub_id>", methods=["DELETE"])
 def api_delete_submission(sub_id):
