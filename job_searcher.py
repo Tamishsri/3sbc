@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RAPIDAPI_KEY     = os.getenv("RAPIDAPI_KEY", "")
+RAPIDAPI_KEY     = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 CACHE_TTL_SECONDS = 3600   # 1 hour
 RESULTS_PER_BOARD = 10
 

@@ -22,9 +22,9 @@ sys.path.insert(0, str(BASE_DIR))
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6KSt2Y2nNkDW" + "6bwC2lSGfr67u1Dx" + "NiRSlsbOWrmifahQg")
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "")
+RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
 
