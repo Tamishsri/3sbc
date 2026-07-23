@@ -180,13 +180,21 @@ def api_candidates():
 
 @app.route("/api/candidates/apply", methods=["POST"])
 def api_candidate_apply():
-    """Public portal intake: Parse Resume, Upload to Storage, Extract AI profile."""
+    """Premium portal intake: Parses form + PDF, Synthesizes with AI, Uploads to Storage."""
     try:
         import json
         if 'resume' not in request.files:
             return jsonify({"error": "No resume file provided"}), 400
         file = request.files['resume']
-        preferences = request.form.get('preferences', '')
+        
+        # Exact structured data from frontend
+        cand_name = request.form.get('name', '')
+        cand_email = request.form.get('email', '')
+        cand_phone = request.form.get('phone', '')
+        cand_loc = request.form.get('location', '')
+        cand_skill = request.form.get('skill', '')
+        cand_rate = request.form.get('rate', '65')
+        cand_visa = request.form.get('visa', 'H1B')
 
         # 1. Parse text from PDF
         import PyPDF2
@@ -195,17 +203,25 @@ def api_candidate_apply():
         pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes))
         text = "".join(page.extract_text() for page in pdf_reader.pages)
         if not text.strip():
-            return jsonify({"error": "Could not extract text from PDF"}), 400
+            text = "No text could be extracted from PDF."
 
         # 2. Extract Candidate Data via Gemini
         prompt = (
-            f"Extract the following information from this resume into a strict JSON format:\n"
-            f"1. Consultant Name\n2. Target Skill (AREA) (e.g. Java, SAP MM, React)\n"
-            f"3. Target Location (City, State)\n4. Visa (guess US Citizen if implied, else H1B)\n"
-            f"5. PayRate (integer hourly rate, guess based on experience if missing, e.g. 75)\n"
-            f"Additional user preferences: {preferences}\n\n"
-            f"RESUME TEXT:\n{text[:4000]}\n\n"
-            f"Return ONLY valid JSON like this: {{\"Consultant Name\": \"John Doe\", \"Target Skill (AREA)\": \"Python\", \"Target Location\": \"Austin, TX\", \"Visa\": \"US Citizen\", \"PayRate\": 90}}"
+            f"You are processing a highly structured candidate submission for a premium staffing agency. "
+            f"The candidate explicitly provided the following details in their application form:\n"
+            f"- Name: {cand_name}\n"
+            f"- Email: {cand_email}\n"
+            f"- Phone: {cand_phone}\n"
+            f"- Primary Skill: {cand_skill}\n"
+            f"- Location: {cand_loc}\n"
+            f"- Target Pay Rate: {cand_rate}/hr\n"
+            f"- Visa Status: {cand_visa}\n\n"
+            f"And here is the text extracted from their PDF resume:\n{text[:4000]}\n\n"
+            f"Your task is to synthesize this into a single, clean JSON object. "
+            f"USE THE EXPLICIT FORM DATA PROVIDED ABOVE. Only use the resume text to fill in gaps or understand their background better. "
+            f"Return ONLY valid JSON with exactly these keys:\n"
+            f'{{"Consultant Name": "{cand_name}", "Email": "{cand_email}", "Phone": "{cand_phone}", '
+            f'"Target Skill (AREA)": "{cand_skill}", "Target Location": "{cand_loc}", "Visa": "{cand_visa}", "PayRate": {cand_rate}}}'
         )
         try:
             res = _gemini(prompt)

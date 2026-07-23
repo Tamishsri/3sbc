@@ -2,83 +2,146 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>3SBC | Apply to Bench</title>
+  <title>3SBC | Apply to Premium Bench</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     :root {
-      --bg-dark: #0a0a0b;
-      --bg-card: #121214;
+      --bg-dark: #050505;
+      --bg-card: #111113;
       --border: rgba(255, 255, 255, 0.08);
-      --text-main: #f3f4f6;
+      --text-main: #f9fafb;
       --text-sub: #9ca3af;
       --indigo: #6366f1;
       --indigo-hover: #4f46e5;
+      --emerald: #10b981;
     }
     body {
       margin: 0; font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--bg-dark); color: var(--text-main);
       display: flex; justify-content: center; align-items: center; min-height: 100vh;
+      padding: 40px 20px; box-sizing: border-box;
+      background-image: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15), transparent 50%);
     }
     .container {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 40px; width: 100%; max-width: 500px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      background: rgba(17,17,19,0.7); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: 20px;
+      padding: 50px; width: 100%; max-width: 600px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
     }
-    h1 { margin: 0 0 10px; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-    p { margin: 0 0 30px; color: var(--text-sub); font-size: 14px; line-height: 1.5; }
+    .header { text-align: center; margin-bottom: 40px; }
+    h1 { margin: 0 0 10px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    p { margin: 0; color: var(--text-sub); font-size: 15px; line-height: 1.6; }
+    
+    .section-title {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--indigo); font-weight: 800; margin: 30px 0 15px;
+      border-bottom: 1px solid var(--border); padding-bottom: 8px;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: span 2; }
+    
+    label { font-size: 12px; font-weight: 600; color: #d1d5db; }
+    input, select {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: #fff;
+      font-family: inherit; font-size: 14px; transition: 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--indigo); background: rgba(99,102,241,0.05); }
+    
     .dropzone {
-      border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px;
+      border: 2px dashed var(--border); border-radius: 14px; padding: 30px 20px;
       text-align: center; cursor: pointer; transition: all 0.2s ease;
-      background: rgba(255,255,255,0.02); margin-bottom: 20px;
+      background: rgba(255,255,255,0.01); margin-top: 10px;
     }
     .dropzone:hover, .dropzone.active { border-color: var(--indigo); background: rgba(99, 102, 241, 0.05); }
     .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
-    .dropzone-text { font-size: 14px; font-weight: 600; }
+    .dropzone-text { font-size: 14px; font-weight: 600; color: var(--text-main); }
     .dropzone-sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
-    textarea {
-      width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border); border-radius: 8px; padding: 12px;
-      color: #fff; font-family: inherit; font-size: 14px; margin-bottom: 20px;
-      resize: vertical; min-height: 80px;
-    }
-    textarea:focus { outline: none; border-color: var(--indigo); }
-    button {
-      width: 100%; background: var(--indigo); color: #fff; border: none;
-      padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: 0.2s;
-    }
-    button:hover { background: var(--indigo-hover); }
-    button:disabled { background: #374151; cursor: not-allowed; color: #9ca3af; }
     
-    #successState { display: none; text-align: center; }
-    #successState h2 { color: #10b981; margin: 20px 0 10px; }
+    button {
+      width: 100%; background: linear-gradient(135deg, var(--indigo), #818cf8);
+      color: #fff; border: none; padding: 16px; border-radius: 12px;
+      font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;
+      margin-top: 30px; box-shadow: 0 10px 20px rgba(99,102,241,0.3);
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(99,102,241,0.4); }
+    button:disabled { background: #374151; cursor: not-allowed; color: #9ca3af; transform: none; box-shadow: none; }
+    
+    #successState { display: none; text-align: center; padding: 40px 0; }
+    #successState h2 { color: var(--emerald); margin: 20px 0 10px; font-size: 28px; }
   </style>
 </head>
 <body>
 
   <div class="container" id="formState">
-    <h1>🚀 Join the 3SBC Bench</h1>
-    <p>Upload your resume. Our AI will automatically parse your skills and match you with our premium vendor network.</p>
+    <div class="header">
+      <h1>🚀 Join the 3SBC Premium Bench</h1>
+      <p>Submit your profile to be instantly AI-matched with top-tier vendors and direct clients across our network.</p>
+    </div>
 
+    <div class="section-title">Personal Details</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Full Name *</label>
+        <input type="text" id="candName" placeholder="e.g. John Doe" required>
+      </div>
+      <div class="form-group">
+        <label>Email Address *</label>
+        <input type="email" id="candEmail" placeholder="john@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="candPhone" placeholder="(555) 123-4567">
+      </div>
+      <div class="form-group full">
+        <label>Current Location *</label>
+        <input type="text" id="candLoc" placeholder="e.g. Austin, TX (or Remote)" required>
+      </div>
+    </div>
+
+    <div class="section-title">Professional Details</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Primary Skillset *</label>
+        <input type="text" id="candSkill" placeholder="e.g. SAP MM, Senior React Developer, Data Engineer" required>
+      </div>
+      <div class="form-group">
+        <label>Target Hourly Rate ($) *</label>
+        <input type="number" id="candRate" placeholder="e.g. 85" required>
+      </div>
+      <div class="form-group">
+        <label>Visa Status *</label>
+        <select id="candVisa" required>
+          <option value="" disabled selected>Select Visa</option>
+          <option value="US Citizen">US Citizen</option>
+          <option value="Green Card">Green Card</option>
+          <option value="H1B">H1B</option>
+          <option value="OPT EAD">OPT EAD</option>
+          <option value="CPT">CPT</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">Resume & Preferences</div>
     <div class="dropzone" id="dropzone">
       <div class="dropzone-icon">📄</div>
-      <div class="dropzone-text" id="dzText">Drag & Drop Resume (PDF)</div>
+      <div class="dropzone-text" id="dzText">Drag & Drop Resume (PDF) *</div>
       <div class="dropzone-sub">or click to browse files</div>
       <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     </div>
 
-    <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:8px">Additional Preferences (Optional)</label>
-    <textarea id="prefs" placeholder="e.g. Looking for $90/hr, W2 only, remote preferred..."></textarea>
-
-    <button id="submitBtn" disabled>Upload & Apply</button>
+    <button id="submitBtn">Submit Profile to AI Engine</button>
   </div>
 
   <div class="container" id="successState">
-    <div style="font-size:48px">🎉</div>
-    <h2>Application Received!</h2>
-    <p>Our AI has successfully analyzed your profile and added you to our active bench. You will be automatically submitted when a matching role is found.</p>
-    <button onclick="location.reload()" style="background:#1f2937">Submit Another</button>
+    <div style="font-size:64px;margin-bottom:20px">🎉</div>
+    <h2>Application Secured!</h2>
+    <p style="margin-bottom:30px;font-size:16px">Our AI has successfully analyzed your profile and added you to our active bench. You will be automatically submitted when a matching role is found.</p>
+    <button onclick="location.reload()" style="background:#1f2937;box-shadow:none;width:auto;padding:12px 30px">Submit Another Profile</button>
   </div>
 
   <script>
@@ -105,25 +168,37 @@
       }
       selectedFile = file;
       dzText.textContent = file.name;
-      dzText.style.color = '#10b981';
-      submitBtn.disabled = false;
+      dzText.style.color = 'var(--emerald)';
     }
 
     submitBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
+      const name = document.getElementById('candName').value.trim();
+      const email = document.getElementById('candEmail').value.trim();
+      const loc = document.getElementById('candLoc').value.trim();
+      const skill = document.getElementById('candSkill').value.trim();
+      const rate = document.getElementById('candRate').value.trim();
+      const visa = document.getElementById('candVisa').value;
+
+      if (!name || !email || !loc || !skill || !rate || !visa || !selectedFile) {
+        alert('Please fill out all required fields and upload a PDF resume.');
+        return;
+      }
       
       submitBtn.disabled = true;
-      submitBtn.textContent = '🤖 AI is analyzing resume...';
+      submitBtn.textContent = '🤖 AI is analyzing profile...';
 
       const formData = new FormData();
       formData.append('resume', selectedFile);
-      formData.append('preferences', document.getElementById('prefs').value);
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('phone', document.getElementById('candPhone').value.trim());
+      formData.append('location', loc);
+      formData.append('skill', skill);
+      formData.append('rate', rate);
+      formData.append('visa', visa);
 
       try {
-        const res = await fetch('/api/candidates/apply', {
-          method: 'POST',
-          body: formData
-        });
+        const res = await fetch('/api/candidates/apply', { method: 'POST', body: formData });
         const data = await res.json();
         
         if (data.success) {
@@ -132,12 +207,12 @@
         } else {
           alert('Error: ' + data.error);
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Upload & Apply';
+          submitBtn.textContent = 'Submit Profile to AI Engine';
         }
       } catch(e) {
         alert('Connection error.');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Upload & Apply';
+        submitBtn.textContent = 'Submit Profile to AI Engine';
       }
     });
   </script>
