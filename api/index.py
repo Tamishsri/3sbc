@@ -3,17 +3,28 @@ api/index.py
 ------------
 Flask Serverless Handler for Vercel + Local Development.
 3SBC Staffing Intelligence Platform — Commercial API
+Powered by Google Gemini 2.0 Flash + JSearch (RapidAPI)
 """
 
 import json
 import sys
 import os
+import re
 import random
+import hashlib
+import time
 from pathlib import Path
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 
 BASE_DIR = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(BASE_DIR))
+
+from dotenv import load_dotenv
+load_dotenv(BASE_DIR / ".env")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "")
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
 
@@ -22,6 +33,10 @@ DATA_FILE   = BASE_DIR / "candidates_data.json"
 
 _candidate_status_cache: dict = {}
 
+
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
 
 def _cors(response):
     response.headers["Access-Control-Allow-Origin"]  = "*"
@@ -39,6 +54,10 @@ def after_request(response):
 def options_handler(path):
     return jsonify({}), 200
 
+
+# ---------------------------------------------------------------------------
+# Static serving
+# ---------------------------------------------------------------------------
 
 @app.route("/")
 def serve_index():
@@ -70,10 +89,27 @@ def serve_data():
 
 
 # ---------------------------------------------------------------------------
+# Gemini AI helper
+# ---------------------------------------------------------------------------
+
+def _gemini(prompt: str, system: str = "") -> str:
+    """Call Gemini API and return text response. Raises on failure."""
+    from google import genai
+    from google.genai import types as gt
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    cfg = gt.GenerateContentConfig(temperature=0.7)
+    if system:
+        cfg = gt.GenerateContentConfig(system_instruction=system, temperature=0.7)
+    resp = client.models.generate_content(model=GEMINI_MODEL, contents=prompt, config=cfg)
+    return resp.text.strip()
+
+
+# ---------------------------------------------------------------------------
 # Candidate helpers & Bench ATS
 # ---------------------------------------------------------------------------
 
 VISAS = ["H1B", "Green Card", "US Citizen", "OPT", "TN Visa"]
+
 
 def _load_candidates():
     records = []
@@ -161,7 +197,7 @@ def api_jobs_search():
 
 
 # ---------------------------------------------------------------------------
-# AI BENCH MATCH & PITCH BULLET GENERATOR
+# AI BENCH MATCH — Powered by Gemini 2.0 Flash
 # ---------------------------------------------------------------------------
 
 @app.route("/api/jobs/match", methods=["POST"])
@@ -174,114 +210,203 @@ def api_jobs_match():
         if not job or not candidates:
             return jsonify({"error": "job and candidates required"}), 400
 
-        job_text = f"{job.get('title','')} {job.get('description','')}".lower()
-        scored   = []
+        job_title    = job.get("title", "IT Role")
+        job_company  = job.get("company", "the client")
+        job_location = job.get("location", "")
+        job_desc     = job.get("description", "")
 
-        for c in candidates:
-            skill_area = str(c.get("Target Skill (AREA)", "") or c.get("AREA", "")).lower()
-            name       = str(c.get("Consultant Name", "") or c.get("NAME OF THE CONSULTANT", ""))
-            location   = str(c.get("Target Location", "") or c.get("Location", "")).lower()
-            team       = str(c.get("Team Name", ""))
-            base_score = int(c.get("Match Score", 75))
-            visa       = c.get("Visa", "H1B")
+        scored = []
+        for c in candidates[:15]:  # Cap at 15 to avoid timeout
+            skill_area = str(c.get("Target Skill (AREA)") or c.get("AREA") or "").strip()
+            name       = str(c.get("Consultant Name") or c.get("NAME OF THE CONSULTANT") or "").strip()
+            location   = str(c.get("Target Location") or c.get("Location") or "").strip()
+            team       = str(c.get("Team Name") or "").strip()
+            visa       = str(c.get("Visa") or "H1B").strip()
             pay_rate   = c.get("PayRate", 65)
+            base_score = int(c.get("Match Score") or 75)
 
-            skill_words = [w for w in skill_area.split() if len(w) > 2]
-            hit_count   = sum(1 for w in skill_words if w in job_text)
-            max_hits    = max(len(skill_words), 1)
-            kw_score    = round((hit_count / max_hits) * 100)
+            if not name:
+                continue
 
-            job_loc   = job.get("location", "").lower()
-            loc_boost = 10 if any(w in job_loc for w in location.split() if len(w) > 2) else 0
+            # --- Multi-factor algorithmic score (fast, unique per candidate) ---
+            skill_words = [w.lower() for w in skill_area.split() if len(w) > 2]
+            job_text    = f"{job_title} {job_desc}".lower()
+            hits        = sum(1 for w in skill_words if w in job_text)
+            kw_pct      = (hits / max(len(skill_words), 1)) * 100
 
-            final_score = min(round((kw_score * 0.6) + (base_score * 0.3) + loc_boost), 99)
+            loc_boost   = 8 if any(w.lower() in job_location.lower() for w in location.split() if len(w) > 2) else 0
+            visa_boost  = 5 if visa in ("US Citizen", "Green Card") else 0
+            rate_penalty= -5 if float(pay_rate) > 110 else 0
 
-            # Generate professional, varied reasoning
-            reason_templates = [
-                f"Exceptional alignment: Exhibits highly relevant {skill_area.upper()} expertise matching the core requirements for {job.get('title', 'this role')}.",
-                f"Strong technical fit: Demonstrates robust capabilities in {skill_area.upper()}, fully authorized via {visa}.",
-                f"Top-tier candidate: Proven track record in {skill_area.upper()} with ideal locational alignment and immediate availability.",
-                f"Highly recommended: {skill_area.upper()} background directly translates to {job.get('title', 'this role')}'s technical stack.",
-                f"Solid profile: Meets key criteria for {skill_area.upper()} with competitive market rate expectations and {visa} status."
-            ]
-            reason = reason_templates[sum(ord(c) for c in name) % len(reason_templates)]
+            raw_score = (kw_pct * 0.55) + (base_score * 0.30) + loc_boost + visa_boost + rate_penalty
+            final_score = min(max(int(raw_score), 35), 98)
+
+            # --- Gemini AI reasoning (unique per candidate) ---
+            reasoning = ""
+            if GEMINI_API_KEY:
+                try:
+                    prompt = (
+                        f"You are a senior IT staffing recruiter writing a brief, professional match analysis.\n\n"
+                        f"JOB: {job_title} at {job_company} ({job_location})\n"
+                        f"JOB DESCRIPTION: {job_desc[:300]}\n\n"
+                        f"CANDIDATE: {name}\n"
+                        f"CANDIDATE SKILLS: {skill_area}\n"
+                        f"CANDIDATE LOCATION: {location}\n"
+                        f"VISA STATUS: {visa}\n"
+                        f"MATCH SCORE: {final_score}/100\n\n"
+                        f"Write exactly 2 sentences explaining WHY this specific candidate is or isn't a good fit "
+                        f"for this specific job. Be specific about their skills vs job requirements. "
+                        f"Do NOT use generic phrases. Do not use markdown. Plain text only."
+                    )
+                    reasoning = _gemini(prompt)
+                except Exception as e:
+                    print(f"[match] Gemini error for {name}: {e}")
+
+            if not reasoning:
+                # Deterministic fallback — unique per candidate based on their actual data
+                gaps = [w for w in ["SAP", "Oracle", "AWS", "Java", "Python", "React", "Azure", "GCP"]
+                        if w.lower() not in skill_area.lower() and w.lower() in job_text]
+                if final_score >= 80:
+                    reasoning = (
+                        f"{name} brings direct {skill_area} expertise that aligns strongly with the {job_title} requirements at {job_company}. "
+                        f"Their {visa} status and {location} base make them an immediate, low-friction placement."
+                    )
+                elif final_score >= 60:
+                    reasoning = (
+                        f"{name}'s background in {skill_area} covers the core technical requirements for this {job_title} role. "
+                        f"{'Potential gap in: ' + ', '.join(gaps[:2]) + '.' if gaps else 'Strong alignment overall with minor domain differences.'}"
+                    )
+                else:
+                    reasoning = (
+                        f"{name} has foundational IT skills but their {skill_area} focus shows limited overlap with {job_title} at {job_company}. "
+                        f"{'Missing key experience in: ' + ', '.join(gaps[:3]) + '.' if gaps else 'Would require upskilling for this specific role.'}"
+                    )
 
             scored.append({
-                "name":         name,
-                "team":         team,
-                "skill":        skill_area.upper(),
-                "location":     location.title(),
-                "visa":         visa,
-                "pay_rate":     pay_rate,
-                "fit_score":    final_score,
-                "reason":       reason,
+                "name":      name,
+                "team":      team,
+                "skill":     skill_area,
+                "location":  location,
+                "visa":      visa,
+                "pay_rate":  pay_rate,
+                "fit_score": final_score,
+                "reason":    reasoning,
             })
 
         scored.sort(key=lambda x: x["fit_score"], reverse=True)
-        return jsonify({"matches": scored[:10], "job_title": job.get("title", "")})
+        return jsonify({"matches": scored[:10], "job_title": job_title})
 
     except Exception as e:
+        print(f"[api/match] ERROR: {e}")
         return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
-# CLIENT-READY RESUME SUMMARY GENERATOR (New Feature!)
+# CLIENT-READY RESUME / PRESENTATION SHEET — Powered by Gemini
 # ---------------------------------------------------------------------------
 
 @app.route("/api/candidates/format-resume", methods=["POST"])
 def api_format_resume():
-    """Generates a 3SBC Branded Candidate Presentation Sheet ready to send to clients."""
+    """Generates a 3SBC Branded Candidate Presentation Sheet using Gemini AI."""
     try:
         data       = request.get_json(force=True)
         c_name     = data.get("name", "Consultant")
         c_skill    = data.get("skill", "SAP MM")
         c_location = data.get("location", "Philadelphia, PA")
-        c_visa     = data.get("visa", "US Citizen / H1B")
+        c_visa     = data.get("visa", "H1B")
         c_rate     = data.get("rate", "90")
+        job_title  = data.get("job_title", "")
+        job_company= data.get("job_company", "")
 
+        if GEMINI_API_KEY:
+            try:
+                system = (
+                    "You are a senior IT staffing consultant at 3SBC Staffing Solutions. "
+                    "You write professional, concise candidate presentation sheets sent to hiring managers at Fortune 500 companies. "
+                    "Your writing is confident, specific, and never uses filler phrases like 'dynamic' or 'passionate'. "
+                    "Always write in plain text with clear sections."
+                )
+                prompt = (
+                    f"Write a professional candidate presentation sheet for the following consultant.\n\n"
+                    f"CANDIDATE: {c_name}\n"
+                    f"SPECIALIZATION: {c_skill}\n"
+                    f"WORK AUTHORIZATION: {c_visa}\n"
+                    f"BASE LOCATION: {c_location}\n"
+                    f"PROPOSED BILL RATE: ${c_rate}/hr (Contract/C2C)\n"
+                    f"TARGET ROLE: {job_title or c_skill + ' Consultant'}\n"
+                    f"TARGET COMPANY: {job_company or 'Client'}\n\n"
+                    f"Format it exactly like this:\n"
+                    f"===================================================================\n"
+                    f"CONFIDENTIAL CANDIDATE PRESENTATION — 3SBC STAFFING SOLUTIONS\n"
+                    f"===================================================================\n\n"
+                    f"CANDIDATE OVERVIEW\n"
+                    f"-------------------------------------------------------------------\n"
+                    f"[Fill in: Name, Specialization, Work Authorization, Location, Bill Rate, Availability]\n\n"
+                    f"EXECUTIVE SUMMARY\n"
+                    f"-------------------------------------------------------------------\n"
+                    f"[3-4 sentences: specific experience, measurable achievements, key technologies. Be specific to {c_skill}.]\n\n"
+                    f"KEY COMPETENCIES\n"
+                    f"-------------------------------------------------------------------\n"
+                    f"[5-6 bullet points of specific technical skills relevant to {c_skill}]\n\n"
+                    f"WHY {c_name.split()[0].upper()}?\n"
+                    f"-------------------------------------------------------------------\n"
+                    f"[2-3 sentences specifically connecting this candidate to {job_title or 'the role'} at {job_company or 'your organization'}]\n\n"
+                    f"===================================================================\n"
+                    f"Presented by 3SBC Staffing Solutions | Contact: tamish@3sbc.com\n"
+                    f"==================================================================="
+                )
+                resume_summary = _gemini(prompt, system)
+                return jsonify({"resume_summary": resume_summary, "ai_powered": True})
+            except Exception as e:
+                print(f"[format-resume] Gemini error: {e}")
+
+        # Fallback (no Gemini)
         resume_summary = f"""===================================================================
-CONFIDENTIAL CANDIDATE PRESENTATION — 3SBC STAFFING INTELLIGENCE
+CONFIDENTIAL CANDIDATE PRESENTATION — 3SBC STAFFING SOLUTIONS
 ===================================================================
 
 CANDIDATE OVERVIEW
 -------------------------------------------------------------------
-• Name:          {c_name}
-• Specialization: {c_skill}
-• Work Status:   {c_visa} (Fully Authorized)
-• Location:      {c_location}
-• Bill Rate:     ${c_rate}/hr (Contract / C2C)
-• Availability:  Immediate (1-2 Weeks Notice)
+• Name:            {c_name}
+• Specialization:  {c_skill}
+• Work Status:     {c_visa} (Fully Authorized)
+• Location:        {c_location}
+• Bill Rate:       ${c_rate}/hr (Contract / C2C)
+• Availability:    Immediate (within 1–2 weeks)
 
 EXECUTIVE SUMMARY
 -------------------------------------------------------------------
-An elite, results-driven {c_skill} professional with over 8 years of 
-hands-on experience driving enterprise-scale projects. Possesses a 
-demonstrated track record of executing complex implementations, 
-cross-functional integrations, and post-go-live stabilization. 
-Known for exceptional problem-solving capabilities, rapid onboarding, 
-and seamless stakeholder communication.
+A highly experienced {c_skill} consultant with a proven track record
+of delivering enterprise-level implementations on time and within scope.
+Recognized for technical depth, business acumen, and ability to bridge
+the gap between functional requirements and technical delivery.
 
-KEY COMPETENCIES & HIGHLIGHTS
+KEY COMPETENCIES
 -------------------------------------------------------------------
-1. Subject Matter Expertise: Deep architectural and functional 
-   knowledge in {c_skill}, aligning perfectly with modern tech stacks.
-2. Delivery Excellence: Successfully spearheaded 3+ full-lifecycle 
-   deployments resulting in measurable operational improvements.
-3. Leadership & Strategy: Adept at leading onshore/offshore teams, 
-   gathering intricate business requirements, and mentoring peers.
+• End-to-end {c_skill} implementation and configuration
+• Business requirements gathering and gap analysis
+• Integration design and cross-module testing
+• Post-go-live support and stabilization
+• Stakeholder management and executive reporting
+• Onshore/offshore team coordination
+
+WHY {c_name.split()[0].upper()}?
+-------------------------------------------------------------------
+This consultant represents a rare combination of deep {c_skill}
+expertise and strong client-facing delivery skills, making them an
+ideal fit for your team's immediate needs.
 
 ===================================================================
-Presented by 3SBC Staffing Solutions | tamish@3sbc.com
-Direct Contact: +1 (555) 019-3827 | www.3sbc.com
+Presented by 3SBC Staffing Solutions | Contact: tamish@3sbc.com
 ==================================================================="""
 
-        return jsonify({"resume_summary": resume_summary})
+        return jsonify({"resume_summary": resume_summary, "ai_powered": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
-# MARGIN CALCULATOR & EMAIL GENERATOR
+# PROFESSIONAL EMAIL GENERATOR — Powered by Gemini
 # ---------------------------------------------------------------------------
 
 @app.route("/api/submissions/email", methods=["POST"])
@@ -293,52 +418,83 @@ def api_submission_email():
         vendor         = data.get("vendor", {})
         recruiter_name = data.get("recruiter_name", "Tamish Sridatta")
 
-        c_name  = consultant.get("name", "Consultant")
-        c_skill = consultant.get("skill", "IT Specialist")
+        c_name  = consultant.get("name", "the consultant")
+        c_skill = consultant.get("skill", "IT")
         c_rate  = consultant.get("rate", "90")
+        c_visa  = consultant.get("visa", "H1B")
 
         j_title   = job.get("title", "the position")
         j_company = job.get("company", "your organization")
+        j_location= job.get("location", "")
+        j_desc    = job.get("description", "")
 
         v_name  = vendor.get("name", "Hiring Manager")
-        subject = f"Top-Tier {c_skill} Candidate for {j_title} | 3SBC Staffing"
+        subject = f"Top-Tier {c_skill} Consultant for {j_title} | 3SBC Staffing Solutions"
 
+        if GEMINI_API_KEY:
+            try:
+                system = (
+                    "You are a senior staffing recruiter at 3SBC Staffing Solutions writing a cold outreach email "
+                    "to a hiring manager or vendor. Your emails are professional, direct, and personalized. "
+                    "Never use buzzwords like 'synergy' or 'leverage'. Keep it under 200 words. Plain text only."
+                )
+                prompt = (
+                    f"Write a professional recruiter submission email.\n\n"
+                    f"TO: {v_name} (Hiring Manager/Vendor)\n"
+                    f"FROM: {recruiter_name} at 3SBC Staffing Solutions\n\n"
+                    f"JOB THEY ARE HIRING FOR:\n"
+                    f"  Role: {j_title}\n"
+                    f"  Company: {j_company}\n"
+                    f"  Location: {j_location}\n"
+                    f"  Description: {j_desc[:200]}\n\n"
+                    f"CANDIDATE BEING SUBMITTED:\n"
+                    f"  Name: {c_name}\n"
+                    f"  Skills: {c_skill}\n"
+                    f"  Rate: ${c_rate}/hr\n"
+                    f"  Work Auth: {c_visa}\n\n"
+                    f"Write the full email including Subject line, greeting, body (why this specific candidate fits this specific job), "
+                    f"and a professional sign-off. Be specific. Do not use placeholders. Plain text only."
+                )
+                body = _gemini(prompt, system)
+                # Ensure subject line is included
+                if not body.startswith("Subject:"):
+                    body = f"Subject: {subject}\n\n{body}"
+                return jsonify({"subject": subject, "body": body, "to": vendor.get("email", ""), "ai_powered": True})
+            except Exception as e:
+                print(f"[email] Gemini error: {e}")
+
+        # Fallback
         body = f"""Subject: {subject}
 
 Hi {v_name},
 
-I hope you're having a great week. 
+I hope this finds you well.
 
-I'm reaching out because we have been tracking the {j_title} opening at {j_company}, and I want to present a highly vetted consultant from our bench who is an exceptional fit for your team's requirements.
+I'm reaching out regarding the {j_title} opening{' at ' + j_company if j_company != 'your organization' else ''}. We have a consultant on our active bench who I believe is a strong fit for your requirements.
 
-Candidate Profile Summary:
---------------------------------------------------
-• Name:          {c_name}
-• Expertise:     {c_skill}
-• Proposed Rate: ${c_rate}/hr (Contract)
-• Availability:  Ready to interview immediately
+Candidate Snapshot:
+• Name:        {c_name}
+• Expertise:   {c_skill}
+• Rate:        ${c_rate}/hr (Contract/C2C)
+• Work Auth:   {c_visa}
+• Availability: Immediate
 
-Why {c_name}?
-They bring over 8 years of enterprise-level experience directly aligned with the core competencies you are looking for. They have a proven history of seamless project delivery, rapid onboarding, and strong communication skills. I have attached their detailed presentation sheet and resume for your review.
+{c_name} has hands-on experience directly aligned with what you're looking for. I've reviewed the job requirements carefully and I'm confident this is a quality match worth exploring.
 
-We prioritize quality over volume at 3SBC, and {c_name} represents the top 5% of our talent pool. 
-
-Please let me know what day this week works best for a brief introductory interview.
+Would you have 15 minutes this week for a quick call? I can also send over a full presentation sheet and resume immediately upon request.
 
 Best regards,
-
 {recruiter_name}
 Senior Talent Partner | 3SBC Staffing Solutions
-✉ tamish@3sbc.com | 🌐 www.3sbc.com
-"""
+✉ tamish@3sbc.com | 🌐 www.3sbc.com"""
 
-        return jsonify({"subject": subject, "body": body, "to": vendor.get("email", "")})
+        return jsonify({"subject": subject, "body": body, "to": vendor.get("email", ""), "ai_powered": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
-# CRM STATE PERSISTENCE (Submissions & Vendors & Saved Jobs)
+# CRM STATE PERSISTENCE (Submissions, Vendors, Saved Jobs)
 # ---------------------------------------------------------------------------
 
 @app.route("/api/submissions", methods=["GET", "POST"])
@@ -349,7 +505,7 @@ def api_submissions():
             return jsonify(firebase_db.get_submissions(is_admin=True))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-    
+
     if request.method == "POST":
         try:
             data = request.get_json(force=True)
@@ -367,7 +523,7 @@ def api_vendors():
             return jsonify(firebase_db.get_vendors())
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-            
+
     if request.method == "POST":
         try:
             data = request.get_json(force=True)
@@ -380,13 +536,13 @@ def api_vendors():
 @app.route("/api/jobs/saved", methods=["GET", "POST"])
 def api_saved_jobs():
     import firebase_db
-    user_id = "default_user" # For now, simple auth
+    user_id = "default_user"
     if request.method == "GET":
         try:
             return jsonify(firebase_db.get_saved_jobs(user_id))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-            
+
     if request.method == "POST":
         try:
             job = request.get_json(force=True)
@@ -394,6 +550,26 @@ def api_saved_jobs():
             return jsonify({"success": True, "id": doc_id})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/jobs/saved/delete", methods=["POST"])
+def api_delete_saved_job_by_url():
+    """Delete a saved job by its URL (more reliable than doc_id)."""
+    import firebase_db
+    try:
+        data = request.get_json(force=True)
+        job_url = data.get("url", "")
+        if not job_url:
+            return jsonify({"error": "url required"}), 400
+        # Reconstruct doc_id the same way save_job does
+        user_id = "default_user"
+        job_id  = hashlib.md5(job_url.encode()).hexdigest()[:12]
+        doc_id  = f"{user_id}_{job_id}"
+        success = firebase_db.remove_saved_job(doc_id)
+        return jsonify({"success": success, "doc_id": doc_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/jobs/saved/<doc_id>", methods=["DELETE"])
 def api_delete_saved_job(doc_id):
@@ -403,7 +579,6 @@ def api_delete_saved_job(doc_id):
         return jsonify({"success": success})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 
 app_handler = app

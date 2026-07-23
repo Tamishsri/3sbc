@@ -851,46 +851,66 @@ function calcMargin() {
 }
 
 async function genEmail() {
-  const job   = STATE.pendingJob;
-  const cName = document.getElementById('subConsultant').value.trim();
+  const job    = STATE.pendingJob;
+  const cName  = document.getElementById('subConsultant').value.trim();
   const cSkill = document.getElementById('subSkill').value.trim();
   const cBill  = document.getElementById('subBill').value.trim();
+  const cVisa  = document.getElementById('subVisa')?.value || 'H1B';
   const vName  = document.getElementById('subVendorName').value.trim();
+  const vEmail = document.getElementById('subVendorEmail').value.trim();
+
+  const box = document.getElementById('emailDraftBox');
+  box.textContent = '✨ Generating professional email with Gemini AI...';
+  box.classList.remove('hidden');
 
   try {
     const res = await fetch('/api/submissions/email', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ consultant: { name: cName, skill: cSkill, rate: cBill }, job, vendor: { name: vName } }),
+      body: JSON.stringify({ 
+        consultant: { name: cName, skill: cSkill, rate: cBill, visa: cVisa }, 
+        job, 
+        vendor: { name: vName, email: vEmail } 
+      }),
     });
     const data = await res.json();
-    const box  = document.getElementById('emailDraftBox');
     box.textContent = data.body || '';
-    box.classList.remove('hidden');
+    if (data.ai_powered) toast('✨ Email drafted by Gemini AI', 'success');
   } catch(e) {
-    toast('Could not generate draft', 'error');
+    box.textContent = '';
+    box.classList.add('hidden');
+    toast('Could not generate email', 'error');
   }
 }
 
 async function genResumePresentation() {
-  const cName = document.getElementById('subConsultant').value.trim() || 'Consultant';
+  const cName  = document.getElementById('subConsultant').value.trim() || 'Consultant';
   const cSkill = document.getElementById('subSkill').value.trim() || 'SAP MM';
-  const cLoc = document.getElementById('subLocation').value.trim() || 'Philadelphia, PA';
-  const cVisa = document.getElementById('subVisa').value;
-  const cBill = document.getElementById('subBill').value.trim();
+  const cLoc   = document.getElementById('subLocation').value.trim() || 'Philadelphia, PA';
+  const cVisa  = document.getElementById('subVisa')?.value || 'H1B';
+  const cBill  = document.getElementById('subBill').value.trim();
+  const job    = STATE.pendingJob || {};
+
+  const box = document.getElementById('emailDraftBox');
+  box.textContent = '✨ Generating candidate presentation sheet with Gemini AI...';
+  box.classList.remove('hidden');
 
   try {
     const res = await fetch('/api/candidates/format-resume', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ name: cName, skill: cSkill, location: cLoc, visa: cVisa, rate: cBill }),
+      body: JSON.stringify({ 
+        name: cName, skill: cSkill, location: cLoc, visa: cVisa, rate: cBill,
+        job_title: job.title || '', job_company: job.company || ''
+      }),
     });
     const data = await res.json();
-    const box = document.getElementById('emailDraftBox');
     box.textContent = data.resume_summary || '';
-    box.classList.remove('hidden');
-    toast('📄 Generated 3SBC Client Presentation Sheet!', 'success');
+    if (data.ai_powered) toast('✨ Presentation Sheet by Gemini AI — ready to send to client!', 'success');
+    else toast('📄 Presentation Sheet generated!', 'success');
   } catch(e) {
+    box.textContent = '';
+    box.classList.add('hidden');
     toast('Could not generate presentation sheet', 'error');
   }
 }
@@ -1107,79 +1127,89 @@ function renderSavedJobs() {
   
   grid.innerHTML = (STATE.savedJobs || []).map(j => {
     const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
+    // URL is stored directly as a data attribute for bulletproof removal
+    const safeUrl = esc(j.url || '');
+    const boardColors = {linkedin:'#0077b5',dice:'#e8571e',indeed:'#003a9b',ziprecruiter:'#4caf50',monster:'#6d0df0'};
+    const bColor = boardColors[j.board] || 'var(--indigo)';
     return `
-    <div class="job-card" style="border-left: 3px solid var(--emerald)">
-      <div style="font-size:10px;text-transform:uppercase;color:var(--indigo);font-weight:700;margin-bottom:4px">${esc(j.board)}</div>
-      <div style="font-weight:700;color:#fff;font-size:15px">${esc(j.title)}</div>
-      <div style="color:var(--text-sub);font-size:13px">${esc(j.company)}</div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text-main)">📍 ${esc(j.location)}</div>
+    <div class="job-card" style="border-top:3px solid ${bColor}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:10px;text-transform:uppercase;color:${bColor};font-weight:700;background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px">${esc(j.board_label || j.board)}</span>
+        ${j.url && j.url !== '#' ? `<a href="${safeUrl}" target="_blank" style="font-size:10px;color:var(--text-muted);text-decoration:none" title="View original posting">↗ View</a>` : ''}
+      </div>
+      <div style="font-weight:700;color:#fff;font-size:15px;line-height:1.3">${esc(j.title)}</div>
+      <div style="color:var(--indigo);font-size:13px;font-weight:600;margin-top:2px">${esc(j.company)}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-sub)">📍 ${esc(j.location)}</div>
       ${j.salary ? `<div style="margin-top:4px;font-size:12px;color:var(--emerald);font-weight:700">💰 ${esc(j.salary)}</div>` : ''}
-      <div style="margin-top:16px;display:flex;gap:8px">
+      <div style="margin-top:14px;display:flex;gap:8px">
         <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmitModal('${b64}')">🚀 Submit</button>
-        <button class="btn-action" style="flex:0.5;background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)" onclick="removeSavedJobB64('${b64}')">🗑️ Remove</button>
+        <button class="btn-action" style="flex:0.5;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)" onclick="removeSavedJobByUrl('${safeUrl}')">🗑️ Remove</button>
       </div>
     </div>`;
-  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No jobs saved yet.</div>';
+  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)"><div style="font-size:32px;margin-bottom:12px">⭐</div><div style="font-size:14px">No saved jobs yet</div><div style="font-size:12px;margin-top:4px">Click "Save to Hotlist" on any job card</div></div>';
 }
 
-async function removeSavedJobB64(b64) {
-  if(!b64) return;
-  const targetJob = JSON.parse(decodeURIComponent(atob(b64)));
-  const job = STATE.savedJobs.find(j => j.url === targetJob.url);
-  if (!job) return;
-  
-  const docId = job.doc_id;
+async function removeSavedJobByUrl(jobUrl) {
+  if (!jobUrl) return;
 
-  // Optimistic UI updates
-  STATE.savedJobs = STATE.savedJobs.filter(j => j.url !== job.url);
+  // 1. Instantly remove from STATE and re-render (optimistic)
+  STATE.savedJobs = STATE.savedJobs.filter(j => j.url !== jobUrl);
   renderSavedJobs();
-  
-  // Sync with Kanban board safely
-  const cards = document.querySelectorAll('.job-card');
-  for (const card of cards) {
-    if (card.getAttribute('data-job-url') === job.url) {
+
+  // 2. Sync the Kanban board button back to unsaved state
+  document.querySelectorAll('.job-card').forEach(card => {
+    if (card.getAttribute('data-job-url') === jobUrl) {
       card.style.border = '';
       card.style.boxShadow = '';
-      const toggleBtn = card.querySelector('.btn-toggle-hotlist');
-      if (toggleBtn) {
-        toggleBtn.innerHTML = '⭐ Save to Hotlist';
-        toggleBtn.style.background = 'rgba(255,255,255,0.05)';
-        toggleBtn.style.color = 'var(--text-main)';
-        toggleBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+      const btn = card.querySelector('.btn-toggle-hotlist');
+      if (btn) {
+        btn.innerHTML = '⭐ Save to Hotlist';
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.color = 'var(--text-main)';
+        btn.style.borderColor = 'rgba(255,255,255,0.1)';
       }
     }
-  }
+  });
 
+  // 3. Delete from server using URL (no doc_id needed — server derives it)
   try {
-    await fetch(`/api/jobs/saved/${docId}`, { method: 'DELETE' });
+    await fetch('/api/jobs/saved/delete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ url: jobUrl })
+    });
     toast('Job removed from Hotlist', 'success');
   } catch(e) {
-    toast('Failed to remove job', 'error');
-    console.error(e);
+    console.error('Remove failed:', e);
+    toast('Removed locally (sync failed)', 'success');
   }
+}
+
+// Keep old name working too
+async function removeSavedJobB64(b64) {
+  if (!b64) return;
+  const targetJob = JSON.parse(decodeURIComponent(atob(b64)));
+  await removeSavedJobByUrl(targetJob.url);
 }
 
 async function toggleHotlist(b64, btnEl) {
-  const job = JSON.parse(decodeURIComponent(atob(b64)));
+  const job      = JSON.parse(decodeURIComponent(atob(b64)));
   const savedJob = (STATE.savedJobs || []).find(sj => sj.url === job.url);
 
   if (savedJob) {
-    // Already saved: Remove it (Optimistic)
+    // ---- ALREADY SAVED: Optimistically unsave ----
     if (btnEl) {
       btnEl.innerHTML = '⭐ Save to Hotlist';
       btnEl.style.background = 'rgba(255,255,255,0.05)';
       btnEl.style.color = 'var(--text-main)';
       btnEl.style.borderColor = 'rgba(255,255,255,0.1)';
       const card = btnEl.closest('.job-card');
-      if (card) {
-        card.style.border = '';
-        card.style.boxShadow = '';
-      }
+      if (card) { card.style.border = ''; card.style.boxShadow = ''; }
     }
-    const b64 = btoa(encodeURIComponent(JSON.stringify(savedJob)));
-    await removeSavedJobB64(b64);
+    await removeSavedJobByUrl(job.url);
+
   } else {
-    // Not saved: Save it (Optimistic)
+    // ---- NOT SAVED: Optimistically save ----
     if (btnEl) {
       btnEl.innerHTML = '✅ Saved';
       btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
@@ -1191,34 +1221,23 @@ async function toggleHotlist(b64, btnEl) {
         card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
       }
     }
-    
-    // We add a temporary doc_id to allow immediate removal if double-clicked
-    const tempDocId = 'temp_' + Date.now();
-    job.doc_id = tempDocId;
     if (!STATE.savedJobs) STATE.savedJobs = [];
-    STATE.savedJobs.unshift(job);
+    STATE.savedJobs.unshift({...job, doc_id: 'pending'});
     renderSavedJobs();
 
     try {
-      const res = await fetch('/api/jobs/saved', {
+      await fetch('/api/jobs/saved', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(job)
       });
-      const data = await res.json();
-      
-      // Update the real doc_id
-      const savedRef = STATE.savedJobs.find(sj => sj.doc_id === tempDocId);
-      if (savedRef) {
-        savedRef.doc_id = data.id;
-        renderSavedJobs(); // Re-render to update the HTML buttons with the real doc_id
-      }
+      // Re-fetch to get real doc_ids synced
+      const saved = await fetch('/api/jobs/saved').then(r => r.json());
+      STATE.savedJobs = saved;
+      renderSavedJobs();
       toast('⭐ Job saved to Hotlist!', 'success');
     } catch(e) {
-      toast('Failed to save job', 'error');
-      // Revert if failed
-      STATE.savedJobs = STATE.savedJobs.filter(sj => sj.doc_id !== tempDocId);
-      renderSavedJobs();
+      toast('Saved locally (cloud sync failed)', 'success');
     }
   }
 }
