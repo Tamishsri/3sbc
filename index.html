@@ -667,6 +667,22 @@ body {
           <input class="form-input" id="subVendorEmail" type="email" placeholder="john@vendor.com"/>
         </div>
       </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
+          <label class="field-label">Submission Status</label>
+          <select class="form-select" id="subStatus">
+            <option value="Submitted">Submitted to Vendor</option>
+            <option value="Interviewing">Interviewing</option>
+            <option value="Offered">Offered</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Submission Notes</label>
+          <input class="form-input" id="subNotes" type="text" placeholder="e.g. Rate negotiated, available next week"/>
+        </div>
+      </div>
 
       <div style="display:flex;gap:10px;margin-top:4px">
         <button type="button" class="btn-action btn-action-indigo" onclick="genEmail()" style="height:36px;padding:0 14px">✉️ Draft Vendor Email</button>
@@ -692,9 +708,18 @@ body {
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <input class="form-input" id="vName" placeholder="Contact Name *"/>
-      <input class="form-input" id="vCompany" placeholder="Company *"/>
-      <input class="form-input" id="vEmail" placeholder="Email"/>
-      <input class="form-input" id="vPhone" placeholder="Phone"/>
+      <input class="form-input" id="vCompany" placeholder="Company Name *"/>
+      <input class="form-input" id="vEmail" placeholder="Email Address"/>
+      <input class="form-input" id="vPhone" placeholder="Phone Number"/>
+      <select class="form-select" id="vTier">
+        <option value="" disabled selected>Select Vendor Tier</option>
+        <option value="Direct Client">Direct Client</option>
+        <option value="Tier 1">Tier 1 Partner</option>
+        <option value="Implementation Partner">Implementation Partner</option>
+        <option value="Other">Other</option>
+      </select>
+      <input class="form-input" id="vTech" placeholder="Preferred Technologies (e.g. SAP, AWS)"/>
+      <input class="form-input" id="vNotes" placeholder="Additional Notes (e.g. Fast payer, Net 30)"/>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
       <button class="btn-action btn-action-indigo" onclick="closeModal('vendorModal')" style="height:36px;padding:0 16px">Cancel</button>
@@ -1112,6 +1137,8 @@ async function confirmSubmit() {
   const bill  = document.getElementById('subBill').value.trim();
   const pay   = document.getElementById('subPay').value.trim();
   const vEmail = document.getElementById('subVendorEmail').value.trim();
+  const status = document.getElementById('subStatus').value;
+  const notes = document.getElementById('subNotes').value.trim();
 
   if (!cName || !job) {
     toast('Enter consultant name', 'error');
@@ -1126,7 +1153,8 @@ async function confirmSubmit() {
     company: job.company,
     board: job.board,
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    status: 'Submitted',
+    status: status,
+    notes: notes,
     bill_rate: bill,
     pay_rate: pay,
     margin_hr: marginHr,
@@ -1227,7 +1255,10 @@ function renderSubmissions() {
 
   tbody.innerHTML = STATE.submissions.map(s => `
     <tr>
-      <td style="font-weight:700;color:#fff">${esc(s.consultant_name)}</td>
+      <td>
+        <div style="font-weight:700;color:#fff">${esc(s.consultant_name)}</div>
+        ${s.notes ? `<div style="font-size:11px;color:var(--text-sub);margin-top:2px;font-style:italic">"${esc(s.notes)}"</div>` : ''}
+      </td>
       <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div></td>
       <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-sub)">${esc(s.board)}</td>
       <td>${esc(s.date || s.created_at_iso?.split(' ')[0] || '')}</td>
@@ -1345,8 +1376,10 @@ function renderVendors() {
   grid.innerHTML = STATE.vendors.map(v => `
     <div class="job-card" style="position:relative;">
       <div style="font-weight:700;color:#fff">${esc(v.name)}</div>
-      <div style="color:var(--indigo);font-weight:600">${esc(v.company)}</div>
-      <div style="font-size:12px;color:var(--text-sub)">${esc(v.email)} · ${esc(v.phone)}</div>
+      <div style="color:var(--indigo);font-weight:600">${esc(v.company)} ${v.tier ? `<span style="font-size:10px;background:rgba(99,102,241,0.15);padding:2px 6px;border-radius:4px;margin-left:4px">${esc(v.tier)}</span>` : ''}</div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:4px">${esc(v.email)} · ${esc(v.phone)}</div>
+      ${v.tech ? `<div style="font-size:11px;color:var(--emerald);margin-top:4px">Tech: ${esc(v.tech)}</div>` : ''}
+      ${v.notes ? `<div style="font-size:11px;color:var(--text-sub);margin-top:4px;font-style:italic">"${esc(v.notes)}"</div>` : ''}
       <button class="btn-action" style="position:absolute;top:16px;right:16px;height:24px;width:24px;padding:0;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteVendor('${esc(v.id)}')">🗑</button>
     </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
 }
@@ -1365,9 +1398,13 @@ async function saveVendor() {
   const company = document.getElementById('vCompany').value.trim();
   const email = document.getElementById('vEmail').value.trim();
   const phone = document.getElementById('vPhone').value.trim();
-  if (!name || !company) return;
+  const tier = document.getElementById('vTier').value;
+  const tech = document.getElementById('vTech').value.trim();
+  const notes = document.getElementById('vNotes').value.trim();
   
-  const payload = { name, company, email, phone };
+  if (!name || !company) return toast('Name and Company required', 'error');
+  
+  const payload = { name, company, email, phone, tier, tech, notes };
   try {
     await fetch('/api/vendors', {
       method: 'POST',
