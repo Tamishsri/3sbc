@@ -628,19 +628,13 @@ def search_jobs(
             board_key, jobs = future.result()
             all_results[board_key] = jobs
 
-    # Distribute real JSearch jobs into ANY column that came up short
+    # Strict attribution: We no longer distribute jobs to other columns.
     if jsearch_jobs:
-        jsearch_pool = list(jsearch_jobs)
-        for b in target_boards:
-            needed = RESULTS_PER_BOARD - len(all_results[b])
-            if needed > 0 and jsearch_pool:
-                fillers = jsearch_pool[:needed]
-                jsearch_pool = jsearch_pool[needed:]
-                # Update board labels for UI consistency
-                for f in fillers:
-                    f["board"] = b
-                    f["id"] = _uid(b, f["title"], f["company"])
-                all_results[b].extend(fillers)
+        # Group JSearch jobs by their actual board instead of forcing them into empty columns
+        for j in jsearch_jobs:
+            b = j.get("board", "linkedin")
+            if b in target_boards:
+                all_results[b].append(j)
 
     for b in target_boards:
         all_results[b] = all_results[b][:RESULTS_PER_BOARD]
