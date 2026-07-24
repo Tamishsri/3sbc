@@ -521,40 +521,59 @@ body {
      MODAL: ADD CANDIDATE
      ════════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="addCandidateModal">
-  <div class="modal-box" style="max-width:500px">
+  <div class="modal-box" style="max-width:550px">
     <div class="modal-header">
-      <div style="font-size:16px;font-weight:700;color:#fff">➕ Add to Bench</div>
+      <div style="font-size:16px;font-weight:800;color:#fff">➕ Add Candidate to Premium Bench</div>
       <button class="modal-close" onclick="closeModal('addCandidateModal')">×</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
-      <div class="field-group">
-        <label class="field-label">Consultant Name</label>
-        <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;padding:20px">
+      <div style="display:flex;gap:16px">
+        <div class="field-group" style="flex:1">
+          <label class="field-label">Consultant Name *</label>
+          <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
+        </div>
+        <div class="field-group" style="flex:1">
+          <label class="field-label">Email *</label>
+          <input type="email" class="form-input" id="acEmail" placeholder="john@example.com">
+        </div>
       </div>
       <div class="field-group">
-        <label class="field-label">Target Skill</label>
-        <input type="text" class="form-input" id="acSkill" placeholder="e.g. Java Developer">
+        <label class="field-label">Primary Skillset *</label>
+        <input type="text" class="form-input" id="acSkill" placeholder="e.g. SAP MM, React Developer">
       </div>
       <div style="display:flex;gap:16px">
         <div class="field-group" style="flex:1">
-          <label class="field-label">Visa Status</label>
+          <label class="field-label">Visa Status *</label>
           <select class="form-select" id="acVisa">
-            <option value="H1B">H1B</option>
-            <option value="Green Card">Green Card</option>
             <option value="US Citizen">US Citizen</option>
-            <option value="OPT">OPT / CPT</option>
+            <option value="Green Card">Green Card</option>
+            <option value="H1B" selected>H1B</option>
+            <option value="OPT EAD">OPT EAD</option>
+            <option value="CPT">CPT</option>
+            <option value="TN Visa">TN Visa</option>
           </select>
         </div>
         <div class="field-group" style="flex:1">
-          <label class="field-label">Pay Rate ($/hr)</label>
-          <input type="number" class="form-input" id="acPay" value="65">
+          <label class="field-label">Target Rate ($/hr) *</label>
+          <input type="number" class="form-input" id="acPay" value="85">
         </div>
       </div>
       <div class="field-group">
-        <label class="field-label">Location</label>
+        <label class="field-label">Current Location *</label>
         <input type="text" class="form-input" id="acLocation" placeholder="e.g. Dallas, TX">
       </div>
-      <button class="btn-search-main" style="width:100%" onclick="saveCandidate()">Save to Bench</button>
+      
+      <!-- Premium Dropzone for Resume -->
+      <div class="field-group" style="margin-top:10px">
+        <label class="field-label">Resume (PDF) *</label>
+        <div class="dropzone" id="acDropzone" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); transition: all 0.3s;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📄</div>
+          <div id="acDzText" style="font-size:14px; font-weight: 600; color: #fff;">Click to upload Resume</div>
+          <input type="file" id="acFileInput" accept="application/pdf" style="display:none">
+        </div>
+      </div>
+      
+      <button class="btn-search-main" style="width:100%;margin-top:10px" id="acSubmitBtn" onclick="saveCandidate()">🤖 AI Process & Save to Bench</button>
     </div>
   </div>
 </div>
@@ -1386,38 +1405,88 @@ async function deleteSubmission(subId) {
 
 function openAddCandidateModal() { document.getElementById('addCandidateModal')?.classList.remove('hidden'); }
 
+let acSelectedFile = null;
+const acDz = document.getElementById('acDropzone');
+const acInput = document.getElementById('acFileInput');
+const acDzText = document.getElementById('acDzText');
+
+if (acDz && acInput) {
+  acDz.addEventListener('click', () => acInput.click());
+  acDz.addEventListener('dragover', e => { e.preventDefault(); acDz.style.borderColor = 'var(--indigo)'; });
+  acDz.addEventListener('dragleave', () => acDz.style.borderColor = 'rgba(255,255,255,0.15)');
+  acDz.addEventListener('drop', e => {
+    e.preventDefault(); acDz.style.borderColor = 'rgba(255,255,255,0.15)';
+    if (e.dataTransfer.files.length) handleAcFile(e.dataTransfer.files[0]);
+  });
+  acInput.addEventListener('change', e => {
+    if (e.target.files.length) handleAcFile(e.target.files[0]);
+  });
+}
+
+function handleAcFile(file) {
+  if (file.type !== 'application/pdf') return toast('Please upload a PDF file.', 'error');
+  acSelectedFile = file;
+  acDzText.textContent = file.name;
+  acDzText.style.color = 'var(--emerald)';
+  acDz.style.borderColor = 'var(--emerald)';
+  acDz.style.background = 'rgba(16, 185, 129, 0.05)';
+}
+
 async function saveCandidate() {
   const name = document.getElementById('acName').value.trim();
+  const email = document.getElementById('acEmail').value.trim();
   const skill = document.getElementById('acSkill').value.trim();
   const visa = document.getElementById('acVisa').value;
   const pay = document.getElementById('acPay').value;
   const loc = document.getElementById('acLocation').value.trim();
+  const btn = document.getElementById('acSubmitBtn');
 
-  if(!name || !skill) return toast('Name and Skill required', 'error');
+  if(!name || !skill || !email || !loc || !acSelectedFile) {
+    return toast('Please fill all fields and upload a Resume.', 'error');
+  }
 
-  const payload = {
-    "Consultant Name": name,
-    "Target Skill (AREA)": skill,
-    "Visa": visa,
-    "PayRate": parseInt(pay) || 65,
-    "Target Location": loc
-  };
+  btn.disabled = true;
+  btn.textContent = '🤖 Processing with AI...';
+
+  const formData = new FormData();
+  formData.append('resume', acSelectedFile);
+  formData.append('name', name);
+  formData.append('email', email);
+  formData.append('phone', '');
+  formData.append('location', loc);
+  formData.append('skill', skill);
+  formData.append('rate', pay);
+  formData.append('visa', visa);
 
   try {
-    await fetch('/api/candidates', {
+    const res = await fetch('/api/candidates/apply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: formData
     });
-    toast('Candidate added to bench!', 'success');
-    document.getElementById('acName').value = '';
-    document.getElementById('acSkill').value = '';
-    document.getElementById('acLocation').value = '';
-    document.getElementById('acPay').value = '65';
-    closeModal('addCandidateModal');
-    loadBench();
+    const data = await res.json();
+    
+    if (data.success) {
+      toast('Candidate successfully processed and added to bench!', 'success');
+      document.getElementById('acName').value = '';
+      document.getElementById('acEmail').value = '';
+      document.getElementById('acSkill').value = '';
+      document.getElementById('acLocation').value = '';
+      document.getElementById('acPay').value = '85';
+      acSelectedFile = null;
+      acDzText.textContent = 'Click to upload Resume';
+      acDzText.style.color = '#fff';
+      acDz.style.borderColor = 'rgba(255,255,255,0.15)';
+      acDz.style.background = 'rgba(0,0,0,0.2)';
+      closeModal('addCandidateModal');
+      loadBench();
+    } else {
+      toast('AI Error: ' + data.error, 'error');
+    }
   } catch(e) {
-    toast('Failed to add candidate', 'error');
+    toast('Failed to reach AI processing engine', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🤖 AI Process & Save to Bench';
   }
 }
 

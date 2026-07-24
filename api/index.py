@@ -242,12 +242,14 @@ def api_candidate_apply():
             f"- Location: {cand_loc}\n"
             f"- Target Pay Rate: {cand_rate}/hr\n"
             f"- Visa Status: {cand_visa}\n\n"
-            f"And here is the text extracted from their PDF resume:\n{text[:4000]}\n\n"
-            f"Your task is to synthesize this into a single, clean JSON object. "
-            f"USE THE EXPLICIT FORM DATA PROVIDED ABOVE. Only use the resume text to fill in gaps or understand their background better. "
+            f"And here is the text extracted from their PDF resume:\n{text[:6000]}\n\n"
+            f"Your task is to synthesize this into a single JSON object. "
+            f"USE THE EXPLICIT FORM DATA PROVIDED ABOVE. "
+            f"Additionally, you MUST read the resume text and generate a dense 'Resume_Summary' (3-4 sentences max). "
+            f"The Resume_Summary should capture their total years of experience, core technologies used, and 1-2 major achievements or domains they've worked in. "
             f"Return ONLY valid JSON with exactly these keys:\n"
             f'{{"Consultant Name": "{cand_name}", "Email": "{cand_email}", "Phone": "{cand_phone}", '
-            f'"Target Skill (AREA)": "{cand_skill}", "Target Location": "{cand_loc}", "Visa": "{cand_visa}", "PayRate": {cand_rate}}}'
+            f'"Target Skill (AREA)": "{cand_skill}", "Target Location": "{cand_loc}", "Visa": "{cand_visa}", "PayRate": {cand_rate}, "Resume_Summary": "dense summary here"}}'
         )
         try:
             res = _gemini(prompt)
@@ -359,10 +361,17 @@ def api_jobs_match():
             if not name:
                 continue
 
+            resume_summary = c.get("Resume_Summary", "")
+            
             # --- Multi-factor algorithmic score (fast, pre-calculated) ---
             skill_words = [w.lower() for w in skill_area.split() if len(w) > 2]
             job_text    = f"{job_title} {job_desc}".lower()
             hits        = sum(1 for w in skill_words if w in job_text)
+            
+            # Boost keyword hits if resume summary matches job text
+            if resume_summary:
+                hits += sum(2 for w in skill_words if w in resume_summary.lower())
+                
             kw_pct      = (hits / max(len(skill_words), 1)) * 100
 
             loc_boost   = 8 if any(w.lower() in job_location.lower() for w in location.split() if len(w) > 2) else 0
@@ -380,6 +389,8 @@ def api_jobs_match():
                 "visa":      visa,
                 "pay_rate":  pay_rate,
                 "fit_score": final_score,
+                "resume_summary": resume_summary,
+                "Resume_URL": c.get("Resume_URL", ""),
                 "reason":    "",
             })
 
@@ -400,9 +411,10 @@ def api_jobs_match():
                         f"CANDIDATE SKILLS: {c['skill']}\n"
                         f"CANDIDATE LOCATION: {c['location']}\n"
                         f"VISA STATUS: {c['visa']}\n"
-                        f"MATCH SCORE: {c['fit_score']}/100\n\n"
+                        f"MATCH SCORE: {c['fit_score']}/100\n"
+                        f"CANDIDATE RESUME SUMMARY: {c.get('resume_summary', 'No explicit resume summary provided.')}\n\n"
                         f"Write exactly 2 sentences explaining WHY this specific candidate is or isn't a good fit "
-                        f"for this specific job. Be specific about their skills vs job requirements. "
+                        f"for this specific job. Leverage their RESUME SUMMARY to be highly specific about their past achievements or exact tech stack overlap. "
                         f"Do NOT use generic phrases. Do not use markdown. Plain text only."
                     )
                     reasoning = _gemini(prompt)

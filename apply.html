@@ -6,80 +6,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
     :root {
-      --bg-dark: #050505;
-      --bg-card: #111113;
-      --border: rgba(255, 255, 255, 0.08);
-      --text-main: #f9fafb;
+      --bg-dark: #030303;
+      --bg-card: rgba(15, 15, 17, 0.7);
+      --border: rgba(255, 255, 255, 0.06);
+      --text-main: #ffffff;
       --text-sub: #9ca3af;
       --indigo: #6366f1;
-      --indigo-hover: #4f46e5;
+      --indigo-glow: rgba(99, 102, 241, 0.4);
       --emerald: #10b981;
     }
+    
     body {
       margin: 0; font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--bg-dark); color: var(--text-main);
       display: flex; justify-content: center; align-items: center; min-height: 100vh;
       padding: 40px 20px; box-sizing: border-box;
-      background-image: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15), transparent 50%);
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
+      overflow-x: hidden;
     }
+    
+    /* Animated Grid Background */
+    body::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-image: linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+      background-size: 40px 40px; z-index: -1; pointer-events: none;
+    }
+    
     .container {
-      background: rgba(17,17,19,0.7); backdrop-filter: blur(20px);
-      border: 1px solid var(--border); border-radius: 20px;
-      padding: 50px; width: 100%; max-width: 600px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      background: var(--bg-card); backdrop-filter: blur(40px);
+      border: 1px solid var(--border); border-radius: 24px;
+      padding: 50px; width: 100%; max-width: 650px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative; overflow: hidden;
+      transform: translateY(0); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .header { text-align: center; margin-bottom: 40px; }
-    h1 { margin: 0 0 10px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-    p { margin: 0; color: var(--text-sub); font-size: 15px; line-height: 1.6; }
+    
+    .container::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+    }
+    
+    .header { text-align: center; margin-bottom: 45px; }
+    h1 { margin: 0 0 12px; font-size: 32px; font-weight: 800; letter-spacing: -0.8px; 
+         background: linear-gradient(to right, #fff, #a5b4fc);
+         -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p { margin: 0; color: var(--text-sub); font-size: 15px; line-height: 1.7; font-weight: 500; }
     
     .section-title {
-      font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--indigo); font-weight: 800; margin: 30px 0 15px;
-      border-bottom: 1px solid var(--border); padding-bottom: 8px;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+      color: #818cf8; font-weight: 800; margin: 35px 0 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::after {
+      content: ""; flex: 1; height: 1px; background: linear-gradient(to right, var(--border), transparent);
     }
 
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; position: relative; }
     .form-group.full { grid-column: span 2; }
     
-    label { font-size: 12px; font-weight: 600; color: #d1d5db; }
+    label { font-size: 13px; font-weight: 700; color: #e5e7eb; transition: 0.3s; }
+    
     input, select {
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 14px; color: #fff;
-      font-family: inherit; font-size: 14px; transition: 0.2s;
+      background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 14px 16px; color: #fff;
+      font-family: inherit; font-size: 15px; font-weight: 500; transition: all 0.3s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
-    input:focus, select:focus { outline: none; border-color: var(--indigo); background: rgba(99,102,241,0.05); }
+    
+    input::placeholder { color: #4b5563; }
+    
+    input:focus, select:focus { 
+      outline: none; border-color: var(--indigo); 
+      background: rgba(99,102,241,0.03); 
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), inset 0 2px 4px rgba(0,0,0,0.1);
+    }
     
     .dropzone {
-      border: 2px dashed var(--border); border-radius: 14px; padding: 30px 20px;
-      text-align: center; cursor: pointer; transition: all 0.2s ease;
-      background: rgba(255,255,255,0.01); margin-top: 10px;
+      border: 2px dashed rgba(255,255,255,0.15); border-radius: 16px; padding: 40px 20px;
+      text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(0,0,0,0.2); margin-top: 10px; position: relative; overflow: hidden;
     }
-    .dropzone:hover, .dropzone.active { border-color: var(--indigo); background: rgba(99, 102, 241, 0.05); }
-    .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
-    .dropzone-text { font-size: 14px; font-weight: 600; color: var(--text-main); }
-    .dropzone-sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+    
+    .dropzone:hover, .dropzone.active { 
+      border-color: var(--indigo); 
+      background: rgba(99, 102, 241, 0.05); 
+      transform: scale(1.01);
+    }
+    
+    .dropzone-icon { font-size: 38px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+    .dropzone-text { font-size: 16px; font-weight: 700; color: var(--text-main); transition: color 0.3s; }
+    .dropzone-sub { font-size: 13px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
     
     button {
-      width: 100%; background: linear-gradient(135deg, var(--indigo), #818cf8);
-      color: #fff; border: none; padding: 16px; border-radius: 12px;
-      font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;
-      margin-top: 30px; box-shadow: 0 10px 20px rgba(99,102,241,0.3);
+      width: 100%; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 18px; border-radius: 14px;
+      font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 35px; box-shadow: 0 10px 25px rgba(99,102,241,0.4);
+      position: relative; overflow: hidden;
     }
-    button:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(99,102,241,0.4); }
-    button:disabled { background: #374151; cursor: not-allowed; color: #9ca3af; transform: none; box-shadow: none; }
     
-    #successState { display: none; text-align: center; padding: 40px 0; }
-    #successState h2 { color: var(--emerald); margin: 20px 0 10px; font-size: 28px; }
+    button::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: all 0.6s ease;
+    }
+    
+    button:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(99,102,241,0.5); }
+    button:hover::before { left: 100%; }
+    button:disabled { background: #1f2937; border-color: #374151; cursor: not-allowed; color: #9ca3af; transform: none; box-shadow: none; }
+    
+    #successState { display: none; text-align: center; padding: 50px 0; }
+    #successState .icon-wrapper {
+      width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;
+      border: 2px solid var(--emerald); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+    }
+    #successState h2 { color: #fff; margin: 0 0 15px; font-size: 32px; font-weight: 800; }
+    
+    /* Toast Notifications */
+    .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+    .toast { background: var(--bg-card); border: 1px solid var(--border); backdrop-filter: blur(10px); padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .toast.error { border-left: 4px solid #f43f5e; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   </style>
 </head>
 <body>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <div class="container" id="formState">
     <div class="header">
       <h1>🚀 Join the 3SBC Premium Bench</h1>
-      <p>Submit your profile to be instantly AI-matched with top-tier vendors and direct clients across our network.</p>
+      <p>Submit your profile to be instantly AI-matched with top-tier vendors and direct clients across our elite network.</p>
     </div>
 
     <div class="section-title">Personal Details</div>
@@ -121,16 +185,17 @@
           <option value="H1B">H1B</option>
           <option value="OPT EAD">OPT EAD</option>
           <option value="CPT">CPT</option>
+          <option value="TN Visa">TN Visa</option>
           <option value="Other">Other</option>
         </select>
       </div>
     </div>
 
-    <div class="section-title">Resume & Preferences</div>
+    <div class="section-title">Resume & AI Analysis</div>
     <div class="dropzone" id="dropzone">
       <div class="dropzone-icon">📄</div>
       <div class="dropzone-text" id="dzText">Drag & Drop Resume (PDF) *</div>
-      <div class="dropzone-sub">or click to browse files</div>
+      <div class="dropzone-sub">Our AI will automatically extract and structure your experience.</div>
       <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     </div>
 
@@ -138,13 +203,24 @@
   </div>
 
   <div class="container" id="successState">
-    <div style="font-size:64px;margin-bottom:20px">🎉</div>
-    <h2>Application Secured!</h2>
-    <p style="margin-bottom:30px;font-size:16px">Our AI has successfully analyzed your profile and added you to our active bench. You will be automatically submitted when a matching role is found.</p>
-    <button onclick="location.reload()" style="background:#1f2937;box-shadow:none;width:auto;padding:12px 30px">Submit Another Profile</button>
+    <div class="icon-wrapper">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h2>Application Secured</h2>
+    <p style="margin-bottom:35px;font-size:16px;color:var(--text-sub)">Our AI has successfully analyzed your profile and generated a deep-match summary. You will be automatically submitted when a perfect role is found.</p>
+    <button onclick="location.reload()" style="background:rgba(255,255,255,0.05);box-shadow:none;border-color:rgba(255,255,255,0.1)">Submit Another Profile</button>
   </div>
 
   <script>
+    function showToast(msg, type='info') {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+
     const dz = document.getElementById('dropzone');
     const input = document.getElementById('fileInput');
     const dzText = document.getElementById('dzText');
@@ -164,11 +240,13 @@
 
     function handleFile(file) {
       if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file.'); return;
+        showToast('Please upload a PDF file.', 'error'); return;
       }
       selectedFile = file;
       dzText.textContent = file.name;
       dzText.style.color = 'var(--emerald)';
+      dz.style.borderColor = 'var(--emerald)';
+      dz.style.background = 'rgba(16, 185, 129, 0.05)';
     }
 
     submitBtn.addEventListener('click', async () => {
@@ -180,7 +258,7 @@
       const visa = document.getElementById('candVisa').value;
 
       if (!name || !email || !loc || !skill || !rate || !visa || !selectedFile) {
-        alert('Please fill out all required fields and upload a PDF resume.');
+        showToast('Please fill out all required fields and upload a PDF resume.', 'error');
         return;
       }
       
@@ -202,15 +280,19 @@
         const data = await res.json();
         
         if (data.success) {
-          document.getElementById('formState').style.display = 'none';
-          document.getElementById('successState').style.display = 'block';
+          document.getElementById('formState').style.transform = 'translateY(20px)';
+          document.getElementById('formState').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('formState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+          }, 300);
         } else {
-          alert('Error: ' + data.error);
+          showToast('Error: ' + data.error, 'error');
           submitBtn.disabled = false;
           submitBtn.textContent = 'Submit Profile to AI Engine';
         }
       } catch(e) {
-        alert('Connection error.');
+        showToast('Connection error.', 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Profile to AI Engine';
       }
