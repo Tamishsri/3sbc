@@ -670,6 +670,28 @@ body {
       
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field-group">
+          <label class="field-label">Vendor Phone</label>
+          <input class="form-input" id="subVendorPhone" type="text" placeholder="(555) 123-4567"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Vendor Company</label>
+          <input class="form-input" id="subVendorCompany" type="text" placeholder="e.g. Teksystems, TCS"/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
+          <label class="field-label">End Client Name</label>
+          <input class="form-input" id="subEndClient" type="text" placeholder="e.g. JP Morgan, Apple"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Interview Availability</label>
+          <input class="form-input" id="subAvailability" type="text" placeholder="e.g. Any time next Tue/Wed"/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field-group">
           <label class="field-label">Submission Status</label>
           <select class="form-select" id="subStatus">
             <option value="Submitted">Submitted to Vendor</option>
@@ -1137,6 +1159,11 @@ async function confirmSubmit() {
   const bill  = document.getElementById('subBill').value.trim();
   const pay   = document.getElementById('subPay').value.trim();
   const vEmail = document.getElementById('subVendorEmail').value.trim();
+  const vName = document.getElementById('subVendorName').value.trim();
+  const vPhone = document.getElementById('subVendorPhone').value.trim();
+  const vCompany = document.getElementById('subVendorCompany').value.trim();
+  const endClient = document.getElementById('subEndClient').value.trim();
+  const availability = document.getElementById('subAvailability').value.trim();
   const status = document.getElementById('subStatus').value;
   const notes = document.getElementById('subNotes').value.trim();
 
@@ -1158,7 +1185,12 @@ async function confirmSubmit() {
     bill_rate: bill,
     pay_rate: pay,
     margin_hr: marginHr,
-    vendor_email: vEmail
+    vendor_email: vEmail,
+    vendor_name: vName,
+    vendor_phone: vPhone,
+    vendor_company: vCompany,
+    end_client: endClient,
+    availability: availability
   };
 
   try {
