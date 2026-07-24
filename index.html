@@ -1599,13 +1599,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const h = Math.floor(diff / 3600);
       const m = Math.floor((diff % 3600) / 60);
       const s = diff % 60;
-      el.innerHTML = \`🕐 \${h}h \${m}m \${s}s ago\`;
+      el.innerHTML = `🕐 ${h}h ${m}m ${s}s ago`;
     });
   }, 1000);
 });
 
 function checkAccessCode() {
-  const code = document.getElementById('accessCodeInput').value;
+  const code = document.getElementById('accessCodeInput').value.trim().toUpperCase();
   if (code === '3SBC2026') {
     localStorage.setItem('3sbc_unlocked', 'true');
     document.getElementById('loginScreen').style.display = 'none';
