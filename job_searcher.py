@@ -74,8 +74,8 @@ def _posted_label(days_ago: int) -> str:
 # JSearch via RapidAPI (real jobs from LinkedIn + Indeed + Glassdoor)
 # ---------------------------------------------------------------------------
 
-def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
-    """Fetch real jobs via JSearch RapidAPI — covers LinkedIn, Indeed, Glassdoor."""
+def _fetch_jsearch(skill: str, location: str, count: int = 10, board_filter: str = "") -> list[dict]:
+    """Fetch real jobs via JSearch RapidAPI."""
     if not RAPIDAPI_KEY:
         return []
     try:
@@ -84,11 +84,14 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
             "x-rapidapi-key":  RAPIDAPI_KEY,
         }
         query = f"{skill} contract jobs in {location}"
+        if board_filter and board_filter != "linkedin":
+            query += f" site:{board_filter}.com"
+            
         # Try multiple known JSearch endpoint paths
         for path in ["/search", "/jobs/search"]:
             r = SESSION.get(
                 f"https://jsearch.p.rapidapi.com{path}",
-                params={"query": query, "num_pages": "3", "page": "1", "date_posted": "3days"},
+                params={"query": query, "num_pages": "2", "page": "1", "date_posted": "3days"},
                 headers=headers,
                 timeout=10,
             )
@@ -116,8 +119,9 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
             board_map = {
                 "linkedin": "linkedin", "indeed": "indeed",
                 "glassdoor": "linkedin", "ziprecruiter": "ziprecruiter",
+                "dice": "dice", "monster": "monster"
             }
-            board = board_map.get(source.lower(), "linkedin")
+            board = board_filter if board_filter else board_map.get(source.lower(), "linkedin")
 
             jobs.append({
                 "id":          _uid(board, j.get("job_title",""), j.get("employer_name","")),
@@ -459,7 +463,13 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
     scraper = scraper_map.get(board)
     jobs    = scraper(skill, location) if scraper else []
 
-
+    # If native scraper gets blocked by Vercel, use JSearch API targeted at this specific board
+    if not jobs and board != "linkedin":
+        try:
+            print(f"[job_searcher] Native scrape failed for {board}. Falling back to JSearch site-specific query.")
+            jobs = _fetch_jsearch(skill, location, RESULTS_PER_BOARD, board_filter=board)
+        except Exception as e:
+            print(f"[job_searcher] JSearch fallback error for {board}: {e}")
 
     # Filter out empty/junk titles
     jobs = [j for j in jobs if j.get("title") and len(j["title"]) > 3]
@@ -515,7 +525,7 @@ def _rate_intelligence(all_jobs: dict[str, list[dict]], skill: str, location: st
 
 def _cache_key(skill: str, location: str, job_type: str) -> str:
     raw = f"{skill.lower().strip()}|{location.lower().strip()}|{job_type}"
-    return "jobcache_v2_" + hashlib.md5(raw.encode()).hexdigest()[:12]
+    return "jobcache_v3_" + hashlib.md5(raw.encode()).hexdigest()[:12]
 
 
 def _read_cache(ck: str) -> dict | None:
@@ -571,12 +581,6 @@ def search_jobs(
             print(f"[job_searcher] Returning cached results for '{skill}' in '{location}'")
             return cached
 
-    # Try JSearch first to get a massive pool of real jobs
-    jsearch_jobs: list[dict] = []
-    if RAPIDAPI_KEY:
-        jsearch_jobs = _fetch_jsearch(skill, location, 50)
-        print(f"[job_searcher] JSearch: {len(jsearch_jobs)} real jobs fetched")
-
     t0 = time.time()
     all_results: dict[str, list[dict]] = {b: [] for b in target_boards}
 
@@ -587,14 +591,6 @@ def search_jobs(
         for future in as_completed(futures):
             board_key, jobs = future.result()
             all_results[board_key] = jobs
-
-    # Strict attribution: We no longer distribute jobs to other columns.
-    if jsearch_jobs:
-        # Group JSearch jobs by their actual board instead of forcing them into empty columns
-        for j in jsearch_jobs:
-            b = j.get("board", "linkedin")
-            if b in target_boards:
-                all_results[b].append(j)
 
     for b in target_boards:
         all_results[b] = all_results[b][:RESULTS_PER_BOARD]
