@@ -459,47 +459,7 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
     scraper = scraper_map.get(board)
     jobs    = scraper(skill, location) if scraper else []
 
-    # If Vercel blocks the scraper, fetch REAL jobs from LinkedIn Guest API with an offset to fill the column
-    if not jobs and board != "linkedin":
-        try:
-            import urllib.parse, random
-            from bs4 import BeautifulSoup
-            offset_map = {"dice": 25, "indeed": 50, "ziprecruiter": 75, "monster": 100}
-            offset = offset_map.get(board, 25)
-            q   = urllib.parse.quote_plus(skill)
-            loc = urllib.parse.quote_plus(location)
-            url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={q}&location={loc}&f_TPR=r172800&start={offset}"
-            r = SESSION.get(url, timeout=10)
-            if r.status_code == 200 and r.text.strip():
-                soup = BeautifulSoup(r.text, "html.parser")
-                for card in soup.select("li")[:RESULTS_PER_BOARD]:
-                    title_el = card.select_one(".base-search-card__title")
-                    comp_el  = card.select_one(".base-search-card__subtitle")
-                    loc_el   = card.select_one(".job-search-card__location")
-                    link_el  = card.select_one("a.base-card__full-link")
-                    if not title_el: continue
-                    title   = _clean(title_el.get_text())
-                    company = _clean(comp_el.get_text() if comp_el else "Featured Employer")
-                    loc_str = _clean(loc_el.get_text() if loc_el else location)
-                    job_url = link_el.get("href", "#") if link_el else "#"
-                    jobs.append({
-                        "id":          _uid(board, title, company),
-                        "board":       board,
-                        "board_label": label,
-                        "title":       title,
-                        "company":     company,
-                        "location":    loc_str,
-                        "salary":      f"${random.choice([65, 75, 85])}–${random.choice([95, 105, 115])}/hr",
-                        "salary_min":  65.0,
-                        "salary_max":  115.0,
-                        "job_type":    "Contract",
-                        "posted":      "Recently",
-                        "url":         job_url,
-                        "easy_apply":  True,
-                        "description": f"Contract role for {title} at {company} in {loc_str}.",
-                    })
-        except Exception as e:
-            print(f"[job_searcher] Fallback error for {board}: {e}")
+
 
     # Filter out empty/junk titles
     jobs = [j for j in jobs if j.get("title") and len(j["title"]) > 3]
@@ -555,7 +515,7 @@ def _rate_intelligence(all_jobs: dict[str, list[dict]], skill: str, location: st
 
 def _cache_key(skill: str, location: str, job_type: str) -> str:
     raw = f"{skill.lower().strip()}|{location.lower().strip()}|{job_type}"
-    return "jobcache_" + hashlib.md5(raw.encode()).hexdigest()[:12]
+    return "jobcache_v2_" + hashlib.md5(raw.encode()).hexdigest()[:12]
 
 
 def _read_cache(ck: str) -> dict | None:
