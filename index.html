@@ -325,45 +325,7 @@ body {
          ════════════════════════════════════════════════════════ -->
     <section id="jobFinderTab" class="tab-view" style="display:flex;">
 
-    <!-- Add Candidate Modal -->
-    <div class="modal-overlay hidden" id="addCandidateModal">
-      <div class="modal-box" style="max-width:500px">
-        <div class="modal-header">
-          <div style="font-size:16px;font-weight:700;color:#fff">➕ Add to Bench</div>
-          <button class="modal-close" onclick="closeModal('addCandidateModal')">×</button>
-        </div>
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
-          <div class="field-group">
-            <label class="field-label">Consultant Name</label>
-            <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Target Skill</label>
-            <input type="text" class="form-input" id="acSkill" placeholder="e.g. Java Developer">
-          </div>
-          <div style="display:flex;gap:16px">
-            <div class="field-group" style="flex:1">
-              <label class="field-label">Visa Status</label>
-              <select class="form-select" id="acVisa">
-                <option value="H1B">H1B</option>
-                <option value="Green Card">Green Card</option>
-                <option value="US Citizen">US Citizen</option>
-                <option value="OPT">OPT / CPT</option>
-              </select>
-            </div>
-            <div class="field-group" style="flex:1">
-              <label class="field-label">Pay Rate ($/hr)</label>
-              <input type="number" class="form-input" id="acPay" value="65">
-            </div>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Location</label>
-            <input type="text" class="form-input" id="acLocation" placeholder="e.g. Dallas, TX">
-          </div>
-          <button class="btn-search-main" style="width:100%" onclick="saveCandidate()">Save to Bench</button>
-        </div>
-      </div>
-    </div>
+
 
       <!-- Search Form Box -->
       <div class="search-container">
@@ -541,6 +503,60 @@ body {
     </section>
 
   </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     LOGIN SCREEN (Secure Access Wall)
+     ════════════════════════════════════════════════════════ -->
+<div id="loginScreen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0f111a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="background:#1a1d2d;padding:40px;border-radius:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 30px rgba(0,0,0,0.5);width:100%;max-width:400px">
+    <h2 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:10px">Secure Access</h2>
+    <p style="color:var(--text-sub);margin-bottom:20px">Please enter your presentation access code.</p>
+    <input type="password" id="accessCodeInput" class="form-input" style="text-align:center;margin-bottom:20px;font-size:18px;letter-spacing:2px" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkAccessCode()">
+    <button class="btn-search-main" style="width:100%" onclick="checkAccessCode()">Unlock Platform</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODAL: ADD CANDIDATE
+     ════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="addCandidateModal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <div style="font-size:16px;font-weight:700;color:#fff">➕ Add to Bench</div>
+      <button class="modal-close" onclick="closeModal('addCandidateModal')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+      <div class="field-group">
+        <label class="field-label">Consultant Name</label>
+        <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Target Skill</label>
+        <input type="text" class="form-input" id="acSkill" placeholder="e.g. Java Developer">
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="field-group" style="flex:1">
+          <label class="field-label">Visa Status</label>
+          <select class="form-select" id="acVisa">
+            <option value="H1B">H1B</option>
+            <option value="Green Card">Green Card</option>
+            <option value="US Citizen">US Citizen</option>
+            <option value="OPT">OPT / CPT</option>
+          </select>
+        </div>
+        <div class="field-group" style="flex:1">
+          <label class="field-label">Pay Rate ($/hr)</label>
+          <input type="number" class="form-input" id="acPay" value="65">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Location</label>
+        <input type="text" class="form-input" id="acLocation" placeholder="e.g. Dallas, TX">
+      </div>
+      <button class="btn-search-main" style="width:100%" onclick="saveCandidate()">Save to Bench</button>
+    </div>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
@@ -744,43 +760,45 @@ function preset(skill, location) {
   runSearch();
 }
 
-async function runSearch(forceRefresh = false) {
+async function runSearch(isBackground = false) {
   const skill    = document.getElementById('skillInput')?.value.trim() || 'SAP MM';
   const location = document.getElementById('locationInput')?.value.trim() || 'Philadelphia, PA';
   const jobType  = document.getElementById('typeInput')?.value || 'contract';
   const btn      = document.getElementById('searchBtn');
   const refreshBtn = document.getElementById('refreshBtn');
 
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Searching...';
-  }
-  if (refreshBtn) refreshBtn.disabled = true;
+  if (!isBackground) {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Searching...';
+    }
+    if (refreshBtn) refreshBtn.disabled = true;
 
-  const grid = document.getElementById('kanbanGrid');
-  if (grid) {
-    // Elegant Skeleton Loading State
-    const columns = ['LinkedIn', 'Dice', 'Indeed', 'ZipRecruiter', 'Monster'];
-    grid.innerHTML = columns.map(c => `
-      <div class="kanban-column">
-        <div class="kanban-header">
-          <div style="display:flex;align-items:center;gap:6px">${c}</div>
+    const grid = document.getElementById('kanbanGrid');
+    if (grid) {
+      // Elegant Skeleton Loading State
+      const columns = ['LinkedIn', 'Dice', 'Indeed', 'ZipRecruiter', 'Monster'];
+      grid.innerHTML = columns.map(c => `
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <div style="display:flex;align-items:center;gap:6px">${c}</div>
+          </div>
+          <div class="kanban-cards-list">
+            ${[1, 2, 3].map(() => `
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text short"></div>
+                <div class="skeleton skeleton-text"></div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        <div class="kanban-cards-list">
-          ${[1, 2, 3].map(() => `
-            <div class="skeleton-card">
-              <div class="skeleton skeleton-title"></div>
-              <div class="skeleton skeleton-text short"></div>
-              <div class="skeleton skeleton-text"></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
   try {
-    const cacheParam = forceRefresh ? '&cache=0' : '';
+    const cacheParam = isBackground ? '&cache=0' : '';
     const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`);
     const data = await res.json();
 
@@ -801,11 +819,13 @@ async function runSearch(forceRefresh = false) {
     console.error('[3SBC] Search error:', e);
     toast('Search complete', 'info');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🔍 Search All 5 Boards';
+    if (!isBackground) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔍 Search Jobs';
+      }
+      if (refreshBtn) refreshBtn.disabled = false;
     }
-    if (refreshBtn) refreshBtn.disabled = false;
   }
 }
 
@@ -850,12 +870,22 @@ function renderCard(j) {
 
   let postedStr = esc(j.posted).toLowerCase();
   let postedColor = 'var(--text-sub)';
-  if (postedStr.includes('hour') || postedStr.includes('min') || postedStr.includes('just') || postedStr.includes('today')) {
-      postedColor = 'var(--emerald)';
-  } else if (postedStr.includes('1 day') || postedStr.includes('24')) {
-      postedColor = 'var(--amber)';
+  
+  // Create a synthetic timestamp based on the scraper text for the live counter
+  let offsetMs = 0;
+  if (postedStr.includes('just') || postedStr.includes('now')) offsetMs = 1000 * 60; // 1 min
+  else if (postedStr.includes('hour')) offsetMs = parseInt(postedStr) * 60 * 60 * 1000 || 3600000;
+  else if (postedStr.includes('min')) offsetMs = parseInt(postedStr) * 60 * 1000 || 60000;
+  else if (postedStr.includes('day')) offsetMs = parseInt(postedStr) * 24 * 60 * 60 * 1000 || 86400000;
+  
+  const synthTimestamp = Date.now() - offsetMs;
+
+  if (offsetMs < 3600000 * 4) {
+      postedColor = 'var(--emerald)'; // < 4 hours
+  } else if (offsetMs <= 86400000) {
+      postedColor = 'var(--amber)'; // <= 24 hours
   } else {
-      postedColor = 'var(--rose)';
+      postedColor = 'var(--rose)'; // > 24 hours
   }
 
   return `
@@ -864,7 +894,7 @@ function renderCard(j) {
       <div class="job-card-company">🏢 ${esc(j.company)}</div>
       <div class="job-card-meta">
         <span>📍 ${esc(j.location)}</span>
-        <span style="color:${postedColor};font-weight:700">🕐 ${esc(j.posted)}</span>
+        <span style="color:${postedColor};font-weight:700" class="live-counter" data-posted-ms="${synthTimestamp}">🕐 ${esc(j.posted)}</span>
         <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
       <div class="job-card-actions">
@@ -1543,10 +1573,47 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   loadBench();
   loadSubmissions();
+  loadSubmissions();
   loadVendors();
   loadSavedJobs();
-  runSearch(); // Auto-search on load
+
+  // Check login auth
+  if (localStorage.getItem('3sbc_unlocked') === 'true') {
+    document.getElementById('loginScreen').style.display = 'none';
+    runSearch(); // Auto-search on load
+  }
+
+  // Auto poll every 60s
+  setInterval(() => {
+    if (document.getElementById('loginScreen').style.display === 'none') {
+      runSearch(true); // background refresh
+    }
+  }, 60000);
+  
+  // Live Ticker for Counters
+  setInterval(() => {
+    document.querySelectorAll('.live-counter').forEach(el => {
+      const ms = parseInt(el.getAttribute('data-posted-ms'));
+      if (!ms) return;
+      const diff = Math.floor((Date.now() - ms) / 1000);
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      el.innerHTML = \`🕐 \${h}h \${m}m \${s}s ago\`;
+    });
+  }, 1000);
 });
+
+function checkAccessCode() {
+  const code = document.getElementById('accessCodeInput').value;
+  if (code === '3SBC2026') {
+    localStorage.setItem('3sbc_unlocked', 'true');
+    document.getElementById('loginScreen').style.display = 'none';
+    runSearch();
+  } else {
+    toast('Invalid Access Code', 'error');
+  }
+}
 
 </script>
 </body>

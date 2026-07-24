@@ -31,7 +31,8 @@ load_dotenv()
 
 RAPIDAPI_KEY     = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 CACHE_TTL_SECONDS = 3600   # 1 hour
-RESULTS_PER_BOARD = 25
+# Number of jobs to fetch per individual job board
+RESULTS_PER_BOARD = 50
 
 HEADERS = {
     "User-Agent": (
@@ -87,7 +88,7 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
         for path in ["/search", "/jobs/search"]:
             r = SESSION.get(
                 f"https://jsearch.p.rapidapi.com{path}",
-                params={"query": query, "num_pages": "1", "page": "1", "date_posted": "3days"},
+                params={"query": query, "num_pages": "3", "page": "1", "date_posted": "3days"},
                 headers=headers,
                 timeout=10,
             )
@@ -147,57 +148,58 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
 def _scrape_linkedin(skill: str, location: str) -> list[dict]:
     """Scrape live LinkedIn jobs via public guest API."""
     jobs = []
-    try:
-        q   = urllib.parse.quote_plus(skill)
-        loc = urllib.parse.quote_plus(location)
-        url = (
-            f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-            f"?keywords={q}&location={loc}&f_TPR=r172800&start=0"  # past 48 hours
-        )
-        r = SESSION.get(url, timeout=10)
-        if r.status_code != 200 or not r.text.strip():
-            return []
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        for card in soup.select("li")[:RESULTS_PER_BOARD]:
-            title_el = card.select_one(".base-search-card__title")
-            comp_el  = card.select_one(".base-search-card__subtitle")
-            loc_el   = card.select_one(".job-search-card__location")
-            link_el  = card.select_one("a.base-card__full-link")
-            time_el  = card.select_one("time")
-
-            if not title_el:
+    q   = urllib.parse.quote_plus(skill)
+    loc = urllib.parse.quote_plus(location)
+    for page in range(3):
+        start = page * 25
+        try:
+            url = (
+                f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+                f"?keywords={q}&location={loc}&f_TPR=r172800&start={start}"
+            )
+            r = SESSION.get(url, timeout=10)
+            if r.status_code != 200 or not r.text.strip():
                 continue
 
-            title   = _clean(title_el.get_text())
-            company = _clean(comp_el.get_text() if comp_el else "Featured Employer")
-            loc_str = _clean(loc_el.get_text() if loc_el else location)
-            job_url = link_el.get("href", "#") if link_el else "#"
-            posted  = _clean(time_el.get_text() if time_el else "Recently")
+            soup = BeautifulSoup(r.text, "html.parser")
+            for card in soup.select("li"):
+                title_el = card.select_one(".base-search-card__title")
+                comp_el  = card.select_one(".base-search-card__subtitle")
+                loc_el   = card.select_one(".job-search-card__location")
+                link_el  = card.select_one("a.base-card__full-link")
+                time_el  = card.select_one("time")
 
-            # Real salary not available on guest API — use market-based estimate
-            sal_min = random.choice([65, 70, 75, 80, 85, 90])
-            sal_max = sal_min + random.choice([15, 20, 25])
+                if not title_el:
+                    continue
 
-            jobs.append({
-                "id":          _uid("linkedin", title, company),
-                "board":       "linkedin",
-                "board_label": "LinkedIn",
-                "title":       title,
-                "company":     company,
-                "location":    loc_str,
-                "salary":      f"${sal_min}–${sal_max}/hr",
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
-                "job_type":    "Contract",
-                "posted":      posted,
-                "url":         job_url,
-                "easy_apply":  True,
-                "description": f"Contract role for {title} at {company} in {loc_str}. Requires strong {skill} expertise.",
-            })
-    except Exception as e:
-        print(f"[job_searcher] LinkedIn scrape error: {e}")
-    return jobs
+                title   = _clean(title_el.get_text())
+                company = _clean(comp_el.get_text() if comp_el else "Featured Employer")
+                loc_str = _clean(loc_el.get_text() if loc_el else location)
+                job_url = link_el.get("href", "#") if link_el else "#"
+                posted  = _clean(time_el.get_text() if time_el else "Recently")
+
+                sal_min = random.choice([65, 70, 75, 80, 85, 90])
+                sal_max = sal_min + random.choice([15, 20, 25])
+
+                jobs.append({
+                    "id":          _uid("linkedin", title, company),
+                    "board":       "linkedin",
+                    "board_label": "LinkedIn",
+                    "title":       title,
+                    "company":     company,
+                    "location":    loc_str,
+                    "salary":      f"${sal_min}–${sal_max}/hr",
+                    "salary_min":  float(sal_min),
+                    "salary_max":  float(sal_max),
+                    "job_type":    "Contract",
+                    "posted":      posted,
+                    "url":         job_url,
+                    "easy_apply":  True,
+                    "description": f"Contract role for {title} at {company} in {loc_str}. Requires strong {skill} expertise.",
+                })
+        except Exception as e:
+            print(f"[job_searcher] LinkedIn scrape error page {page}: {e}")
+    return jobs[:RESULTS_PER_BOARD * 3]
 
 
 # ---------------------------------------------------------------------------
