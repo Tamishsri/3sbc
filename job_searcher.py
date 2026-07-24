@@ -31,7 +31,7 @@ load_dotenv()
 
 RAPIDAPI_KEY     = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 CACHE_TTL_SECONDS = 3600   # 1 hour
-RESULTS_PER_BOARD = 10
+RESULTS_PER_BOARD = 25
 
 HEADERS = {
     "User-Agent": (
@@ -87,7 +87,7 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10) -> list[dict]:
         for path in ["/search", "/jobs/search"]:
             r = SESSION.get(
                 f"https://jsearch.p.rapidapi.com{path}",
-                params={"query": query, "num_pages": "1", "page": "1", "date_posted": "week"},
+                params={"query": query, "num_pages": "1", "page": "1", "date_posted": "3days"},
                 headers=headers,
                 timeout=10,
             )
@@ -152,7 +152,7 @@ def _scrape_linkedin(skill: str, location: str) -> list[dict]:
         loc = urllib.parse.quote_plus(location)
         url = (
             f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-            f"?keywords={q}&location={loc}&f_TPR=r604800&start=0"  # past week
+            f"?keywords={q}&location={loc}&f_TPR=r172800&start=0"  # past 48 hours
         )
         r = SESSION.get(url, timeout=10)
         if r.status_code != 200 or not r.text.strip():
@@ -210,7 +210,7 @@ def _scrape_indeed(skill: str, location: str) -> list[dict]:
     try:
         q   = urllib.parse.quote_plus(skill + " contract")
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=7"
+        url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=2"
         r   = SESSION.get(url, timeout=10)
         if r.status_code != 200:
             return []
@@ -277,7 +277,7 @@ def _scrape_dice(skill: str, location: str) -> list[dict]:
     try:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.dice.com/jobs?q={q}&location={loc}&filters.postedDate=ONE_WEEK&filters.employmentType=CONTRACTS"
+        url = f"https://www.dice.com/jobs?q={q}&location={loc}&filters.postedDate=THREE_DAYS&filters.employmentType=CONTRACTS"
         r   = SESSION.get(url, timeout=10)
         if r.status_code != 200:
             return []
@@ -332,7 +332,7 @@ def _scrape_ziprecruiter(skill: str, location: str) -> list[dict]:
     try:
         q   = urllib.parse.quote_plus(skill + " contract")
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=7"
+        url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=2"
         r   = SESSION.get(url, timeout=10)
         if r.status_code != 200:
             return []
@@ -387,7 +387,7 @@ def _scrape_monster(skill: str, location: str) -> list[dict]:
     try:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.monster.com/jobs/search?q={q}&where={loc}&jobtype=contract&tm=7"
+        url = f"https://www.monster.com/jobs/search?q={q}&where={loc}&jobtype=contract&tm=2"
         r   = SESSION.get(url, timeout=10)
         if r.status_code != 200:
             return []
@@ -462,11 +462,11 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
         try:
             import urllib.parse, random
             from bs4 import BeautifulSoup
-            offset_map = {"dice": 10, "indeed": 20, "ziprecruiter": 30, "monster": 40}
-            offset = offset_map.get(board, 10)
+            offset_map = {"dice": 25, "indeed": 50, "ziprecruiter": 75, "monster": 100}
+            offset = offset_map.get(board, 25)
             q   = urllib.parse.quote_plus(skill)
             loc = urllib.parse.quote_plus(location)
-            url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={q}&location={loc}&f_TPR=r604800&start={offset}"
+            url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={q}&location={loc}&f_TPR=r172800&start={offset}"
             r = SESSION.get(url, timeout=10)
             if r.status_code == 200 and r.text.strip():
                 soup = BeautifulSoup(r.text, "html.parser")

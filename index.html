@@ -237,7 +237,7 @@ body {
 }
 
 .job-card-actions {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px;
 }
 .btn-action {
   height: 32px; border-radius: 6px; font-size: 12px; font-weight: 500;
@@ -848,16 +848,27 @@ function renderCard(j) {
     : 'width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px;transition:all 0.3s ease';
   const btnText = isSaved ? '✅ Saved' : '⭐ Save to Hotlist';
 
+  let postedStr = esc(j.posted).toLowerCase();
+  let postedColor = 'var(--text-sub)';
+  if (postedStr.includes('hour') || postedStr.includes('min') || postedStr.includes('just') || postedStr.includes('today')) {
+      postedColor = 'var(--emerald)';
+  } else if (postedStr.includes('1 day') || postedStr.includes('24')) {
+      postedColor = 'var(--amber)';
+  } else {
+      postedColor = 'var(--rose)';
+  }
+
   return `
     <div class="job-card" data-job-url="${esc(j.url)}" style="${cardStyle}">
       <div class="job-card-title">${esc(j.title)}</div>
       <div class="job-card-company">🏢 ${esc(j.company)}</div>
       <div class="job-card-meta">
         <span>📍 ${esc(j.location)}</span>
-        <span>🕐 ${esc(j.posted)}</span>
+        <span style="color:${postedColor};font-weight:700">🕐 ${esc(j.posted)}</span>
         <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
       </div>
       <div class="job-card-actions">
+        <a href="${esc(j.url || '#')}" target="_blank" class="btn-action btn-action-indigo" style="text-decoration:none;font-size:11px">🔗 Apply</a>
         <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${b64}')">🤖 Match</button>
         <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${b64}')">✅ Submit</button>
       </div>
@@ -1123,8 +1134,9 @@ function renderBench() {
       <td style="color:var(--emerald);font-weight:700">$${c['PayRate'] || 65}/hr</td>
       <td style="font-weight:800;color:var(--emerald)">${c['Match Score'] || 80}%</td>
       <td><span style="color:var(--emerald);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
-      <td>
+      <td style="display:flex;gap:6px">
         <button class="btn-action btn-action-indigo" style="height:32px;padding:0 12px" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
+        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)" onclick="removeCandidate('${esc(c._doc_id || c.id || '')}', this)" title="Remove Candidate">🗑️</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-sub)">No matching consultants.</td></tr>';
 }
@@ -1363,10 +1375,33 @@ async function saveCandidate() {
       body: JSON.stringify(payload)
     });
     toast('Candidate added to bench!', 'success');
+    document.getElementById('acName').value = '';
+    document.getElementById('acSkill').value = '';
+    document.getElementById('acLocation').value = '';
+    document.getElementById('acPay').value = '65';
     closeModal('addCandidateModal');
-    loadCandidates();
+    loadBench();
   } catch(e) {
     toast('Failed to add candidate', 'error');
+  }
+}
+
+async function removeCandidate(id, btnEl) {
+  if (!id) return toast('Cannot delete: Missing Candidate ID', 'error');
+  if (!confirm('Are you sure you want to remove this candidate?')) return;
+  
+  if (btnEl) btnEl.disabled = true;
+  try {
+    await fetch('/api/candidates', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    toast('Candidate removed successfully!', 'success');
+    loadBench();
+  } catch(e) {
+    toast('Failed to remove candidate', 'error');
+    if (btnEl) btnEl.disabled = false;
   }
 }
 

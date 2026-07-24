@@ -178,7 +178,7 @@ def _load_candidates():
     return records
 
 
-@app.route("/api/candidates", methods=["GET", "POST"])
+@app.route("/api/candidates", methods=["GET", "POST", "DELETE"])
 def api_candidates():
     if request.method == "POST":
         try:
@@ -188,6 +188,19 @@ def api_candidates():
             return jsonify({"success": True, "id": doc_id})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+            
+    if request.method == "DELETE":
+        try:
+            data = request.get_json(force=True)
+            doc_id = data.get("id")
+            if not doc_id:
+                return jsonify({"error": "Missing candidate ID"}), 400
+            import firebase_db
+            success = firebase_db.delete_candidate(doc_id)
+            return jsonify({"success": success})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+            
     return jsonify(_load_candidates())
 
 

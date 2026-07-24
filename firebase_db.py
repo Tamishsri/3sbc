@@ -93,6 +93,17 @@ def get_candidates() -> list[dict]:
         return []
 
 
+def delete_candidate(doc_id: str) -> bool:
+    """Delete a candidate from Firestore."""
+    try:
+        db = _db()
+        db.collection("candidates").document(doc_id).delete()
+        return True
+    except Exception as exc:
+        print(f"[firebase_db] delete_candidate error: {exc}")
+        return False
+
+
 def upload_candidates_to_firestore(evaluated_data: list[dict]) -> int:
     """Flatten and upload evaluated consultant/candidate data to Firestore."""
     try:
