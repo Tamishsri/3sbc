@@ -871,12 +871,17 @@ function renderCard(j) {
   let postedStr = esc(j.posted).toLowerCase();
   let postedColor = 'var(--text-sub)';
   
+  // Consistent pseudo-random time for jobs that say "Recent"
+  const hashCode = s => s.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+  
   // Create a synthetic timestamp based on the scraper text for the live counter
   let offsetMs = 0;
   if (postedStr.includes('just') || postedStr.includes('now')) offsetMs = 1000 * 60; // 1 min
   else if (postedStr.includes('hour')) offsetMs = parseInt(postedStr) * 60 * 60 * 1000 || 3600000;
   else if (postedStr.includes('min')) offsetMs = parseInt(postedStr) * 60 * 1000 || 60000;
   else if (postedStr.includes('day')) offsetMs = parseInt(postedStr) * 24 * 60 * 60 * 1000 || 86400000;
+  else if (postedStr.includes('recent')) offsetMs = (Math.abs(hashCode(j.id || j.title)) % (23 * 3600000)) + 3600000; // 1h to 24h
+  else offsetMs = (Math.abs(hashCode(j.id || j.title)) % (24 * 3600000)); // Default fallback
   
   const synthTimestamp = Date.now() - offsetMs;
 
