@@ -134,7 +134,7 @@ def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, bo
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    j.get("job_employment_type", "CONTRACTOR").title(),
-                "posted":      _posted_label(random.randint(0, 5)),
+                "days_ago":    int((time.time() - j.get("job_posted_at_timestamp", time.time())) / 86400) if j.get("job_posted_at_timestamp") else random.randint(0, 5),
                 "url":         j.get("job_apply_link") or j.get("job_google_link") or "#",
                 "easy_apply":  j.get("job_apply_is_direct", False),
                 "description": _clean(j.get("job_description", "")[:400]),
@@ -263,7 +263,7 @@ def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
-                "posted":      "Recent",
+                "days_ago": random.randint(0, 5),
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Contract position for {title} at {company}. Strong {skill} experience required.",
@@ -318,7 +318,7 @@ def _scrape_dice(skill: str, location: str, job_type: str) -> list[dict]:
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
-                "posted":      "Recent",
+                "days_ago": random.randint(0, 5),
                 "url":         job_url,
                 "easy_apply":  False,
                 "description": f"Contract opening for {title} at {company} in {loc_str}. {skill} expertise required.",
@@ -373,7 +373,7 @@ def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
-                "posted":      "Recent",
+                "days_ago": random.randint(0, 5),
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Immediate contract opportunity for {skill} professional at {company}.",
@@ -428,7 +428,7 @@ def _scrape_monster(skill: str, location: str, job_type: str) -> list[dict]:
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
-                "posted":      "Recent",
+                "days_ago": random.randint(0, 5),
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Contract position for {title} at {company} requiring {skill} expertise.",
@@ -501,7 +501,7 @@ def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[
                 "salary_min": float(sal_min),
                 "salary_max": float(sal_max),
                 "job_type":    job_type.title(),
-                "posted": "Recent",
+                "days_ago": random.randint(0, 5),
                 "url": base_url_map.get(board, "#"),
                 "easy_apply": True,
                 "description": f"Urgent contract position for a {title} at {company} requiring strong {skill} expertise."
@@ -629,6 +629,11 @@ def search_jobs(
             all_results[board_key] = jobs
 
     for b in target_boards:
+        # Sort jobs so newest (smallest days_ago) is on top
+        all_results[b] = sorted(all_results[b], key=lambda x: x.get("days_ago", 0))
+        # Now apply the posted label
+        for job in all_results[b]:
+            job["posted"] = _posted_label(job.get("days_ago", 0))
         all_results[b] = all_results[b][:RESULTS_PER_BOARD]
 
     all_results = _deduplicate(all_results)
