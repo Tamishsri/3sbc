@@ -103,13 +103,21 @@ def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, bo
 
         jobs = []
         for j in jobs_raw[:count]:
-            sal_min = j.get("job_min_salary") or random.randint(65, 80)
-            sal_max = j.get("job_max_salary") or (sal_min + random.randint(15, 25))
-            period  = j.get("job_salary_period", "YEAR")
-            # Convert annual to hourly if needed
-            if period == "YEAR":
-                sal_min = round(sal_min / 2080)
-                sal_max = round(sal_max / 2080)
+            sal_min_raw = j.get("job_min_salary")
+            sal_max_raw = j.get("job_max_salary")
+            period = j.get("job_salary_period", "YEAR")
+            
+            if sal_min_raw:
+                sal_min = float(sal_min_raw)
+                sal_max = float(sal_max_raw) if sal_max_raw else sal_min
+                if period == "YEAR":
+                    sal_min = round(sal_min / 2080)
+                    sal_max = round(sal_max / 2080)
+                salary_str = f"${int(sal_min)}–${int(sal_max)}/hr"
+            else:
+                sal_min = 0
+                sal_max = 0
+                salary_str = "DOE (Not Listed)"
 
             city  = j.get("job_city", "")
             state = j.get("job_state", "")
@@ -130,7 +138,7 @@ def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, bo
                 "title":       _clean(j.get("job_title", skill + " Consultant")),
                 "company":     _clean(j.get("employer_name", "Major Client")),
                 "location":    loc,
-                "salary":      f"${sal_min}–${sal_max}/hr",
+                "salary":      salary_str,
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    j.get("job_employment_type", "CONTRACTOR").title(),
@@ -192,7 +200,7 @@ def _scrape_linkedin(skill: str, location: str, job_type: str) -> list[dict]:
                     "title":       title,
                     "company":     company,
                     "location":    loc_str,
-                    "salary":      f"${sal_min}–${sal_max}/hr",
+                    "salary":      salary_str,
                     "salary_min":  float(sal_min),
                     "salary_max":  float(sal_max),
                     "job_type":    job_type.title(),
@@ -259,7 +267,7 @@ def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
                 "title":       title,
                 "company":     company,
                 "location":    loc_str,
-                "salary":      f"${sal_min}–${sal_max}/hr",
+                "salary":      salary_str,
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
@@ -314,7 +322,7 @@ def _scrape_dice(skill: str, location: str, job_type: str) -> list[dict]:
                 "title":       title,
                 "company":     company,
                 "location":    loc_str,
-                "salary":      f"${sal_min}–${sal_max}/hr",
+                "salary":      salary_str,
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
@@ -369,7 +377,7 @@ def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]
                 "title":       title,
                 "company":     company,
                 "location":    loc_str,
-                "salary":      f"${sal_min}–${sal_max}/hr",
+                "salary":      salary_str,
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
@@ -424,7 +432,7 @@ def _scrape_monster(skill: str, location: str, job_type: str) -> list[dict]:
                 "title":       title,
                 "company":     company,
                 "location":    loc_str,
-                "salary":      f"${sal_min}–${sal_max}/hr",
+                "salary":      salary_str,
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
                 "job_type":    job_type.title(),
