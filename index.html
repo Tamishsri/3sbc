@@ -323,6 +323,7 @@ body {
       <button class="nav-tab" data-tab="bench">👥 Bench Pool <span id="navBenchCount">(...)</span></button>
       <button class="nav-tab" data-tab="submissions">📋 Submissions CRM</button>
       <button class="nav-tab" data-tab="vendors">📞 Vendor Contacts</button>
+      <button class="nav-tab" data-tab="feedbacks" style="display:none;">💬 Feedbacks</button>
     </nav>
 
     <div class="user-area">
@@ -830,10 +831,10 @@ function applyRoleBasedUI() {
   }
   
   // Hide restricted tabs from employees
-  const feedbacksBtn = document.getElementById('feedbacksTabBtn');
-  const vendorsBtn = document.getElementById('vendorsTabBtn');
-  if (feedbacksBtn) feedbacksBtn.style.display = isAdmin ? 'flex' : 'none';
-  if (vendorsBtn) vendorsBtn.style.display = isAdmin ? 'flex' : 'none';
+  const feedbacksBtn = document.querySelector('button[data-tab="feedbacks"]');
+  const vendorsBtn = document.querySelector('button[data-tab="vendors"]');
+  if (feedbacksBtn) feedbacksBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (vendorsBtn) vendorsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   
   // Add logout button to nav if not exists
   let logoutBtn = document.getElementById('logoutBtn');
