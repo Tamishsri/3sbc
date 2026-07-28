@@ -346,11 +346,11 @@ body {
         <form class="search-form" id="searchForm">
           <div class="field-group" style="flex:2">
             <label class="field-label" for="skillInput">Skill / Role Keyword</label>
-            <input class="form-input" id="skillInput" type="text" value="SAP MM" placeholder="e.g. SAP MM, Java Lead, AWS Architect" required/>
+            <input class="form-input" id="skillInput" type="text"  placeholder="e.g. SAP MM, Java Lead, AWS Architect" required/>
           </div>
           <div class="field-group" style="flex:1.5">
             <label class="field-label" for="locationInput">Target Location</label>
-            <input class="form-input" id="locationInput" type="text" value="Philadelphia, PA" placeholder="e.g. Philadelphia, PA"/>
+            <input class="form-input" id="locationInput" type="text"  placeholder="e.g. Philadelphia, PA"/>
           </div>
           <div class="field-group" style="max-width:140px">
             <label class="field-label" for="typeInput">Job Type</label>
@@ -569,7 +569,7 @@ body {
         </div>
         <div class="field-group" style="flex:1">
           <label class="field-label">Target Rate ($/hr) *</label>
-          <input type="number" class="form-input" id="acPay" value="85">
+          <input type="number" class="form-input" id="acPay" placeholder="e.g. 85">
         </div>
       </div>
       <div class="field-group">
@@ -658,11 +658,11 @@ body {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div class="field-group">
             <label class="field-label">Client Bill Rate ($/hr)</label>
-            <input class="form-input" id="subBill" type="number" value="90" oninput="calcMargin()"/>
+            <input class="form-input" id="subBill" type="number" placeholder="e.g. 90" oninput="calcMargin()"/>
           </div>
           <div class="field-group">
             <label class="field-label">Consultant Pay Rate ($/hr)</label>
-            <input class="form-input" id="subPay" type="number" value="65" oninput="calcMargin()"/>
+            <input class="form-input" id="subPay" type="number" placeholder="e.g. 65" oninput="calcMargin()"/>
           </div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);padding:10px 14px;border-radius:8px;font-size:13px">
