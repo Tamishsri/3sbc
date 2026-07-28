@@ -822,7 +822,27 @@ def api_delete_saved_job(doc_id):
         return jsonify({"error": str(e)}), 500
 
 
+
+
+@app.route("/api/feedbacks", methods=["GET", "POST"])
+def api_feedbacks():
+    import firebase_db
+    if request.method == "GET":
+        try:
+            return jsonify(firebase_db.get_feedbacks())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    if request.method == "POST":
+        try:
+            data = request.get_json(force=True)
+            fid = firebase_db.add_feedback(data)
+            return jsonify({"success": True, "id": fid})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
 app_handler = app
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

@@ -387,3 +387,38 @@ def upload_resume(pdf_bytes: bytes, filename: str) -> str:
     # The actual parsed text is stored securely in Firestore via Resume_Summary.
     safe_filename = f"{uuid.uuid4().hex[:8]}_{filename}"
     return "https://storage.googleapis.com/3sbc-resumes/" + urllib.parse.quote(safe_filename)
+
+# ---------------------------------------------------------------------------
+# FEEDBACKS
+# ---------------------------------------------------------------------------
+
+def add_feedback(data: dict) -> str:
+    import hashlib
+    try:
+        db = _db()
+        fid = hashlib.md5(f"feedback|{time.time()}".encode()).hexdigest()[:16]
+        record = {
+            "text": str(data.get("text", "")),
+            "image_b64": str(data.get("image_b64", "")),
+            "created_at": time.time(),
+        }
+        db.collection("feedbacks").document(fid).set(record)
+        return fid
+    except Exception as exc:
+        print(f"[firebase_db] add_feedback error: {exc}")
+        return hashlib.md5(f"mock_feedback|{time.time()}".encode()).hexdigest()[:16]
+
+def get_feedbacks() -> list[dict]:
+    try:
+        db = _db()
+        docs = db.collection("feedbacks").order_by("created_at", direction="DESCENDING").stream()
+        result = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            d["created_at_iso"] = _ts_to_iso(d.get("created_at"))
+            result.append(d)
+        return result
+    except Exception as exc:
+        print(f"[firebase_db] get_feedbacks error: {exc}")
+        return []

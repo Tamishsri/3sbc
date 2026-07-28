@@ -804,6 +804,7 @@ function switchTab(tabId) {
   });
 
   if (tabId === 'bench') renderBench();
+  if (tabId === 'feedbacks') renderFeedbacks();
   if (tabId === 'submissions') renderSubmissions();
   if (tabId === 'vendors') renderVendors();
   if (tabId === 'savedJobs') renderSavedJobs();
@@ -1789,5 +1790,37 @@ function checkAccessCode() {
 }
 
 </script>
+
+  <!-- Floating Action Button for Feedback -->
+  <button class="fab-btn" onclick="openFeedbackModal()" style="position:fixed; bottom:24px; right:24px; width:60px; height:60px; border-radius:30px; background:var(--accent-primary); color:white; border:none; box-shadow:0 10px 20px rgba(0,0,0,0.2); font-size:1.5rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:900; transition:transform 0.2s;">
+    💬
+  </button>
+
+  <!-- Feedback Modal -->
+  <div class="modal-overlay hidden" id="feedbackModal">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h3>Submit Feedback</h3>
+        <button class="close-btn" onclick="closeFeedbackModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Your Feedback / Issue</label>
+          <textarea class="form-input" id="feedbackText" rows="4" placeholder="Describe your feedback, feature request, or issue here..." style="resize:vertical;"></textarea>
+        </div>
+        <div class="field-group" style="margin-top:1rem;">
+          <label class="field-label">Attach Image (Optional, for reference)</label>
+          <input type="file" id="feedbackImage" accept="image/*" class="form-input" style="padding:0.5rem;" />
+          <p style="font-size:0.8rem; color:var(--text-sub); margin-top:0.3rem;">Image will be compressed automatically.</p>
+        </div>
+        <canvas id="feedbackCanvas" style="display:none;"></canvas>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
+        <button class="btn-primary" id="btnSubmitFeedback" onclick="submitFeedback()">Submit Feedback</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
