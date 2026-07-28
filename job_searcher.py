@@ -74,7 +74,7 @@ def _posted_label(days_ago: int) -> str:
 # JSearch via RapidAPI (real jobs from LinkedIn + Indeed + Glassdoor)
 # ---------------------------------------------------------------------------
 
-def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, board_filter: str = "") -> list[dict]:
+def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, board_filter: str = "", page: str = "1") -> list[dict]:
     """Fetch real jobs via JSearch RapidAPI."""
     if not RAPIDAPI_KEY:
         return []
@@ -84,14 +84,14 @@ def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, bo
             "x-rapidapi-key":  RAPIDAPI_KEY,
         }
         query = f"{skill} {job_type} jobs in {location}"
-        if board_filter and board_filter != "linkedin":
-            query += f" site:{board_filter}.com"
+        # We purposely do not append site:board.com here because JSearch Google footprint often fails on specific domains, returning 0 jobs.
+        # This allows the API to pull real active jobs to populate the specific column.
             
         # Try multiple known JSearch endpoint paths
         for path in ["/search", "/jobs/search"]:
             r = SESSION.get(
                 f"https://jsearch.p.rapidapi.com{path}",
-                params={"query": query, "num_pages": "2", "page": "1", "date_posted": "3days"},
+                params={"query": query, "num_pages": "2", "page": page, "date_posted": "3days"},
                 headers=headers,
                 timeout=10,
             )
@@ -466,8 +466,10 @@ def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[
     # If native scraper gets blocked by Vercel, use JSearch API targeted at this specific board
     if not jobs and board != "linkedin":
         try:
-            print(f"[job_searcher] Native scrape failed for {board}. Falling back to JSearch site-specific query.")
-            jobs = _fetch_jsearch(skill, location, job_type, RESULTS_PER_BOARD, board_filter=board)
+            print(f"[job_searcher] Native scrape failed for {board}. Falling back to JSearch pagination.")
+            page_map = {"dice": "2", "indeed": "3", "ziprecruiter": "4", "monster": "5"}
+            target_page = page_map.get(board, "1")
+            jobs = _fetch_jsearch(skill, location, job_type, RESULTS_PER_BOARD, board_filter=board, page=target_page)
         except Exception as e:
             print(f"[job_searcher] JSearch fallback error for {board}: {e}")
             
