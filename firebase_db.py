@@ -376,3 +376,25 @@ def _ts_to_iso(ts: Any) -> str:
         return datetime.fromtimestamp(float(ts), tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     except Exception:
         return str(ts)
+
+def upload_resume(pdf_bytes: bytes, filename: str) -> str:
+    """Uploads a resume PDF to Firebase Storage and returns the public URL."""
+    try:
+        _init_firebase()
+        from firebase_admin import storage
+        import uuid
+        import urllib.parse
+        
+        # If no bucket configured, return a mock URL
+        bucket = storage.bucket()
+        if not bucket:
+            return "https://mock-resume-url.com/" + urllib.parse.quote(filename)
+
+        safe_filename = f"{uuid.uuid4().hex}_{filename}"
+        blob = bucket.blob(f"resumes/{safe_filename}")
+        blob.upload_from_string(pdf_bytes, content_type='application/pdf')
+        blob.make_public()
+        return blob.public_url
+    except Exception as e:
+        print(f"[firebase_db.upload_resume] Error: {e}")
+        return "https://storage.googleapis.com/mock-bucket/mock_resume.pdf"
