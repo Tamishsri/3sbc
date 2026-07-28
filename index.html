@@ -990,10 +990,12 @@ async function openMatchModal(b64) {
   document.getElementById('matchModal').classList.remove('hidden');
 
   try {
+    const availableCandidates = STATE.candidates.filter(c => (c.Status || 'Available') !== 'Placed');
+    
     const res  = await fetch('/api/jobs/match', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ job, candidates: STATE.candidates }),
+      body: JSON.stringify({ job, candidates: availableCandidates }),
     });
     const data = await res.json();
     renderMatches(data.matches || []);
@@ -1205,11 +1207,35 @@ async function confirmSubmit() {
     closeModal('submitModal');
     renderSubmissions();
   } catch(e) {
-    toast('Failed to save submission to cloud', 'error');
+    toast('Failed to remove consultant', 'error');
   }
 }
 
-// ── BENCH POOL ────────────────────────────────────────────────
+async function markPlaced(id) {
+  if (!id) return;
+  if (!confirm('Mark this consultant as Placed? They will be removed from the Bench Pool.')) return;
+  try {
+    const res = await fetch(`/api/candidates/${id}/status`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: 'Placed'})
+    });
+    const result = await res.json();
+    if (result.success) {
+      toast('Consultant marked as Placed!', 'success');
+      // Update local state instantly
+      const c = STATE.candidates.find(x => (x._doc_id || x.id) === id);
+      if (c) c.Status = 'Placed';
+      renderBench();
+    } else {
+      toast(result.error || 'Failed to update status', 'error');
+    }
+  } catch(e) {
+    toast('API error', 'error');
+  }
+}
+
+// ── UTILS ──────────────────────────────────────────────────────
 async function loadBench() {
   if (window.EMBEDDED_CANDIDATES && window.EMBEDDED_CANDIDATES.length > 0) {
     STATE.candidates = window.EMBEDDED_CANDIDATES;
@@ -1235,7 +1261,8 @@ function renderBench() {
     const loc   = (c['Target Location'] || c['Location'] || '').toLowerCase();
     const v     = (c['Visa'] || 'H1B').toLowerCase();
     const vRaw  = c['Visa'] || 'H1B';
-    return (!query || name.includes(query) || skill.includes(query) || loc.includes(query) || v.includes(query)) && (!visa || vRaw === visa);
+    const status = c['Status'] || 'Available';
+    return status !== 'Placed' && (!query || name.includes(query) || skill.includes(query) || loc.includes(query) || v.includes(query)) && (!visa || vRaw === visa);
   });
 
   document.getElementById('benchCount').textContent = `${list.length} Consultants`;
@@ -1251,6 +1278,7 @@ function renderBench() {
       <td><span style="color:var(--emerald);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
       <td style="display:flex;gap:6px">
         <button class="btn-action btn-action-indigo" style="height:32px;padding:0 12px" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
+        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(16,185,129,0.1);color:var(--emerald);border:1px solid rgba(16,185,129,0.3)" onclick="markPlaced('${esc(c._doc_id || c.id || '')}')" title="Mark Placed">✅</button>
         <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)" onclick="removeCandidate('${esc(c._doc_id || c.id || '')}', this)" title="Remove Candidate">🗑️</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-sub)">No matching consultants.</td></tr>';
