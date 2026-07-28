@@ -650,13 +650,17 @@ def api_submissions():
     import firebase_db
     if request.method == "GET":
         try:
-            return jsonify(firebase_db.get_submissions(is_admin=True))
+            user_id = request.args.get("user_id")
+            is_admin = request.args.get("is_admin") == "true"
+            return jsonify(firebase_db.get_submissions(user_id=user_id, is_admin=is_admin))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     if request.method == "POST":
         try:
             data = request.get_json(force=True)
+            if "user_id" not in data:
+                data["user_id"] = "default_user"
             sub_id = firebase_db.add_submission(data)
             return jsonify({"success": True, "id": sub_id})
         except Exception as e:
@@ -777,9 +781,9 @@ def api_delete_vendor(vid):
 @app.route("/api/jobs/saved", methods=["GET", "POST"])
 def api_saved_jobs():
     import firebase_db
-    user_id = "default_user"
     if request.method == "GET":
         try:
+            user_id = request.args.get("user_id", "default_user")
             return jsonify(firebase_db.get_saved_jobs(user_id))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -787,6 +791,7 @@ def api_saved_jobs():
     if request.method == "POST":
         try:
             job = request.get_json(force=True)
+            user_id = job.get("user_id", "default_user")
             doc_id = firebase_db.save_job(job, user_id)
             return jsonify({"success": True, "id": doc_id})
         except Exception as e:
@@ -803,7 +808,7 @@ def api_delete_saved_job_by_url():
         if not job_url:
             return jsonify({"error": "url required"}), 400
         # Reconstruct doc_id the same way save_job does
-        user_id = "default_user"
+        user_id = data.get("user_id", "default_user")
         job_id  = hashlib.md5(job_url.encode()).hexdigest()[:12]
         doc_id  = f"{user_id}_{job_id}"
         success = firebase_db.remove_saved_job(doc_id)

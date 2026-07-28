@@ -288,6 +288,20 @@ body {
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-body); z-index:9999; display:flex; align-items:center; justify-content:center;">
+  <div style="background:var(--bg-surface); padding:3rem; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.3); max-width:400px; width:100%; text-align:center;">
+    <h2 style="margin-bottom:0.5rem; color:var(--text-main);">Welcome to 3SBC</h2>
+    <p style="color:var(--text-sub); margin-bottom:2rem;">Please log in to continue</p>
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      <input type="text" id="loginUsername" placeholder="Username or Email" style="padding:1rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text-main); font-size:1rem;">
+      <input type="password" id="loginPassword" placeholder="Password (Optional unless Admin)" style="padding:1rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-body); color:var(--text-main); font-size:1rem;">
+      <button class="btn-primary" onclick="performLogin()" style="padding:1rem; font-size:1.1rem; margin-top:0.5rem;">Login</button>
+    </div>
+  </div>
+</div>
+
+
 <div id="toastContainer"></div>
 
 <!-- MAIN APPLICATION -->
@@ -759,6 +773,110 @@ window.EMBEDDED_CANDIDATES = [];
  * Perfectly aligned card layout & instant 5-column job rendering
  */
 
+
+
+// ── AUTHENTICATION ENGINE ────────────────────────────────────
+
+let CURRENT_USER = { id: null, role: 'employee' };
+
+function checkSession() {
+  const savedUser = localStorage.getItem('3sbc_user');
+  if (savedUser) {
+    CURRENT_USER = JSON.parse(savedUser);
+    document.getElementById('loginOverlay').style.display = 'none';
+    applyRoleBasedUI();
+  } else {
+    document.getElementById('loginOverlay').style.display = 'flex';
+  }
+}
+
+function performLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const pass = document.getElementById('loginPassword').value.trim();
+  
+  if (!username) {
+    alert("Please enter a username or email.");
+    return;
+  }
+  
+  let role = 'employee';
+  if (username.toLowerCase() === 'admin' && pass === '1234') {
+    role = 'admin';
+  } else if (username.toLowerCase() === 'admin') {
+    alert("Incorrect admin password.");
+    return;
+  }
+  
+  CURRENT_USER = { id: username, role: role };
+  localStorage.setItem('3sbc_user', JSON.stringify(CURRENT_USER));
+  document.getElementById('loginOverlay').style.display = 'none';
+  
+  applyRoleBasedUI();
+  toast(`Welcome, ${username}!`);
+}
+
+function logout() {
+  localStorage.removeItem('3sbc_user');
+  location.reload();
+}
+
+function applyRoleBasedUI() {
+  const isAdmin = CURRENT_USER.role === 'admin';
+  
+  // Hide restricted tabs from employees
+  const feedbacksBtn = document.getElementById('feedbacksTabBtn');
+  const vendorsBtn = document.getElementById('vendorsTabBtn');
+  if (feedbacksBtn) feedbacksBtn.style.display = isAdmin ? 'flex' : 'none';
+  if (vendorsBtn) vendorsBtn.style.display = isAdmin ? 'flex' : 'none';
+  
+  // Add logout button to nav if not exists
+  let logoutBtn = document.getElementById('logoutBtn');
+  if (!logoutBtn) {
+    const nav = document.querySelector('.navbar');
+    logoutBtn = document.createElement('button');
+    logoutBtn.id = 'logoutBtn';
+    logoutBtn.className = 'btn-secondary';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.style.marginLeft = 'auto';
+    logoutBtn.onclick = logout;
+    nav.appendChild(logoutBtn);
+  }
+}
+
+// Intercept global fetch calls to append user_id if needed
+const originalFetch = window.fetch;
+window.fetch = async function() {
+  let [resource, config] = arguments;
+  
+  if (typeof resource === 'string' && resource.startsWith('/api/')) {
+    // Inject user_id into GET query params
+    if (!config || !config.method || config.method === 'GET') {
+      const url = new URL(resource, window.location.origin);
+      url.searchParams.append('user_id', CURRENT_USER.id);
+      if (CURRENT_USER.role === 'admin') {
+        url.searchParams.append('is_admin', 'true');
+      }
+      resource = url.toString();
+    } 
+    // Inject user_id into POST JSON body
+    else if (config.method === 'POST') {
+      if (config.body && typeof config.body === 'string') {
+        try {
+          const bodyObj = JSON.parse(config.body);
+          if (!bodyObj.user_id) bodyObj.user_id = CURRENT_USER.id;
+          config.body = JSON.stringify(bodyObj);
+        } catch(e) {}
+      }
+    }
+  }
+  
+  return originalFetch.apply(this, [resource, config]);
+};
+
+// Check session on load
+window.addEventListener('DOMContentLoaded', checkSession);
+
+// ── END AUTHENTICATION ENGINE ────────────────────────────────
 
 // ── FEEDBACK ENGINE ──────────────────────────────────────────
 
