@@ -946,8 +946,8 @@ function renderCard(j) {
   else if (postedStr.includes('hour')) offsetMs = parseInt(postedStr) * 60 * 60 * 1000 || 3600000;
   else if (postedStr.includes('min')) offsetMs = parseInt(postedStr) * 60 * 1000 || 60000;
   else if (postedStr.includes('day')) offsetMs = parseInt(postedStr) * 24 * 60 * 60 * 1000 || 86400000;
-  else if (postedStr.includes('recent')) offsetMs = (Math.abs(hashCode(j.id || j.title)) % (23 * 3600000)) + 3600000; // 1h to 24h
-  else offsetMs = (Math.abs(hashCode(j.id || j.title)) % (24 * 3600000)); // Default fallback
+  else if (postedStr.includes('recent')) offsetMs = (Math.abs(hashCode(j.id || j.title)) % (95 * 3600000)) + 3600000; // 1h to 96h (4 days max)
+  else offsetMs = (Math.abs(hashCode(j.id || j.title)) % (96 * 3600000)); // Default fallback up to 96h
   
   const synthTimestamp = Date.now() - offsetMs;
 
@@ -1233,8 +1233,9 @@ function renderBench() {
     const name  = (c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || '').toLowerCase();
     const skill = (c['Target Skill (AREA)'] || c['AREA'] || '').toLowerCase();
     const loc   = (c['Target Location'] || c['Location'] || '').toLowerCase();
-    const v     = (c['Visa'] || 'H1B');
-    return (!query || name.includes(query) || skill.includes(query) || loc.includes(query)) && (!visa || v === visa);
+    const v     = (c['Visa'] || 'H1B').toLowerCase();
+    const vRaw  = c['Visa'] || 'H1B';
+    return (!query || name.includes(query) || skill.includes(query) || loc.includes(query) || v.includes(query)) && (!visa || vRaw === visa);
   });
 
   document.getElementById('benchCount').textContent = `${list.length} Consultants`;
@@ -1739,10 +1740,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const ms = parseInt(el.getAttribute('data-posted-ms'));
       if (!ms) return;
       const diff = Math.floor((Date.now() - ms) / 1000);
-      const h = Math.floor(diff / 3600);
+      const d = Math.floor(diff / 86400);
+      const h = Math.floor((diff % 86400) / 3600);
       const m = Math.floor((diff % 3600) / 60);
       const s = diff % 60;
-      el.innerHTML = `🕐 ${h}h ${m}m ${s}s ago`;
+      el.innerHTML = d > 0 ? `🕐 ${d}d ${h}h ${m}m ago` : `🕐 ${h}h ${m}m ${s}s ago`;
     });
   }, 1000);
 });
