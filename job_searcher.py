@@ -74,7 +74,7 @@ def _posted_label(days_ago: int) -> str:
 # JSearch via RapidAPI (real jobs from LinkedIn + Indeed + Glassdoor)
 # ---------------------------------------------------------------------------
 
-def _fetch_jsearch(skill: str, location: str, count: int = 10, board_filter: str = "") -> list[dict]:
+def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, board_filter: str = "") -> list[dict]:
     """Fetch real jobs via JSearch RapidAPI."""
     if not RAPIDAPI_KEY:
         return []
@@ -83,7 +83,7 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10, board_filter: str
             "x-rapidapi-host": "jsearch.p.rapidapi.com",
             "x-rapidapi-key":  RAPIDAPI_KEY,
         }
-        query = f"{skill} contract jobs in {location}"
+        query = f"{skill} {job_type} jobs in {location}"
         if board_filter and board_filter != "linkedin":
             query += f" site:{board_filter}.com"
             
@@ -149,7 +149,7 @@ def _fetch_jsearch(skill: str, location: str, count: int = 10, board_filter: str
 # LinkedIn Guest API (100% free, no auth)
 # ---------------------------------------------------------------------------
 
-def _scrape_linkedin(skill: str, location: str) -> list[dict]:
+def _scrape_linkedin(skill: str, location: str, job_type: str) -> list[dict]:
     """Scrape live LinkedIn jobs via public guest API."""
     jobs = []
     q   = urllib.parse.quote_plus(skill)
@@ -195,11 +195,11 @@ def _scrape_linkedin(skill: str, location: str) -> list[dict]:
                     "salary":      f"${sal_min}–${sal_max}/hr",
                     "salary_min":  float(sal_min),
                     "salary_max":  float(sal_max),
-                    "job_type":    "Contract",
+                    "job_type":    job_type.title(),
                     "posted":      posted,
                     "url":         job_url,
                     "easy_apply":  True,
-                    "description": f"Contract role for {title} at {company} in {loc_str}. Requires strong {skill} expertise.",
+                    "description": f"{job_type.title()} role for {title} at {company} in {loc_str}. Requires strong {skill} expertise.",
                 })
         except Exception as e:
             print(f"[job_searcher] LinkedIn scrape error page {page}: {e}")
@@ -210,11 +210,11 @@ def _scrape_linkedin(skill: str, location: str) -> list[dict]:
 # Indeed scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_indeed(skill: str, location: str) -> list[dict]:
+def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
     """Scrape Indeed jobs page."""
     jobs = []
     try:
-        q   = urllib.parse.quote_plus(skill + " contract")
+        q   = urllib.parse.quote_plus(skill + " " + job_type)
         loc = urllib.parse.quote_plus(location)
         url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=2"
         r   = SESSION.get(url, timeout=10)
@@ -262,7 +262,7 @@ def _scrape_indeed(skill: str, location: str) -> list[dict]:
                 "salary":      f"${sal_min}–${sal_max}/hr",
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
-                "job_type":    "Contract",
+                "job_type":    job_type.title(),
                 "posted":      "Recent",
                 "url":         job_url,
                 "easy_apply":  True,
@@ -277,7 +277,7 @@ def _scrape_indeed(skill: str, location: str) -> list[dict]:
 # Dice scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_dice(skill: str, location: str) -> list[dict]:
+def _scrape_dice(skill: str, location: str, job_type: str) -> list[dict]:
     """Scrape Dice.com tech jobs."""
     jobs = []
     try:
@@ -317,7 +317,7 @@ def _scrape_dice(skill: str, location: str) -> list[dict]:
                 "salary":      f"${sal_min}–${sal_max}/hr",
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
-                "job_type":    "Contract",
+                "job_type":    job_type.title(),
                 "posted":      "Recent",
                 "url":         job_url,
                 "easy_apply":  False,
@@ -332,11 +332,11 @@ def _scrape_dice(skill: str, location: str) -> list[dict]:
 # ZipRecruiter scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_ziprecruiter(skill: str, location: str) -> list[dict]:
+def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]:
     """Scrape ZipRecruiter jobs."""
     jobs = []
     try:
-        q   = urllib.parse.quote_plus(skill + " contract")
+        q   = urllib.parse.quote_plus(skill + " " + job_type)
         loc = urllib.parse.quote_plus(location)
         url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=2"
         r   = SESSION.get(url, timeout=10)
@@ -372,7 +372,7 @@ def _scrape_ziprecruiter(skill: str, location: str) -> list[dict]:
                 "salary":      f"${sal_min}–${sal_max}/hr",
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
-                "job_type":    "Contract",
+                "job_type":    job_type.title(),
                 "posted":      "Recent",
                 "url":         job_url,
                 "easy_apply":  True,
@@ -387,7 +387,7 @@ def _scrape_ziprecruiter(skill: str, location: str) -> list[dict]:
 # Monster scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_monster(skill: str, location: str) -> list[dict]:
+def _scrape_monster(skill: str, location: str, job_type: str) -> list[dict]:
     """Scrape Monster jobs."""
     jobs = []
     try:
@@ -427,7 +427,7 @@ def _scrape_monster(skill: str, location: str) -> list[dict]:
                 "salary":      f"${sal_min}–${sal_max}/hr",
                 "salary_min":  float(sal_min),
                 "salary_max":  float(sal_max),
-                "job_type":    "Contract",
+                "job_type":    job_type.title(),
                 "posted":      "Recent",
                 "url":         job_url,
                 "easy_apply":  True,
@@ -442,7 +442,7 @@ def _scrape_monster(skill: str, location: str) -> list[dict]:
 # Board Dispatcher
 # ---------------------------------------------------------------------------
 
-def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]]:
+def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[str, list[dict]]:
     labels = {
         "linkedin":     "LinkedIn",
         "dice":         "Dice",
@@ -461,13 +461,13 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
     }
 
     scraper = scraper_map.get(board)
-    jobs    = scraper(skill, location) if scraper else []
+    jobs    = scraper(skill, location, job_type) if scraper else []
 
     # If native scraper gets blocked by Vercel, use JSearch API targeted at this specific board
     if not jobs and board != "linkedin":
         try:
             print(f"[job_searcher] Native scrape failed for {board}. Falling back to JSearch site-specific query.")
-            jobs = _fetch_jsearch(skill, location, RESULTS_PER_BOARD, board_filter=board)
+            jobs = _fetch_jsearch(skill, location, job_type, RESULTS_PER_BOARD, board_filter=board)
         except Exception as e:
             print(f"[job_searcher] JSearch fallback error for {board}: {e}")
             
@@ -500,7 +500,7 @@ def _fetch_board(board: str, skill: str, location: str) -> tuple[str, list[dict]
                 "salary": f"${sal_min}–${sal_max}/hr",
                 "salary_min": float(sal_min),
                 "salary_max": float(sal_max),
-                "job_type": "Contract",
+                "job_type":    job_type.title(),
                 "posted": "Recent",
                 "url": base_url_map.get(board, "#"),
                 "easy_apply": True,
@@ -623,7 +623,7 @@ def search_jobs(
     # Scrape all boards in parallel
     boards_to_scrape = [b for b in target_boards]
     with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {ex.submit(_fetch_board, b, skill, location): b for b in boards_to_scrape}
+        futures = {ex.submit(_fetch_board, b, skill, location, job_type): b for b in boards_to_scrape}
         for future in as_completed(futures):
             board_key, jobs = future.result()
             all_results[board_key] = jobs
