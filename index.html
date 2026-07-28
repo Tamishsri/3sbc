@@ -326,7 +326,7 @@ body {
     </nav>
 
     <div class="user-area">
-      <span class="user-email" id="userEmailLabel">tamishsridhatta.16@gmail.com</span>
+      <span class="user-email" id="userEmailLabel"></span>
       <button class="btn-action btn-action-indigo" onclick="exportCSV()" style="height:36px;padding:0 14px">📊 Export CSV</button>
     </div>
   </header>
@@ -822,6 +822,12 @@ function logout() {
 
 function applyRoleBasedUI() {
   const isAdmin = CURRENT_USER.role === 'admin';
+  
+  // Set the navbar name to the logged in user
+  const emailLabel = document.getElementById('userEmailLabel');
+  if (emailLabel) {
+    emailLabel.textContent = CURRENT_USER.role === 'admin' ? "Admin Mode" : CURRENT_USER.id;
+  }
   
   // Hide restricted tabs from employees
   const feedbacksBtn = document.getElementById('feedbacksTabBtn');
