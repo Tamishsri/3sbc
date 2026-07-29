@@ -9,11 +9,7 @@
       }
     }
   ],
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60
-    }
-  },
+
   "routes": [
     {
       "src": "/(.*)",
