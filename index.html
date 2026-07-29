@@ -520,17 +520,7 @@ body {
   </main>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     LOGIN SCREEN (Secure Access Wall)
-     ════════════════════════════════════════════════════════ -->
-<div id="loginScreen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0f111a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-  <div style="background:#1a1d2d;padding:40px;border-radius:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 30px rgba(0,0,0,0.5);width:100%;max-width:400px">
-    <h2 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:10px">Secure Access</h2>
-    <p style="color:var(--text-sub);margin-bottom:20px">Please enter your presentation access code.</p>
-    <input type="password" id="accessCodeInput" class="form-input" style="text-align:center;margin-bottom:20px;font-size:18px;letter-spacing:2px" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkAccessCode()">
-    <button class="btn-search-main" style="width:100%" onclick="checkAccessCode()">Unlock Platform</button>
-  </div>
-</div>
+
 
 <!-- ════════════════════════════════════════════════════════
      MODAL: ADD CANDIDATE
@@ -786,6 +776,7 @@ function checkSession() {
     CURRENT_USER = JSON.parse(savedUser);
     document.getElementById('loginOverlay').style.display = 'none';
     applyRoleBasedUI();
+    runSearch();
   } else {
     document.getElementById('loginOverlay').style.display = 'flex';
   }
@@ -814,6 +805,7 @@ function performLogin() {
   
   applyRoleBasedUI();
   toast(`Welcome, ${username}!`);
+  runSearch();
 }
 
 function logout() {
@@ -2012,15 +2004,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadVendors();
   loadSavedJobs();
 
-  // Check login auth
-  if (localStorage.getItem('3sbc_unlocked') === 'true') {
-    document.getElementById('loginScreen').style.display = 'none';
-    runSearch(); // Auto-search on load
-  }
+  // Check User Auth
+  checkSession();
 
   // Auto poll every 60s
   setInterval(() => {
-    if (document.getElementById('loginScreen').style.display === 'none') {
+    if (CURRENT_USER && CURRENT_USER.id) {
       runSearch(true); // background refresh
     }
   }, 60000);
@@ -2040,15 +2029,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1000);
 });
 
-function checkAccessCode() {
-  const code = document.getElementById('accessCodeInput').value.trim().toUpperCase();
-  if (code === '3SBC2026') {
-    localStorage.setItem('3sbc_unlocked', 'true');
-    document.getElementById('loginScreen').style.display = 'none';
-    runSearch();
-  } else {
-    toast('Invalid Access Code', 'error');
-  }
 }
 
 </script>
