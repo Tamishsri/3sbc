@@ -288,18 +288,7 @@ body {
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
-<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; align-items:center; justify-content:center;">
-  <div style="background:var(--bg-surface); padding:3rem; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.5); max-width:400px; width:100%; text-align:center; border:1px solid var(--border);">
-    <h2 style="margin-bottom:0.5rem; color:var(--text-main);">Welcome to 3SBC</h2>
-    <p style="color:var(--text-sub); margin-bottom:2rem;">Please log in to continue</p>
-    <div style="display:flex; flex-direction:column; gap:1rem;">
-      <input type="text" id="loginUsername" placeholder="Username or Email" style="padding:1rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); font-size:1rem;" onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()">
-      <input type="password" id="loginPassword" placeholder="Password (Optional unless Admin)" style="padding:1rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); font-size:1rem;" onkeydown="if(event.key==='Enter') performLogin()">
-      <button class="btn-search-main" onclick="performLogin()" style="padding:1rem; font-size:1.1rem; margin-top:0.5rem;">Login</button>
-    </div>
-  </div>
-</div>
+
 
 
 <div id="toastContainer"></div>
@@ -768,45 +757,14 @@ window.EMBEDDED_CANDIDATES = [];
 
 // ── AUTHENTICATION ENGINE ────────────────────────────────────
 
-let CURRENT_USER = { id: null, role: 'employee' };
+let CURRENT_USER = { id: 'admin', role: 'admin' };
 
 function checkSession() {
-  const savedUser = localStorage.getItem('3sbc_user');
-  if (savedUser) {
-    CURRENT_USER = JSON.parse(savedUser);
-    document.getElementById('loginOverlay').style.display = 'none';
-    applyRoleBasedUI();
-    runSearch();
-  } else {
-    document.getElementById('loginOverlay').style.display = 'flex';
-  }
-}
-
-function performLogin() {
-  const username = document.getElementById('loginUsername').value.trim();
-  const pass = document.getElementById('loginPassword').value.trim();
-  
-  if (!username) {
-    alert("Please enter a username or email.");
-    return;
-  }
-  
-  let role = 'employee';
-  if (username.toLowerCase() === 'admin' && (pass === '1234' || pass.toLowerCase() === 'p:1234')) {
-    role = 'admin';
-  } else if (username.toLowerCase() === 'admin') {
-    alert("Incorrect admin password.");
-    return;
-  }
-  
-  CURRENT_USER = { id: username, role: role };
-  localStorage.setItem('3sbc_user', JSON.stringify(CURRENT_USER));
-  document.getElementById('loginOverlay').style.display = 'none';
-  
+  CURRENT_USER = { id: 'admin', role: 'admin' };
   applyRoleBasedUI();
-  toast(`Welcome, ${username}!`);
   runSearch();
 }
+
 
 function logout() {
   localStorage.removeItem('3sbc_user');
@@ -828,21 +786,6 @@ function applyRoleBasedUI() {
   if (feedbacksBtn) feedbacksBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   if (vendorsBtn) vendorsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   
-  // Add logout button to nav if not exists
-  let logoutBtn = document.getElementById('logoutBtn');
-  if (!logoutBtn) {
-    const nav = document.querySelector('.user-area');
-    if (nav) {
-      logoutBtn = document.createElement('button');
-      logoutBtn.id = 'logoutBtn';
-      logoutBtn.className = 'nav-tab';
-      logoutBtn.textContent = 'Logout';
-      logoutBtn.style.marginLeft = '12px';
-      logoutBtn.style.background = 'rgba(239, 68, 68, 0.15)';
-      logoutBtn.style.color = '#ef4444';
-      logoutBtn.onclick = logout;
-      nav.appendChild(logoutBtn);
-    }
   }
 }
 
