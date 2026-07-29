@@ -351,7 +351,7 @@ body {
           </div>
           <div class="field-group" style="flex:1.5">
             <label class="field-label" for="locationInput">Target Location</label>
-            <input class="form-input" id="locationInput" type="text"  placeholder="e.g. Philadelphia, PA"/>
+            <input class="form-input" id="locationInput" type="text"  placeholder="e.g. United States of America"/>
           </div>
           <div class="field-group" style="max-width:140px">
             <label class="field-label" for="typeInput">Job Type</label>
@@ -370,7 +370,7 @@ body {
         <!-- Quick Presets -->
         <div class="presets-row">
           <span style="font-weight:700;color:var(--text-sub)">Quick Presets:</span>
-          <button type="button" class="preset-pill" onclick="preset('SAP MM', 'Philadelphia, PA')">SAP MM (Philly)</button>
+          <button type="button" class="preset-pill" onclick="preset('SAP MM', 'United States of America')">SAP MM (USA)</button>
           <button type="button" class="preset-pill" onclick="preset('Java Lead', 'New York, NY')">Java Lead (NYC)</button>
           <button type="button" class="preset-pill" onclick="preset('AWS Architect', 'Remote')">AWS Architect (Remote)</button>
           <button type="button" class="preset-pill" onclick="preset('Salesforce', 'Dallas, TX')">Salesforce (Dallas)</button>
@@ -640,7 +640,7 @@ body {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field-group">
           <label class="field-label">Location</label>
-          <input class="form-input" id="subLocation" type="text" placeholder="e.g. Philadelphia, PA"/>
+          <input class="form-input" id="subLocation" type="text" placeholder="e.g. United States of America"/>
         </div>
         <div class="field-group">
           <label class="field-label">Work Auth</label>
@@ -1078,7 +1078,7 @@ function preset(skill, location) {
 
 async function runSearch(isBackground = false) {
   const skill    = document.getElementById('skillInput')?.value.trim() || 'SAP MM';
-  const location = document.getElementById('locationInput')?.value.trim() || 'Philadelphia, PA';
+  const location = document.getElementById('locationInput')?.value.trim() || 'United States of America';
   const jobType  = document.getElementById('typeInput')?.value || 'contract';
   const btn      = document.getElementById('searchBtn');
   const refreshBtn = document.getElementById('refreshBtn');
@@ -1376,7 +1376,7 @@ async function genEmail() {
 async function genResumePresentation() {
   const cName  = document.getElementById('subConsultant').value.trim() || 'Consultant';
   const cSkill = document.getElementById('subSkill').value.trim() || 'SAP MM';
-  const cLoc   = document.getElementById('subLocation').value.trim() || 'Philadelphia, PA';
+  const cLoc   = document.getElementById('subLocation').value.trim() || 'United States of America';
   const cVisa  = document.getElementById('subVisa')?.value || 'H1B';
   const cBill  = document.getElementById('subBill').value.trim();
   const job    = STATE.pendingJob || {};
