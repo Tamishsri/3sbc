@@ -2,11 +2,9 @@
 job_searcher.py
 ---------------
 Real Job Search Engine for 3SBC Platform.
-- LinkedIn Guest API (real live results, no auth required)
-- Indeed scraping via requests
-- Dice scraping via requests
-- JSearch (RapidAPI) if key available
-- Smart fallback ensures all 5 boards always show real-looking jobs
+- LinkedIn Guest API (real live results, no auth required) - primary source
+- Indeed, Dice, ZipRecruiter, Monster - native scrapers
+- NO fake jobs. NO random salaries. Only real data.
 """
 
 from __future__ import annotations
@@ -14,7 +12,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import random
 import re
 import statistics
 import time
@@ -29,10 +26,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RAPIDAPI_KEY     = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
 CACHE_TTL_SECONDS = 3600   # 1 hour
-# Number of jobs to fetch per individual job board
-RESULTS_PER_BOARD = 50
+RESULTS_PER_BOARD = 30     # max jobs per board
 
 HEADERS = {
     "User-Agent": (
@@ -46,6 +41,7 @@ HEADERS = {
 
 SESSION = requests.Session()
 SESSION.headers.update(HEADERS)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -70,111 +66,74 @@ def _posted_label(days_ago: int) -> str:
     return f"{days_ago}d ago"
 
 
-# ---------------------------------------------------------------------------
-# JSearch via RapidAPI (real jobs from LinkedIn + Indeed + Glassdoor)
-# ---------------------------------------------------------------------------
+def _parse_salary_text(salary_text: str):
+    """
+    Parse salary from a raw text string.
+    Returns (sal_min, sal_max, formatted_string) or (0, 0, '') if not found.
+    """
+    if not salary_text:
+        return 0.0, 0.0, ""
 
-def _fetch_jsearch(skill: str, location: str, job_type: str, count: int = 10, board_filter: str = "", page: str = "1") -> list[dict]:
-    """Fetch real jobs via JSearch RapidAPI."""
-    if not RAPIDAPI_KEY:
-        return []
-    try:
-        headers = {
-            "x-rapidapi-host": "jsearch.p.rapidapi.com",
-            "x-rapidapi-key":  RAPIDAPI_KEY,
-        }
-        query = f"{skill} {job_type} jobs in {location}"
-        # We purposely do not append site:board.com here because JSearch Google footprint often fails on specific domains, returning 0 jobs.
-        # This allows the API to pull real active jobs to populate the specific column.
-            
-        # Try multiple known JSearch endpoint paths
-        for path in ["/search", "/jobs/search"]:
-            r = SESSION.get(
-                f"https://jsearch.p.rapidapi.com{path}",
-                params={"query": query, "num_pages": "2", "page": page, "date_posted": "3days"},
-                headers=headers,
-                timeout=10,
-            )
-            if r.status_code == 200:
-                jobs_raw = r.json().get("data", [])
-                break
-        else:
-            return []
+    text = salary_text.replace(",", "").replace("$", "")
 
-        jobs = []
-        for j in jobs_raw[:count]:
-            sal_min_raw = j.get("job_min_salary")
-            sal_max_raw = j.get("job_max_salary")
-            period = j.get("job_salary_period", "YEAR")
-            
-            if sal_min_raw:
-                sal_min = float(sal_min_raw)
-                sal_max = float(sal_max_raw) if sal_max_raw else sal_min
-                if period == "YEAR":
-                    sal_min = round(sal_min / 2080)
-                    sal_max = round(sal_max / 2080)
-                salary_str = f"${int(sal_min)}–${int(sal_max)}/hr"
-            else:
-                sal_min = 0
-                sal_max = 0
-                salary_str = "DOE (Not Listed)"
+    nums = re.findall(r"\d+(?:\.\d+)?", text)
+    if not nums:
+        return 0.0, 0.0, ""
 
-            city  = j.get("job_city", "")
-            state = j.get("job_state", "")
-            loc   = f"{city}, {state}".strip(", ") or location
+    nums_f = [float(n) for n in nums]
 
-            source = (j.get("job_publisher") or "LinkedIn").title()
-            board_map = {
-                "linkedin": "linkedin", "indeed": "indeed",
-                "glassdoor": "linkedin", "ziprecruiter": "ziprecruiter",
-                "dice": "dice", "monster": "monster"
-            }
-            board = board_filter if board_filter else board_map.get(source.lower(), "linkedin")
+    is_hourly = "hr" in text.lower() or "hour" in text.lower() or "/h" in text.lower()
+    is_annual = "year" in text.lower() or "/yr" in text.lower() or "annual" in text.lower() or "salary" in text.lower()
 
-            jobs.append({
-                "id":          _uid(board, j.get("job_title",""), j.get("employer_name","")),
-                "board":       board,
-                "board_label": source,
-                "title":       _clean(j.get("job_title", skill + " Consultant")),
-                "company":     _clean(j.get("employer_name", "Major Client")),
-                "location":    loc,
-                "salary":      salary_str,
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
-                "job_type":    j.get("job_employment_type", "CONTRACTOR").title(),
-                "days_ago":    int((time.time() - j.get("job_posted_at_timestamp", time.time())) / 86400) if j.get("job_posted_at_timestamp") else random.randint(0, 5),
-                "url":         j.get("job_apply_link") or j.get("job_google_link") or "#",
-                "easy_apply":  j.get("job_apply_is_direct", False),
-                "description": _clean(j.get("job_description", "")[:400]),
-            })
-        return jobs
-    except Exception as e:
-        print(f"[job_searcher] JSearch error: {e}")
-        return []
+    if len(nums_f) >= 2:
+        sal_min, sal_max = nums_f[0], nums_f[1]
+    else:
+        sal_min = sal_max = nums_f[0]
+
+    # Convert annual to hourly
+    if not is_hourly and (is_annual or sal_min > 500):
+        sal_min = round(sal_min / 2080, 2)
+        sal_max = round(sal_max / 2080, 2)
+
+    # Sanity check: hourly rates should be between $10 and $400
+    if sal_min < 10 or sal_min > 400:
+        return 0.0, 0.0, ""
+
+    if sal_min == sal_max:
+        formatted = f"${int(sal_min)}/hr"
+    else:
+        formatted = f"${int(sal_min)}-${int(sal_max)}/hr"
+
+    return float(sal_min), float(sal_max), formatted
 
 
 # ---------------------------------------------------------------------------
-# LinkedIn Guest API (100% free, no auth)
+# LinkedIn Guest API (100% free, no auth) - Primary Source
 # ---------------------------------------------------------------------------
 
-def _scrape_linkedin(skill: str, location: str, job_type: str) -> list[dict]:
+def _scrape_linkedin(skill: str, location: str, job_type: str) -> list:
     """Scrape live LinkedIn jobs via public guest API."""
     jobs = []
     q   = urllib.parse.quote_plus(skill)
     loc = urllib.parse.quote_plus(location)
-    for page in range(3):
+
+    for page in range(4):  # 4 pages x 25 = up to 100 results
         start = page * 25
         try:
             url = (
                 f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-                f"?keywords={q}&location={loc}&f_TPR=r172800&start={start}"
+                f"?keywords={q}&location={loc}&f_TPR=r604800&start={start}"
             )
-            r = SESSION.get(url, timeout=10)
+            r = SESSION.get(url, timeout=12)
             if r.status_code != 200 or not r.text.strip():
-                continue
+                break
 
             soup = BeautifulSoup(r.text, "html.parser")
-            for card in soup.select("li"):
+            cards = soup.select("li")
+            if not cards:
+                break
+
+            for card in cards:
                 title_el = card.select_one(".base-search-card__title")
                 comp_el  = card.select_one(".base-search-card__subtitle")
                 loc_el   = card.select_one(".job-search-card__location")
@@ -185,13 +144,24 @@ def _scrape_linkedin(skill: str, location: str, job_type: str) -> list[dict]:
                     continue
 
                 title   = _clean(title_el.get_text())
-                company = _clean(comp_el.get_text() if comp_el else "Featured Employer")
+                company = _clean(comp_el.get_text() if comp_el else "")
                 loc_str = _clean(loc_el.get_text() if loc_el else location)
                 job_url = link_el.get("href", "#") if link_el else "#"
-                posted  = _clean(time_el.get_text() if time_el else "Recently")
 
-                sal_min = random.choice([65, 70, 75, 80, 85, 90])
-                sal_max = sal_min + random.choice([15, 20, 25])
+                # Parse posted time into days_ago
+                days_ago = 0
+                if time_el:
+                    posted_text = _clean(time_el.get_text()).lower()
+                    if "hour" in posted_text or "minute" in posted_text or "second" in posted_text:
+                        days_ago = 0
+                    elif "day" in posted_text:
+                        m = re.search(r"(\d+)", posted_text)
+                        days_ago = int(m.group(1)) if m else 1
+                    elif "week" in posted_text:
+                        m = re.search(r"(\d+)", posted_text)
+                        days_ago = (int(m.group(1)) if m else 1) * 7
+                    elif "month" in posted_text:
+                        days_ago = 30
 
                 jobs.append({
                     "id":          _uid("linkedin", title, company),
@@ -200,65 +170,59 @@ def _scrape_linkedin(skill: str, location: str, job_type: str) -> list[dict]:
                     "title":       title,
                     "company":     company,
                     "location":    loc_str,
-                    "salary":      "DOE (Not Listed)",
-                    "salary_min":  float(sal_min),
-                    "salary_max":  float(sal_max),
+                    "salary":      "",   # LinkedIn guest API never shows salary
+                    "salary_min":  0.0,
+                    "salary_max":  0.0,
                     "job_type":    job_type.title(),
-                    "posted":      posted,
+                    "days_ago":    days_ago,
                     "url":         job_url,
                     "easy_apply":  True,
-                    "description": f"{job_type.title()} role for {title} at {company} in {loc_str}. Requires strong {skill} expertise.",
+                    "description": f"{job_type.title()} role for {title} at {company} in {loc_str}.",
                 })
         except Exception as e:
             print(f"[job_searcher] LinkedIn scrape error page {page}: {e}")
-    return jobs[:RESULTS_PER_BOARD * 3]
+            break
+
+    return jobs[:RESULTS_PER_BOARD * 2]
 
 
 # ---------------------------------------------------------------------------
 # Indeed scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
+def _scrape_indeed(skill: str, location: str, job_type: str) -> list:
     """Scrape Indeed jobs page."""
     jobs = []
     try:
-        q   = urllib.parse.quote_plus(skill + " " + job_type)
+        q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=2"
-        r   = SESSION.get(url, timeout=10)
+        url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=7&sort=date"
+
+        r = SESSION.get(url, timeout=12)
         if r.status_code != 200:
+            print(f"[job_searcher] Indeed HTTP {r.status_code}")
             return []
 
         soup = BeautifulSoup(r.text, "html.parser")
-        # Indeed uses data-jk for job key
-        for card in soup.select("div.job_seen_beacon, div[data-jk]")[:RESULTS_PER_BOARD]:
+        cards = soup.select("div.job_seen_beacon, div[data-jk]")
+
+        for card in cards[:RESULTS_PER_BOARD]:
             title_el   = card.select_one("h2.jobTitle span, h2 span[title]")
             comp_el    = card.select_one("[data-testid='company-name'], .companyName")
             loc_el     = card.select_one("[data-testid='text-location'], .companyLocation")
-            salary_el  = card.select_one("[data-testid='attribute_snippet_testid'], .salary-snippet")
-            jk         = card.get("data-jk") or card.find_parent("[data-jk]", {}).get("data-jk") if card.find_parent("[data-jk]") else None
+            salary_el  = card.select_one("[data-testid='attribute_snippet_testid'], .salary-snippet, [class*='salary']")
+            jk         = card.get("data-jk")
 
             if not title_el:
                 continue
 
             title   = _clean(title_el.get_text())
-            company = _clean(comp_el.get_text() if comp_el else "Employer")
+            company = _clean(comp_el.get_text() if comp_el else "")
             loc_str = _clean(loc_el.get_text() if loc_el else location)
             job_url = f"https://www.indeed.com/viewjob?jk={jk}" if jk else f"https://www.indeed.com/jobs?q={q}&l={loc}"
-            salary_txt = _clean(salary_el.get_text() if salary_el else "")
+            salary_text = _clean(salary_el.get_text() if salary_el else "")
 
-            # Parse salary or estimate
-            sal_match = re.findall(r"\$?(\d+)", salary_txt.replace(",", ""))
-            if len(sal_match) >= 2:
-                sal_min = int(sal_match[0])
-                sal_max = int(sal_match[1])
-                # Convert annual to hourly
-                if sal_min > 300:
-                    sal_min = round(sal_min / 2080)
-                    sal_max = round(sal_max / 2080)
-            else:
-                sal_min = random.choice([60, 65, 70, 75, 80])
-                sal_max = sal_min + random.choice([15, 20, 25])
+            sal_min, sal_max, salary_str = _parse_salary_text(salary_text)
 
             jobs.append({
                 "id":          _uid("indeed", title, company),
@@ -268,10 +232,10 @@ def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
                 "company":     company,
                 "location":    loc_str,
                 "salary":      salary_str,
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
+                "salary_min":  sal_min,
+                "salary_max":  sal_max,
                 "job_type":    job_type.title(),
-                "days_ago": random.randint(0, 5),
+                "days_ago":    0,
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Contract position for {title} at {company}. Strong {skill} experience required.",
@@ -282,55 +246,109 @@ def _scrape_indeed(skill: str, location: str, job_type: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Dice scraping
+# Dice scraping - uses JSON API
 # ---------------------------------------------------------------------------
 
-def _scrape_dice(skill: str, location: str, job_type: str) -> list[dict]:
-    """Scrape Dice.com tech jobs."""
+def _scrape_dice(skill: str, location: str, job_type: str) -> list:
+    """Scrape Dice.com via their public JSON API."""
     jobs = []
     try:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.dice.com/jobs?q={q}&location={loc}&filters.postedDate=THREE_DAYS&filters.employmentType=CONTRACTS"
-        r   = SESSION.get(url, timeout=10)
-        if r.status_code != 200:
-            return []
 
-        soup = BeautifulSoup(r.text, "html.parser")
-        for card in soup.select("dhi-search-card, [data-cy='card'], .card")[:RESULTS_PER_BOARD]:
-            title_el = card.select_one("a.card-title-link, h5, [data-cy='card-title']")
-            comp_el  = card.select_one(".company-name, [data-cy='company-name']")
-            loc_el   = card.select_one(".location, [data-cy='location']")
-            link_el  = card.select_one("a[href*='/job-detail/'], a.card-title-link")
+        # Dice JSON API
+        api_url = (
+            f"https://job-search-api.svc.dhigroupinc.com/v1/dice/jobs/search"
+            f"?q={q}&countryCode2=US&radius=50&radiusUnit=mi&page=1&pageSize=20"
+            f"&filters.postedDate=THREE_DAYS&language=en"
+        )
+        headers_dice = {**HEADERS, "x-api-key": "1YAt0R9wBg4WfsF9VB2778F5CHLAPMVW3WAZcKd8"}
+        r = SESSION.get(api_url, headers=headers_dice, timeout=10)
 
-            if not title_el:
-                continue
+        if r.status_code == 200:
+            data = r.json()
+            for job in data.get("data", [])[:RESULTS_PER_BOARD]:
+                title   = _clean(job.get("title", ""))
+                company = ""
+                if isinstance(job.get("hiringOrganization"), dict):
+                    company = _clean(job["hiringOrganization"].get("name", ""))
+                loc_str = location
+                if isinstance(job.get("jobLocation"), dict):
+                    loc_str = _clean(job["jobLocation"].get("displayName", location))
+                job_url = job.get("applyUrl") or f"https://www.dice.com/jobs?q={q}"
 
-            title   = _clean(title_el.get_text())
-            company = _clean(comp_el.get_text() if comp_el else "Top Employer")
-            loc_str = _clean(loc_el.get_text() if loc_el else location)
-            href    = link_el.get("href", "") if link_el else ""
-            job_url = f"https://www.dice.com{href}" if href.startswith("/") else href or f"https://www.dice.com/jobs?q={q}"
+                sal_min, sal_max, salary_str = 0.0, 0.0, ""
+                if isinstance(job.get("baseSalary"), dict):
+                    salary_text = str(job["baseSalary"].get("value", {}).get("value", ""))
+                    sal_min, sal_max, salary_str = _parse_salary_text(salary_text)
 
-            sal_min = random.choice([70, 75, 80, 85, 90])
-            sal_max = sal_min + random.choice([15, 20, 25])
+                days_ago = 0
+                posted_at = job.get("datePosted", "")
+                if posted_at:
+                    try:
+                        dt = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+                        delta = datetime.now(timezone.utc) - dt
+                        days_ago = max(0, delta.days)
+                    except Exception:
+                        pass
 
-            jobs.append({
-                "id":          _uid("dice", title, company),
-                "board":       "dice",
-                "board_label": "Dice",
-                "title":       title,
-                "company":     company,
-                "location":    loc_str,
-                "salary":      salary_str,
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
-                "job_type":    job_type.title(),
-                "days_ago": random.randint(0, 5),
-                "url":         job_url,
-                "easy_apply":  False,
-                "description": f"Contract opening for {title} at {company} in {loc_str}. {skill} expertise required.",
-            })
+                if not title:
+                    continue
+
+                jobs.append({
+                    "id":          _uid("dice", title, company),
+                    "board":       "dice",
+                    "board_label": "Dice",
+                    "title":       title,
+                    "company":     company,
+                    "location":    loc_str,
+                    "salary":      salary_str,
+                    "salary_min":  sal_min,
+                    "salary_max":  sal_max,
+                    "job_type":    job_type.title(),
+                    "days_ago":    days_ago,
+                    "url":         job_url,
+                    "easy_apply":  False,
+                    "description": f"Contract opening for {title} at {company} in {loc_str}. {skill} expertise required.",
+                })
+        else:
+            # Fallback to HTML scrape
+            url = f"https://www.dice.com/jobs?q={q}&location={loc}&filters.postedDate=THREE_DAYS&filters.employmentType=CONTRACTS"
+            r2 = SESSION.get(url, timeout=10)
+            if r2.status_code == 200:
+                soup = BeautifulSoup(r2.text, "html.parser")
+                for card in soup.select("dhi-search-card, [data-cy='card'], .card")[:RESULTS_PER_BOARD]:
+                    title_el = card.select_one("a.card-title-link, h5, [data-cy='card-title']")
+                    comp_el  = card.select_one(".company-name, [data-cy='company-name']")
+                    loc_el   = card.select_one(".location, [data-cy='location']")
+                    link_el  = card.select_one("a[href*='/job-detail/'], a.card-title-link")
+
+                    if not title_el:
+                        continue
+
+                    title   = _clean(title_el.get_text())
+                    company = _clean(comp_el.get_text() if comp_el else "")
+                    loc_str = _clean(loc_el.get_text() if loc_el else location)
+                    href    = link_el.get("href", "") if link_el else ""
+                    job_url = f"https://www.dice.com{href}" if href.startswith("/") else href or f"https://www.dice.com/jobs?q={q}"
+
+                    jobs.append({
+                        "id":          _uid("dice", title, company),
+                        "board":       "dice",
+                        "board_label": "Dice",
+                        "title":       title,
+                        "company":     company,
+                        "location":    loc_str,
+                        "salary":      "",
+                        "salary_min":  0.0,
+                        "salary_max":  0.0,
+                        "job_type":    job_type.title(),
+                        "days_ago":    0,
+                        "url":         job_url,
+                        "easy_apply":  False,
+                        "description": f"Contract opening for {title} at {company} in {loc_str}. {skill} expertise required.",
+                    })
+
     except Exception as e:
         print(f"[job_searcher] Dice scrape error: {e}")
     return jobs
@@ -340,35 +358,36 @@ def _scrape_dice(skill: str, location: str, job_type: str) -> list[dict]:
 # ZipRecruiter scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]:
+def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list:
     """Scrape ZipRecruiter jobs."""
     jobs = []
     try:
-        q   = urllib.parse.quote_plus(skill + " " + job_type)
+        q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=2"
-        r   = SESSION.get(url, timeout=10)
+        url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=7"
+        r   = SESSION.get(url, timeout=12)
         if r.status_code != 200:
             return []
 
         soup = BeautifulSoup(r.text, "html.parser")
-        for card in soup.select("article.job_result, div[class*='job-card']")[:RESULTS_PER_BOARD]:
-            title_el = card.select_one("h2, .job_title, [class*='title']")
-            comp_el  = card.select_one(".company_name, [class*='company']")
-            loc_el   = card.select_one(".location, [class*='location']")
-            link_el  = card.select_one("a[href*='/jobs/']")
+        for card in soup.select("article.job_result, div[class*='job-card'], li[class*='job']")[:RESULTS_PER_BOARD]:
+            title_el  = card.select_one("h2, .job_title, [class*='title']")
+            comp_el   = card.select_one(".company_name, [class*='company']")
+            loc_el    = card.select_one(".location, [class*='location']")
+            link_el   = card.select_one("a[href*='/jobs/']")
+            salary_el = card.select_one(".salary, [class*='salary']")
 
             if not title_el:
                 continue
 
             title   = _clean(title_el.get_text())
-            company = _clean(comp_el.get_text() if comp_el else "Employer")
+            company = _clean(comp_el.get_text() if comp_el else "")
             loc_str = _clean(loc_el.get_text() if loc_el else location)
             href    = link_el.get("href", "") if link_el else ""
             job_url = href if href.startswith("http") else (f"https://www.ziprecruiter.com{href}" if href else f"https://www.ziprecruiter.com/jobs-search?search={q}")
+            salary_text = _clean(salary_el.get_text() if salary_el else "")
 
-            sal_min = random.choice([60, 65, 70, 75, 80])
-            sal_max = sal_min + random.choice([15, 20, 25])
+            sal_min, sal_max, salary_str = _parse_salary_text(salary_text)
 
             jobs.append({
                 "id":          _uid("ziprecruiter", title, company),
@@ -378,10 +397,10 @@ def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]
                 "company":     company,
                 "location":    loc_str,
                 "salary":      salary_str,
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
+                "salary_min":  sal_min,
+                "salary_max":  sal_max,
                 "job_type":    job_type.title(),
-                "days_ago": random.randint(0, 5),
+                "days_ago":    0,
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Immediate contract opportunity for {skill} professional at {company}.",
@@ -395,48 +414,49 @@ def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list[dict]
 # Monster scraping
 # ---------------------------------------------------------------------------
 
-def _scrape_monster(skill: str, location: str, job_type: str) -> list[dict]:
+def _scrape_monster(skill: str, location: str, job_type: str) -> list:
     """Scrape Monster jobs."""
     jobs = []
     try:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
-        url = f"https://www.monster.com/jobs/search?q={q}&where={loc}&jobtype=contract&tm=2"
-        r   = SESSION.get(url, timeout=10)
+        url = f"https://www.monster.com/jobs/search?q={q}&where={loc}&jobtype=contract&tm=7"
+        r   = SESSION.get(url, timeout=12)
         if r.status_code != 200:
             return []
 
         soup = BeautifulSoup(r.text, "html.parser")
         for card in soup.select("section.card-content, div[class*='JobCard']")[:RESULTS_PER_BOARD]:
-            title_el = card.select_one("h2, .title, [class*='title']")
-            comp_el  = card.select_one(".name, [class*='company']")
-            loc_el   = card.select_one(".location, [class*='location']")
-            link_el  = card.select_one("a[href*='/job-openings/'], a[href*='/jobs/']")
+            title_el  = card.select_one("h2, .title, [class*='title']")
+            comp_el   = card.select_one(".name, [class*='company']")
+            loc_el    = card.select_one(".location, [class*='location']")
+            link_el   = card.select_one("a[href*='/job-openings/'], a[href*='/jobs/']")
+            salary_el = card.select_one(".salary, [class*='salary']")
 
             if not title_el:
                 continue
 
             title   = _clean(title_el.get_text())
-            company = _clean(comp_el.get_text() if comp_el else "Client")
+            company = _clean(comp_el.get_text() if comp_el else "")
             loc_str = _clean(loc_el.get_text() if loc_el else location)
             href    = link_el.get("href", "") if link_el else ""
             job_url = href if href.startswith("http") else f"https://www.monster.com/jobs/search?q={q}"
+            salary_text = _clean(salary_el.get_text() if salary_el else "")
 
-            sal_min = random.choice([60, 65, 70, 75])
-            sal_max = sal_min + random.choice([15, 20, 25])
+            sal_min, sal_max, salary_str = _parse_salary_text(salary_text)
 
             jobs.append({
                 "id":          _uid("monster", title, company),
                 "board":       "monster",
                 "board_label": "Monster",
-                    "title":       title,
-                    "company":     company,
-                    "location":    loc_str,
-                    "salary":      "DOE (Not Listed)",
-                "salary_min":  float(sal_min),
-                "salary_max":  float(sal_max),
+                "title":       title,
+                "company":     company,
+                "location":    loc_str,
+                "salary":      salary_str,
+                "salary_min":  sal_min,
+                "salary_max":  sal_max,
                 "job_type":    job_type.title(),
-                "days_ago": random.randint(0, 5),
+                "days_ago":    0,
                 "url":         job_url,
                 "easy_apply":  True,
                 "description": f"Contract position for {title} at {company} requiring {skill} expertise.",
@@ -450,16 +470,7 @@ def _scrape_monster(skill: str, location: str, job_type: str) -> list[dict]:
 # Board Dispatcher
 # ---------------------------------------------------------------------------
 
-def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[str, list[dict]]:
-    labels = {
-        "linkedin":     "LinkedIn",
-        "dice":         "Dice",
-        "indeed":       "Indeed",
-        "ziprecruiter": "ZipRecruiter",
-        "monster":      "Monster",
-    }
-    label = labels.get(board, board.title())
-
+def _fetch_board(board: str, skill: str, location: str, job_type: str):
     scraper_map = {
         "linkedin":     _scrape_linkedin,
         "dice":         _scrape_dice,
@@ -471,16 +482,6 @@ def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[
     scraper = scraper_map.get(board)
     jobs    = scraper(skill, location, job_type) if scraper else []
 
-    # If native scraper gets blocked by Vercel, use JSearch API targeted at this specific board
-    if not jobs and board != "linkedin":
-        try:
-            print(f"[job_searcher] Native scrape failed for {board}. Falling back to JSearch pagination.")
-            page_map = {"dice": "2", "indeed": "3", "ziprecruiter": "4", "monster": "5"}
-            target_page = page_map.get(board, "1")
-            jobs = _fetch_jsearch(skill, location, job_type, RESULTS_PER_BOARD, board_filter=board, page=target_page)
-        except Exception as e:
-            print(f"[job_searcher] JSearch fallback error for {board}: {e}")
-            
     # Filter out empty/junk titles
     jobs = [j for j in jobs if j.get("title") and len(j["title"]) > 3]
 
@@ -492,31 +493,41 @@ def _fetch_board(board: str, skill: str, location: str, job_type: str) -> tuple[
 # Deduplication & Rate Intelligence
 # ---------------------------------------------------------------------------
 
-def _deduplicate(all_jobs: dict[str, list[dict]]) -> dict[str, list[dict]]:
-    seen: dict[str, str] = {}
-    result: dict[str, list[dict]] = {b: [] for b in all_jobs}
+def _deduplicate(all_jobs):
+    """Remove duplicate jobs that appear across multiple boards."""
+    seen = set()
+    result = {b: [] for b in all_jobs}
     for board, jobs in all_jobs.items():
         for job in jobs:
             norm = f"{job['title'].lower().strip()}|{job['company'].lower().strip()}"
             if norm not in seen:
-                seen[norm] = job["board_label"]
-            result[board].append(job)
+                seen.add(norm)
+                result[board].append(job)
     return result
 
 
-def _rate_intelligence(all_jobs: dict[str, list[dict]], skill: str, location: str) -> dict:
-    hourly: list[float] = []
+def _rate_intelligence(all_jobs, skill, location):
+    """Calculate market rate intelligence from REAL salary data only."""
+    hourly = []
     for jobs in all_jobs.values():
         for j in jobs:
-            hi = j.get("salary_max", 0)
-            lo = j.get("salary_min", 0)
-            if 20 <= hi <= 350:
+            hi = j.get("salary_max", 0) or 0
+            lo = j.get("salary_min", 0) or 0
+            if 15 <= hi <= 400:
                 hourly.append(hi)
-            if lo and 20 <= lo <= 350:
+            if lo and 15 <= lo <= 400:
                 hourly.append(lo)
 
-    if not hourly:
-        hourly = [70, 75, 80, 85, 90]
+    if len(hourly) < 3:
+        return {
+            "skill": skill,
+            "location": location,
+            "count": 0,
+            "low": 0,
+            "median": 0,
+            "high": 0,
+            "display": "",
+        }
 
     return {
         "skill":    skill,
@@ -525,7 +536,7 @@ def _rate_intelligence(all_jobs: dict[str, list[dict]], skill: str, location: st
         "low":      int(min(hourly)),
         "median":   int(statistics.median(hourly)),
         "high":     int(max(hourly)),
-        "display":  f"${int(min(hourly))}–${int(max(hourly))}/hr based on {len(hourly)} postings in {location}",
+        "display":  f"${int(min(hourly))}-${int(max(hourly))}/hr based on {len(hourly)} real postings in {location}",
     }
 
 
@@ -535,10 +546,10 @@ def _rate_intelligence(all_jobs: dict[str, list[dict]], skill: str, location: st
 
 def _cache_key(skill: str, location: str, job_type: str) -> str:
     raw = f"{skill.lower().strip()}|{location.lower().strip()}|{job_type}"
-    return "jobcache_v4_" + hashlib.md5(raw.encode()).hexdigest()[:12]
+    return "jobcache_v5_" + hashlib.md5(raw.encode()).hexdigest()[:12]
 
 
-def _read_cache(ck: str) -> dict | None:
+def _read_cache(ck: str):
     try:
         from firebase_admin import firestore as fs
         db  = fs.client()
@@ -574,14 +585,19 @@ def search_jobs(
     location: str,
     job_type: str = "contract",
     days: int = 7,
-    boards: list[str] | None = None,
+    boards=None,
     use_cache: bool = True,
 ) -> dict:
     """
     Search all job boards in parallel.
-    Uses live scrapers with intelligent fallback to ensure 10 jobs per board.
+    Returns ONLY real scraped jobs - no fakes, no random data.
     """
     target_boards = boards or ["linkedin", "dice", "indeed", "ziprecruiter", "monster"]
+
+    # Default location to USA if not specified
+    if not location or location.strip() == "":
+        location = "United States of America"
+
     ck = _cache_key(skill, location, job_type)
 
     if use_cache:
@@ -592,20 +608,19 @@ def search_jobs(
             return cached
 
     t0 = time.time()
-    all_results: dict[str, list[dict]] = {b: [] for b in target_boards}
+    all_results = {b: [] for b in target_boards}
 
     # Scrape all boards in parallel
-    boards_to_scrape = [b for b in target_boards]
     with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {ex.submit(_fetch_board, b, skill, location, job_type): b for b in boards_to_scrape}
+        futures = {ex.submit(_fetch_board, b, skill, location, job_type): b for b in target_boards}
         for future in as_completed(futures):
             board_key, jobs = future.result()
             all_results[board_key] = jobs
 
+    # Sort each board by newest first (smallest days_ago)
     for b in target_boards:
-        # Sort jobs so newest (smallest days_ago) is on top
-        all_results[b] = sorted(all_results[b], key=lambda x: x.get("days_ago", 0))
-        # Now apply the posted label
+        all_results[b] = sorted(all_results[b], key=lambda x: x.get("days_ago", 999))
+        # Apply posted label after sorting
         for job in all_results[b]:
             job["posted"] = _posted_label(job.get("days_ago", 0))
         all_results[b] = all_results[b][:RESULTS_PER_BOARD]
@@ -634,8 +649,14 @@ def search_jobs(
 
 
 if __name__ == "__main__":
-    res = search_jobs("SAP MM", "Philadelphia, PA", use_cache=False)
+    import sys
+    skill_arg = sys.argv[1] if len(sys.argv) > 1 else "SAP MM"
+    loc_arg   = sys.argv[2] if len(sys.argv) > 2 else "United States of America"
+    res = search_jobs(skill_arg, loc_arg, use_cache=False)
     print(f"\nTotal: {res['total']} jobs in {res['elapsed_seconds']}s")
     for b, jobs in res["boards"].items():
         if jobs:
-            print(f"  {b.upper()}: {len(jobs)} jobs — First: {jobs[0]['title']} @ {jobs[0]['company']}")
+            j0 = jobs[0]
+            print(f"  {b.upper()}: {len(jobs)} jobs - First: {j0['title']} @ {j0['company']} | Salary: {j0['salary'] or 'Not Listed'} | URL: {j0['url'][:80]}")
+        else:
+            print(f"  {b.upper()}: 0 jobs")

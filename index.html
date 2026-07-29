@@ -1068,7 +1068,8 @@ async function runSearch(isBackground = false) {
       }
     }
 
-    toast(`Found ${data.total || 50} jobs across 5 boards!`, 'success');
+    const total = data.total || 0;
+    toast(`Found ${total} real jobs! LinkedIn: ${(data.boards?.linkedin||[]).length}, Dice: ${(data.boards?.dice||[]).length}, Indeed: ${(data.boards?.indeed||[]).length}, Zip: ${(data.boards?.ziprecruiter||[]).length}, Monster: ${(data.boards?.monster||[]).length}`, 'success');
 
   } catch(e) {
     console.error('[3SBC] Search error:', e);
@@ -1088,82 +1089,106 @@ function renderKanban(data) {
   const grid = document.getElementById('kanbanGrid');
   if (!grid) return;
 
-  const boards = [
-    { key: 'linkedin',     name: 'LinkedIn (Live API)' },
-    { key: 'dice',         name: 'Dice' },
-    { key: 'indeed',       name: 'Indeed' },
-    { key: 'ziprecruiter', name: 'ZipRecruiter' },
-    { key: 'monster',      name: 'Monster' },
-  ];
+  const BOARD_META = {
+    linkedin:     { name: 'LinkedIn',     icon: '💼', color: '#0a66c2', base: 'https://www.linkedin.com/jobs' },
+    dice:         { name: 'Dice',         icon: '🎲', color: '#e85d04', base: 'https://www.dice.com/jobs' },
+    indeed:       { name: 'Indeed',       icon: '🔍', color: '#2164f3', base: 'https://www.indeed.com/jobs' },
+    ziprecruiter: { name: 'ZipRecruiter', icon: '📋', color: '#4caf50', base: 'https://www.ziprecruiter.com/jobs-search' },
+    monster:      { name: 'Monster',      icon: '👾', color: '#6d28d9', base: 'https://www.monster.com/jobs/search' },
+  };
 
   const boardsData = data.boards || {};
+  const skill = data.search?.skill || '';
+  const location = data.search?.location || '';
 
-  grid.innerHTML = boards.map(b => {
-    const jobs = boardsData[b.key] || [];
+  grid.innerHTML = Object.entries(BOARD_META).map(([key, meta]) => {
+    const jobs = (boardsData[key] || []);
+    // Sort ascending by days_ago (newest first)
+    const sorted = [...jobs].sort((a, b) => (a.days_ago || 0) - (b.days_ago || 0));
+    const emptyMsg = jobs.length === 0
+      ? `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">No live jobs found.<br><a href="${meta.base}?q=${encodeURIComponent(skill)}&l=${encodeURIComponent(location)}" target="_blank" style="color:var(--indigo);text-decoration:underline">Search on ${meta.name} →</a></div>`
+      : '';
     return `
       <div class="kanban-column">
-        <div class="kanban-header">
-          <span>${b.name}</span>
-          <span class="col-count-badge">${jobs.length}</span>
+        <div class="kanban-header" style="border-bottom:2px solid ${meta.color}22">
+          <span style="display:flex;align-items:center;gap:6px">${meta.icon} ${meta.name}</span>
+          <span class="col-count-badge" style="background:${meta.color}22;color:${meta.color}">${sorted.length}</span>
         </div>
         <div class="kanban-cards-list">
-          ${jobs.map(j => renderCard(j)).join('')}
+          ${emptyMsg}
+          ${sorted.map(j => renderCard(j, meta)).join('')}
         </div>
       </div>`;
   }).join('');
+
+  // Start live counters
+  startLiveCounters();
 }
 
-function renderCard(j) {
+function renderCard(j, meta) {
   const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
   const isSaved = (STATE.savedJobs || []).some(sj => sj.url === j.url);
-  
   const cardStyle = isSaved ? 'border: 1px solid var(--emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);' : '';
-  const btnStyle = isSaved 
+  const btnStyle = isSaved
     ? 'width:100%;margin-top:8px;background:rgba(16, 185, 129, 0.1);color:var(--emerald);border:1px solid var(--emerald);font-size:12px;transition:all 0.3s ease'
     : 'width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px;transition:all 0.3s ease';
   const btnText = isSaved ? '✅ Saved' : '⭐ Save to Hotlist';
 
-  let postedStr = esc(j.posted).toLowerCase();
+  // Compute REAL timestamp from days_ago
+  const daysAgo = typeof j.days_ago === 'number' ? j.days_ago : 0;
+  const postedMs = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
   let postedColor = 'var(--text-sub)';
-  
-  // Consistent pseudo-random time for jobs that say "Recent"
-  const hashCode = s => s.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-  
-  // Create a synthetic timestamp based on the scraper text for the live counter
-  let offsetMs = 0;
-  if (postedStr.includes('just') || postedStr.includes('now')) offsetMs = 1000 * 60; // 1 min
-  else if (postedStr.includes('hour')) offsetMs = parseInt(postedStr) * 60 * 60 * 1000 || 3600000;
-  else if (postedStr.includes('min')) offsetMs = parseInt(postedStr) * 60 * 1000 || 60000;
-  else if (postedStr.includes('day')) offsetMs = parseInt(postedStr) * 24 * 60 * 60 * 1000 || 86400000;
-  else if (postedStr.includes('recent')) offsetMs = (Math.abs(hashCode(j.id || j.title)) % (95 * 3600000)) + 3600000; // 1h to 96h (4 days max)
-  else offsetMs = (Math.abs(hashCode(j.id || j.title)) % (96 * 3600000)); // Default fallback up to 96h
-  
-  const synthTimestamp = Date.now() - offsetMs;
+  if (daysAgo === 0) postedColor = 'var(--emerald)';
+  else if (daysAgo === 1) postedColor = 'var(--amber)';
+  else postedColor = 'var(--rose)';
 
-  if (offsetMs < 3600000 * 4) {
-      postedColor = 'var(--emerald)'; // < 4 hours
-  } else if (offsetMs <= 86400000) {
-      postedColor = 'var(--amber)'; // <= 24 hours
-  } else {
-      postedColor = 'var(--rose)'; // > 24 hours
-  }
+  // Only show salary if we have a real value
+  const salaryHtml = j.salary && j.salary.trim() !== ''
+    ? `<span class="salary-pill">${esc(j.salary)}</span>`
+    : '';
+
+  // Apply URL - use the job's URL directly (it points to the right board)
+  const applyUrl = j.url && j.url !== '#' ? esc(j.url) : (meta ? `${meta.base}?q=${encodeURIComponent(j.title)}` : '#');
 
   return `
     <div class="job-card" data-job-url="${esc(j.url)}" style="${cardStyle}">
       <div class="job-card-title">${esc(j.title)}</div>
-      <div class="job-card-company">🏢 ${esc(j.company)}</div>
+      <div class="job-card-company">🏢 ${esc(j.company || 'Company Not Listed')}</div>
       <div class="job-card-meta">
-        <span>📍 ${esc(j.location)}</span>
-        <span style="color:${postedColor};font-weight:700" class="live-counter" data-posted-ms="${synthTimestamp}">🕐 ${esc(j.posted)}</span>
-        <span class="salary-pill">${esc(j.salary || '$75–$95/hr')}</span>
+        <span>📍 ${esc(j.location || 'USA')}</span>
+        <span style="color:${postedColor};font-weight:700" class="live-counter" data-posted-ms="${postedMs}">🕐 ${esc(j.posted || 'Recently')}</span>
+        ${salaryHtml}
       </div>
       <div class="job-card-actions">
-        <a href="${esc(j.url || '#')}" target="_blank" class="btn-action btn-action-indigo" style="text-decoration:none;font-size:11px">🔗 Apply</a>
+        <a href="${applyUrl}" target="_blank" rel="noopener" class="btn-action btn-action-indigo" style="text-decoration:none;font-size:11px">🔗 Apply on ${esc(j.board_label || '')}</a>
         <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${b64}')">🤖 Match</button>
         <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${b64}')">✅ Submit</button>
       </div>
       <button class="btn-action btn-toggle-hotlist" style="${btnStyle}" onclick="toggleHotlist('${b64}', this)">${btnText}</button>
     </div>`;
+}
+
+function startLiveCounters() {
+  const update = () => {
+    document.querySelectorAll('.live-counter[data-posted-ms]').forEach(el => {
+      const postedMs = parseInt(el.dataset.postedMs, 10);
+      if (isNaN(postedMs)) return;
+      const diffMs = Date.now() - postedMs;
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+      const diffHr  = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHr / 24);
+      let label = '';
+      if (diffDay >= 1) label = `${diffDay}d ago`;
+      else if (diffHr >= 1) label = `${diffHr}h ago`;
+      else if (diffMin >= 1) label = `${diffMin}m ago`;
+      else label = 'Just now';
+      el.textContent = '🕐 ' + label;
+    });
+  };
+  update();
+  if (window._counterInterval) clearInterval(window._counterInterval);
+  window._counterInterval = setInterval(update, 30000);
 }
 
 // ── AI MATCH MODAL ───────────────────────────────────────────
@@ -1947,33 +1972,24 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   loadBench();
   loadSubmissions();
-  loadSubmissions();
   loadVendors();
   loadSavedJobs();
 
-  // Check User Auth
+  // Set default search values
+  const skillInput = document.getElementById('skillInput');
+  const locationInput = document.getElementById('locationInput');
+  if (skillInput && !skillInput.value) skillInput.value = 'SAP MM';
+  if (locationInput && !locationInput.value) locationInput.value = 'United States of America';
+
+  // Check User Auth & run initial search
   checkSession();
 
-  // Auto poll every 60s
+  // Auto poll every 5 minutes (avoid hammering scrapers)
   setInterval(() => {
     if (CURRENT_USER && CURRENT_USER.id) {
       runSearch(true); // background refresh
     }
-  }, 60000);
-  
-  // Live Ticker for Counters
-  setInterval(() => {
-    document.querySelectorAll('.live-counter').forEach(el => {
-      const ms = parseInt(el.getAttribute('data-posted-ms'));
-      if (!ms) return;
-      const diff = Math.floor((Date.now() - ms) / 1000);
-      const d = Math.floor(diff / 86400);
-      const h = Math.floor((diff % 86400) / 3600);
-      const m = Math.floor((diff % 3600) / 60);
-      const s = diff % 60;
-      el.innerHTML = d > 0 ? `🕐 ${d}d ${h}h ${m}m ago` : `🕐 ${h}h ${m}m ${s}s ago`;
-    });
-  }, 1000);
+  }, 300000);
 });
 
 }
