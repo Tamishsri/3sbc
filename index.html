@@ -762,7 +762,7 @@ let CURRENT_USER = { id: 'admin', role: 'admin' };
 function checkSession() {
   CURRENT_USER = { id: 'admin', role: 'admin' };
   applyRoleBasedUI();
-  runSearch();
+  // runSearch is called by DOMContentLoaded after defaults are set
 }
 
 
@@ -819,8 +819,7 @@ window.fetch = async function() {
   return originalFetch.apply(this, [resource, config]);
 };
 
-// Check session on load
-window.addEventListener('DOMContentLoaded', checkSession);
+// Session is checked inside DOMContentLoaded below
 
 // ── END AUTHENTICATION ENGINE ────────────────────────────────
 
@@ -1073,7 +1072,11 @@ async function runSearch(isBackground = false) {
 
   } catch(e) {
     console.error('[3SBC] Search error:', e);
-    toast('Search complete', 'info');
+    const grid = document.getElementById('kanbanGrid');
+    if (grid && !isBackground) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--rose)"><div style="font-size:2rem;margin-bottom:12px">⚠️</div><div style="font-weight:700;margin-bottom:8px">Search Error</div><div style="color:var(--text-sub);font-size:13px;margin-bottom:16px">' + (e.message || 'API timeout or network error') + '</div><button onclick="runSearch()" style="padding:8px 20px;background:var(--indigo);color:#fff;border:none;border-radius:6px;cursor:pointer">🔄 Try Again</button></div>';
+    }
+    toast('Search failed — click Try Again', 'error');
   } finally {
     if (!isBackground) {
       if (btn) {
@@ -1983,6 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check User Auth & run initial search
   checkSession();
+  runSearch();
 
   // Auto poll every 5 minutes (avoid hammering scrapers)
   setInterval(() => {
