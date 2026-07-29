@@ -1053,7 +1053,7 @@ async function runSearch(isBackground = false) {
   }
 
   try {
-    const cacheParam = isBackground ? '&cache=0' : '';
+    const cacheParam = '&cache=0'; // ALWAYS bypass cache for live demo!
     const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`);
     const data = await res.json();
 
