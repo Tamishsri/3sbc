@@ -3,2036 +3,339 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3SBC — Staffing Intelligence Platform</title>
-
-  <!-- Fonts -->
+  <title>3SBC — Job Finder</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  
-  <!-- Chart.js for Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Inlined Styles -->
   <style>
-/* ============================================================
-   3SBC Staffing Platform — Ultra-Premium SaaS UI
-   Linear / Ashby Inspired, Perfectly Aligned
-   ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0a0a0a;
+    --surface: #111111;
+    --card:    #161616;
+    --border:  #242424;
+    --text:    #ededed;
+    --sub:     #a1a1aa;
+    --muted:   #52525b;
+    --indigo:  #6366f1;
+    --emerald: #10b981;
+    --amber:   #f59e0b;
+    --rose:    #f43f5e;
+    --r:       8px;
+  }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; font-size:14px; }
 
-:root {
-  --bg-page:       #000000;
-  --bg-surface:    #0c0c0c;
-  --bg-card:       #131313;
-  --bg-card-hover: #1a1a1a;
-  --bg-input:      #121212;
+  /* ── NAV ── */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px; height:56px; border-bottom:1px solid var(--border);
+    background:var(--surface); position:sticky; top:0; z-index:100;
+  }
+  .logo { font-size:15px; font-weight:800; letter-spacing:-0.04em; }
+  .logo span { color:var(--indigo); }
 
-  --border:        #262626;
-  --border-bright: #3a3a3a;
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    display:flex; gap:10px; padding:24px 28px 0; flex-wrap:wrap; align-items:flex-end;
+  }
+  .field { display:flex; flex-direction:column; gap:5px; }
+  .field label { font-size:11px; font-weight:600; color:var(--sub); text-transform:uppercase; letter-spacing:0.05em; }
+  .field input, .field select {
+    height:40px; padding:0 12px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r); color:var(--text); font-size:13px; font-family:inherit;
+    outline:none; transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus { border-color:var(--indigo); }
+  .field input { min-width:220px; }
+  .btn-search {
+    height:40px; padding:0 22px; background:var(--indigo); color:#fff; border:none;
+    border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer;
+    transition:opacity .15s; white-space:nowrap;
+  }
+  .btn-search:hover { opacity:.85; }
+  .btn-search:disabled { opacity:.4; cursor:not-allowed; }
 
-  --text-main:     #ededed;
-  --text-sub:      #a1a1aa;
-  --text-muted:    #71717a;
+  /* ── PILLS ── */
+  .presets { display:flex; gap:8px; padding:12px 28px 0; flex-wrap:wrap; }
+  .pill {
+    height:28px; padding:0 12px; background:var(--card); border:1px solid var(--border);
+    border-radius:20px; font-size:12px; color:var(--sub); cursor:pointer;
+    transition:all .15s;
+  }
+  .pill:hover { border-color:var(--indigo); color:var(--indigo); }
 
-  --indigo:        #6366f1;
-  --indigo-hover:  #818cf8;
-  --emerald:       #10b981;
-  --blue:          #3b82f6;
-  --rose:          #f43f5e;
-  --amber:         #f59e0b;
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display:flex; align-items:center; gap:12px; padding:14px 28px;
+    font-size:12px; color:var(--sub);
+  }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .status-dot.green { background:var(--emerald); box-shadow:0 0 6px var(--emerald); }
+  .status-dot.spin { animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  --radius:        8px;
-  --shadow-sm:     0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md:     0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg:     0 12px 32px rgba(0,0,0,0.6);
-}
+  /* ── KANBAN ── */
+  .kanban { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; padding:0 28px 32px; }
+  @media(max-width:900px) { .kanban { grid-template-columns:1fr; } }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-page);
-  color: var(--text-main);
-  line-height: 1.5;
-  font-size: 14px;
-  letter-spacing: -0.01em;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+  .col { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .col-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; border-bottom:1px solid var(--border);
+    background:var(--card);
+  }
+  .col-name { font-size:12px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .col-badge {
+    height:20px; padding:0 8px; border-radius:10px; font-size:11px; font-weight:700;
+    display:flex; align-items:center;
+  }
+  .col-list { padding:10px; display:flex; flex-direction:column; gap:8px; max-height:70vh; overflow-y:auto; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+  /* ── JOB CARD ── */
+  .jcard {
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; transition:border-color .15s;
+  }
+  .jcard:hover { border-color:#3a3a3a; }
+  .jcard-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.4; }
+  .jcard-company { font-size:12px; color:var(--sub); margin-bottom:8px; }
+  .jcard-meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .tag {
+    display:inline-flex; align-items:center; gap:4px; height:20px; padding:0 8px;
+    border-radius:10px; font-size:11px; background:rgba(255,255,255,.04);
+    border:1px solid var(--border); color:var(--sub);
+  }
+  .tag.green { background:rgba(16,185,129,.08); border-color:rgba(16,185,129,.2); color:var(--emerald); }
+  .tag.amber { background:rgba(245,158,11,.08); border-color:rgba(245,158,11,.2); color:var(--amber); }
+  .tag.rose  { background:rgba(244,63,94,.08);  border-color:rgba(244,63,94,.2);  color:var(--rose); }
+  .btn-apply {
+    display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
+    background:var(--indigo); color:#fff; border-radius:6px; font-size:12px;
+    font-weight:600; text-decoration:none; transition:opacity .15s;
+  }
+  .btn-apply:hover { opacity:.8; }
 
-.hidden { display: none !important; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
+  /* ── EMPTY / LOADING ── */
+  .empty { text-align:center; padding:32px 16px; color:var(--muted); font-size:13px; }
+  .sk { background:var(--border); border-radius:4px; animation:sk 1.2s ease-in-out infinite; }
+  @keyframes sk { 0%,100%{opacity:.4} 50%{opacity:.9} }
+  .sk-title { height:14px; width:80%; margin-bottom:8px; }
+  .sk-sub   { height:12px; width:50%; margin-bottom:10px; }
+  .sk-tag   { height:20px; width:60px; border-radius:10px; display:inline-block; margin-right:6px; }
 
-.tab-view {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Toast Notifications */
-#toastContainer {
-  position: fixed; bottom: 24px; right: 24px; z-index: 99999;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.toast {
-  padding: 12px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
-  background: rgba(24, 24, 27, 0.85); border: 1px solid var(--border-bright); color: #fff;
-  backdrop-filter: blur(8px); box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.toast-success { border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
-.toast-error   { border-color: rgba(244, 63, 94, 0.4); color: #fb7185; }
-
-/* ── Top Header Navigation Bar ─────────────────────────────── */
-.top-header {
-  height: 56px; padding: 0 24px; background: rgba(0, 0, 0, 0.6);
-  border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100; gap: 20px; backdrop-filter: blur(12px);
-}
-.logo-area { display: flex; align-items: center; gap: 10px; }
-.logo-badge {
-  width: 28px; height: 28px; background: linear-gradient(135deg, var(--indigo) 0%, #4f46e5 100%);
-  border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px;
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
-}
-.logo-title { font-size: 14px; font-weight: 600; color: #fff; line-height: 1; }
-.logo-sub   { font-size: 10px; color: var(--text-sub); font-weight: 500; margin-top: 2px; }
-
-.nav-tabs { display: flex; align-items: center; gap: 4px; }
-.nav-tab {
-  padding: 6px 12px; border-radius: 6px; border: none; background: transparent;
-  color: var(--text-sub); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap; display: flex; align-items: center; gap: 6px;
-}
-.nav-tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
-.nav-tab.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
-
-.user-area { display: flex; align-items: center; gap: 12px; }
-.user-email { font-size: 12px; color: var(--text-sub); font-weight: 500; }
-
-/* ── Main Container ─────────────────────────────────────────── */
-.main-container {
-  padding: 24px; display: flex; flex-direction: column; gap: 24px; width: 100%;
-}
-
-/* ── Search Container (Perfectly Aligned Inputs) ───────────── */
-.search-container {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 16px;
-  box-shadow: var(--shadow-sm);
-}
-.search-form { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-
-.field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
-.field-label { font-size: 11px; font-weight: 600; color: var(--text-sub); }
-
-.form-input, .form-select {
-  height: 36px; background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: 6px; padding: 0 12px; color: #fff;
-  font-family: inherit; font-size: 13px; outline: none; transition: border 0.2s ease, box-shadow 0.2s ease;
-  width: 100%;
-}
-.form-input:focus, .form-select:focus { border-color: var(--indigo); box-shadow: 0 0 0 1px var(--indigo); }
-.form-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 8px center; background-size: 14px; padding-right: 28px; }
-
-.btn-search-main {
-  height: 36px; padding: 0 20px; background: var(--text-main); border: none;
-  border-radius: 6px; color: #000; font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: all 0.2s ease; white-space: nowrap;
-}
-.btn-search-main:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
-
-/* Quick Search Presets */
-.presets-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
-.preset-pill {
-  background: var(--bg-card); border: 1px solid var(--border); padding: 4px 10px;
-  border-radius: 4px; color: var(--text-sub); font-size: 11px; font-weight: 500;
-  cursor: pointer; font-family: inherit; transition: all 0.2s ease;
-}
-.preset-pill:hover { border-color: var(--text-sub); color: #fff; background: var(--bg-surface); }
-
-/* Rate Intelligence Banner */
-.rate-banner {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), rgba(0,0,0,0)); border-left: 2px solid var(--emerald);
-  padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; color: var(--emerald); font-weight: 500; border-radius: 0 6px 6px 0;
-}
-
-/* ── Kanban Grid Layout ─────────────────────────────────────── */
-.kanban-grid {
-  display: flex; gap: 16px; align-items: start;
-  overflow-x: auto; padding-bottom: 12px;
-}
-.kanban-column {
-  background: transparent; border: none;
-  display: flex; flex-direction: column; max-height: calc(100vh - 220px);
-  min-width: 320px; flex-shrink: 0;
-}
-.kanban-header {
-  padding: 0 4px 12px 4px; display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 600; color: var(--text-main);
-}
-.col-count-badge {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  color: var(--text-sub); font-size: 11px; font-weight: 600;
-  padding: 2px 8px; border-radius: 12px;
-}
-
-.kanban-cards-list {
-  display: flex; flex-direction: column; gap: 12px;
-  overflow-y: auto; flex: 1; padding: 2px;
-}
-
-/* ── Job Cards (Spacious, Beautiful Layout) ──────────────────── */
-.job-card {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); cursor: default;
-  box-shadow: var(--shadow-sm);
-}
-.job-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-
-.job-card-title {
-  font-size: 14px; font-weight: 600; color: #fff; line-height: 1.4;
-  word-break: break-word; letter-spacing: -0.02em;
-}
-.job-card-company { font-size: 12px; font-weight: 500; color: var(--text-sub); display: flex; align-items: center; gap: 6px; }
-
-/* Skeleton Loaders */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-}
-.skeleton-card {
-  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-surface); display: flex; flex-direction: column; gap: 12px;
-}
-.skeleton-text { height: 14px; width: 100%; border-radius: 4px; }
-.skeleton-text.short { width: 60%; }
-.skeleton-title { height: 18px; width: 80%; border-radius: 4px; margin-bottom: 4px; }
-
-.job-card-meta {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500;
-}
-.salary-pill {
-  color: var(--text-main); font-weight: 600; background: var(--bg-input); border: 1px solid var(--border);
-  padding: 2px 6px; border-radius: 4px;
-}
-
-.job-card-actions {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px;
-}
-.btn-action {
-  height: 32px; border-radius: 6px; font-size: 12px; font-weight: 500;
-  cursor: pointer; border: 1px solid transparent; font-family: inherit;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: all 0.2s ease;
-}
-.btn-action-indigo { background: rgba(255,255,255,0.05); color: #fff; border-color: var(--border); }
-.btn-action-indigo:hover { background: rgba(255,255,255,0.1); border-color: var(--border-bright); }
-.btn-action-emerald { background: var(--indigo); color: #fff; }
-.btn-action-emerald:hover { background: var(--indigo-hover); }
-
-/* ── Tables & Views ─────────────────────────────────────────── */
-.table-card {
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow-x: auto; box-shadow: var(--shadow-sm);
-}
-.custom-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 900px; }
-.custom-table th {
-  padding: 12px 16px; font-size: 11px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
-}
-.custom-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text-main); }
-.custom-table tr:last-child td { border-bottom: none; }
-.custom-table tr:hover { background: rgba(255,255,255,0.02); }
-
-/* Modals */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
-}
-.modal-box {
-  background: var(--bg-surface); border: 1px solid var(--border-bright);
-  border-radius: 12px; padding: 24px; width: 100%; max-width: 600px;
-  max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.8);
-}
-.modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-.modal-title { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
-.modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
-.modal-close:hover { color: #fff; }
-
-</style>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#1a1a1a; border:1px solid var(--border); color:var(--text);
+    padding:10px 20px; border-radius:8px; font-size:13px;
+    opacity:0; transition:opacity .3s; pointer-events:none; z-index:9999; white-space:nowrap;
+  }
+  #toast.show { opacity:1; }
+  </style>
 </head>
 <body>
 
+<header>
+  <div class="logo">3<span>S</span>BC — Job Finder</div>
+  <div style="font-size:12px;color:var(--sub)">Live job search · LinkedIn + Dice</div>
+</header>
 
-
-
-<div id="toastContainer"></div>
-
-<!-- MAIN APPLICATION -->
-<div id="mainApp">
-
-  <!-- Top Header Navigation Bar -->
-  <header class="top-header">
-    <div class="logo-area">
-      <div class="logo-badge">3S</div>
-      <div>
-        <div class="logo-title">3SBC Platform</div>
-        <div class="logo-sub">Staffing SaaS</div>
-      </div>
-    </div>
-
-    <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="jobFinder">🔍 Search Jobs</button>
-      <button class="nav-tab" data-tab="savedJobs">⭐ Saved Jobs</button>
-      <button class="nav-tab" data-tab="bench">👥 Bench Pool <span id="navBenchCount">(...)</span></button>
-      <button class="nav-tab" data-tab="submissions">📋 Submissions CRM</button>
-      <button class="nav-tab" data-tab="vendors">📞 Vendor Contacts</button>
-      <button class="nav-tab" data-tab="feedbacks" style="display:none;">💬 Feedbacks</button>
-    </nav>
-
-    <div class="user-area">
-      <span class="user-email" id="userEmailLabel"></span>
-      <button class="btn-action btn-action-indigo" onclick="exportCSV()" style="height:36px;padding:0 14px">📊 Export CSV</button>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="main-container">
-
-    <!-- ════════════════════════════════════════════════════════
-         TAB 1: SEARCH JOBS
-         ════════════════════════════════════════════════════════ -->
-    <section id="jobFinderTab" class="tab-view" style="display:flex;">
-
-
-
-      <!-- Search Form Box -->
-      <div class="search-container">
-        <form class="search-form" id="searchForm">
-          <div class="field-group" style="flex:2">
-            <label class="field-label" for="skillInput">Skill / Role Keyword</label>
-            <input class="form-input" id="skillInput" type="text"  placeholder="e.g. SAP MM, Java Lead, AWS Architect" required/>
-          </div>
-          <div class="field-group" style="flex:1.5">
-            <label class="field-label" for="locationInput">Target Location</label>
-            <input class="form-input" id="locationInput" type="text"  placeholder="e.g. United States of America"/>
-          </div>
-          <div class="field-group" style="max-width:140px">
-            <label class="field-label" for="typeInput">Job Type</label>
-            <select class="form-select" id="typeInput">
-              <option value="contract" selected>Contract (C2C)</option>
-              <option value="contract-w2">Contract (W2)</option>
-              <option value="1099">1099</option>
-              <option value="contract-to-hire">Contract-to-Hire</option>
-              <option value="full-time">Full-Time</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-search-main" id="searchBtn">🔍 Search All 5 Boards</button>
-          <button type="button" class="btn-search-main" id="refreshBtn" style="background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border);" onclick="runSearch(true)">🔄 Force Refresh</button>
-        </form>
-
-        <!-- Quick Presets -->
-        <div class="presets-row">
-          <span style="font-weight:700;color:var(--text-sub)">Quick Presets:</span>
-          <button type="button" class="preset-pill" onclick="preset('SAP MM', 'United States of America')">SAP MM (USA)</button>
-          <button type="button" class="preset-pill" onclick="preset('Java Lead', 'New York, NY')">Java Lead (NYC)</button>
-          <button type="button" class="preset-pill" onclick="preset('AWS Architect', 'Remote')">AWS Architect (Remote)</button>
-          <button type="button" class="preset-pill" onclick="preset('Salesforce', 'Dallas, TX')">Salesforce (Dallas)</button>
-          <button type="button" class="preset-pill" onclick="preset('Data Engineer', 'Chicago, IL')">Data Engineer (Chicago)</button>
-        </div>
-      </div>
-
-      <!-- Rate Intelligence Banner -->
-      <div class="rate-banner hidden" id="rateBanner"></div>
-
-      <!-- Kanban 5 Columns Grid -->
-      <div class="kanban-grid" id="kanbanGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)">
-          Loading live job search...
-        </div>
-      </div>
-
-    </section>
-
-    <!-- ════════════════════════════════════════════════════════
-         TAB 1.5: SAVED JOBS (HOTLIST)
-         ════════════════════════════════════════════════════════ -->
-    <section id="savedJobsTab" class="tab-view" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.02em">⭐ Saved Jobs Hotlist</h2>
-          <p style="font-size:12px;color:var(--text-sub)">Jobs you've saved from the Kanban board for later review.</p>
-        </div>
-        <button class="btn-action btn-action-emerald" onclick="exportSavedJobsCSV()" style="height:36px;padding:0 16px">📊 Export Hotlist</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px" id="savedJobsGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">Loading saved jobs...</div>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════════════════════
-         TAB 2: BENCH POOL
-         ════════════════════════════════════════════════════════ -->
-    <section id="benchTab" class="tab-view" style="display:none;">
-      <div class="search-container" style="padding:16px 20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <input class="form-input" id="benchSearch" type="text" placeholder="🔍 Filter consultant by name, skill, location..." style="max-width:360px" oninput="renderBench()"/>
-          <select class="form-select" id="benchVisa" onchange="renderBench()" style="max-width:200px">
-            <option value="">All Work Authorizations</option>
-            <option value="H1B">H1B Visa</option>
-            <option value="Green Card">Green Card</option>
-            <option value="US Citizen">US Citizen</option>
-            <option value="OPT">OPT / CPT</option>
-          </select>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="font-weight:700;color:var(--indigo)" id="benchCount">63 Consultants</span>
-            <button class="btn-action btn-action-emerald" onclick="openAddCandidateModal()" style="height:36px;padding:0 16px">➕ Add Candidate</button>
-            <button class="btn-action btn-action-indigo" onclick="exportBenchCSV()" style="height:36px;padding:0 16px">📊 Export Bench</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-card">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Consultant Name</th>
-              <th>Target Skill</th>
-              <th>Work Auth</th>
-              <th>Location</th>
-              <th>Pay Rate</th>
-              <th>Match Score</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="benchBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════════════════════
-         TAB 3: SUBMISSIONS CRM
-         ════════════════════════════════════════════════════════ -->
-    <section id="submissionsTab" class="tab-view" style="display:none;">
-      
-      <!-- CRM Dashboard -->
-      <div style="display:grid;grid-template-columns:3fr 1fr;gap:16px;margin-bottom:16px">
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-          <div style="font-size:12px;font-weight:600;color:var(--text-sub);text-transform:uppercase;margin-bottom:12px">Pipeline Analytics</div>
-          <div style="height:140px;width:100%"><canvas id="analyticsChart"></canvas></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;flex:1;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-size:11px;font-weight:600;color:var(--text-sub);text-transform:uppercase">Total Submissions</div>
-            <div style="font-size:28px;font-weight:700;color:#fff" id="crmTotalCount">0</div>
-          </div>
-          <div style="background:linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(99,102,241,0.02) 100%);border:1px solid var(--indigo);border-radius:var(--radius);padding:16px;flex:1;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-size:11px;font-weight:600;color:var(--indigo);text-transform:uppercase">Avg Deal Margin</div>
-            <div style="font-size:28px;font-weight:700;color:#fff" id="crmAvgMargin">$0.00/hr</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.02em">📋 Submissions Queue</h2>
-          <p style="font-size:12px;color:var(--text-sub)">Track submissions from initial outreach to deal placement</p>
-        </div>
-        <button class="btn-action btn-action-emerald" onclick="exportSubmissionsCSV()" style="height:36px;padding:0 16px">📊 Export CSV</button>
-      </div>
-
-      <div class="table-card" style="margin-top:16px">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Consultant</th>
-              <th>Job Title &amp; Company</th>
-              <th>Board Source</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Bill / Pay Rate</th>
-              <th>Margin ($/hr)</th>
-              <th>Vendor Contact</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="submissionsBody">
-            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════════════════════
-         TAB 4: VENDOR CONTACTS
-         ════════════════════════════════════════════════════════ -->
-    <section id="vendorsTab" class="tab-view" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:18px;font-weight:800;color:#fff">📞 Vendor Contact Directory</h2>
-          <p style="font-size:12px;color:var(--text-sub)">Store vendor contacts for auto-filling submissions</p>
-        </div>
-        <button class="btn-search-main" onclick="openVendorModal()">＋ Add Vendor Contact</button>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px" id="vendorGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-sub)">No vendor contacts added yet.</div>
-      </div>
-    </section>
-
-  </main>
+<!-- SEARCH BAR -->
+<div class="search-bar">
+  <div class="field" style="flex:2;min-width:200px">
+    <label>Skill / Role</label>
+    <input id="inp-skill" type="text" placeholder="e.g. SAP MM, Java Lead, AWS Architect" value="SAP MM"/>
+  </div>
+  <div class="field" style="flex:2;min-width:200px">
+    <label>Location</label>
+    <input id="inp-loc" type="text" placeholder="e.g. United States of America" value="United States of America"/>
+  </div>
+  <div class="field">
+    <label>Job Type</label>
+    <select id="inp-type">
+      <option value="contract" selected>Contract (C2C)</option>
+      <option value="contract-w2">Contract (W2)</option>
+      <option value="full-time">Full-Time</option>
+    </select>
+  </div>
+  <button class="btn-search" id="btn-search" onclick="doSearch()">🔍 Search Jobs</button>
 </div>
 
+<!-- QUICK PRESETS -->
+<div class="presets">
+  <span style="font-size:12px;color:var(--muted);line-height:28px">Quick:</span>
+  <button class="pill" onclick="preset('SAP MM','United States of America')">SAP MM (USA)</button>
+  <button class="pill" onclick="preset('SAP FICO','United States of America')">SAP FICO (USA)</button>
+  <button class="pill" onclick="preset('Java Developer','New York, NY')">Java (NYC)</button>
+  <button class="pill" onclick="preset('AWS Architect','Remote')">AWS Architect (Remote)</button>
+  <button class="pill" onclick="preset('Salesforce Developer','Texas')">Salesforce (Texas)</button>
+  <button class="pill" onclick="preset('Data Engineer','Chicago, IL')">Data Eng (Chicago)</button>
+  <button class="pill" onclick="preset('Python Developer','California')">Python (California)</button>
+  <button class="pill" onclick="preset('SAP SD','United States of America')">SAP SD (USA)</button>
+</div>
 
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">Ready to search</span>
+</div>
 
-<!-- ════════════════════════════════════════════════════════
-     MODAL: ADD CANDIDATE
-     ════════════════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="addCandidateModal">
-  <div class="modal-box" style="max-width:550px">
-    <div class="modal-header">
-      <div style="font-size:16px;font-weight:800;color:#fff">➕ Add Candidate to Premium Bench</div>
-      <button class="modal-close" onclick="closeModal('addCandidateModal')">×</button>
+<!-- KANBAN GRID -->
+<div class="kanban" id="kanban">
+  <div class="col">
+    <div class="col-head">
+      <div class="col-name">💼 LinkedIn</div>
+      <div class="col-badge" style="background:rgba(10,102,194,.15);color:#0a66c2">0</div>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;padding:20px">
-      <div style="display:flex;gap:16px">
-        <div class="field-group" style="flex:1">
-          <label class="field-label">Consultant Name *</label>
-          <input type="text" class="form-input" id="acName" placeholder="e.g. John Doe">
-        </div>
-        <div class="field-group" style="flex:1">
-          <label class="field-label">Email *</label>
-          <input type="email" class="form-input" id="acEmail" placeholder="john@example.com">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Primary Skillset *</label>
-        <input type="text" class="form-input" id="acSkill" placeholder="e.g. SAP MM, React Developer">
-      </div>
-      <div style="display:flex;gap:16px">
-        <div class="field-group" style="flex:1">
-          <label class="field-label">Visa Status *</label>
-          <select class="form-select" id="acVisa">
-            <option value="US Citizen">US Citizen</option>
-            <option value="Green Card">Green Card</option>
-            <option value="H1B" selected>H1B</option>
-            <option value="OPT EAD">OPT EAD</option>
-            <option value="CPT">CPT</option>
-            <option value="TN Visa">TN Visa</option>
-          </select>
-        </div>
-        <div class="field-group" style="flex:1">
-          <label class="field-label">Target Rate ($/hr) *</label>
-          <input type="number" class="form-input" id="acPay" placeholder="e.g. 85">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Current Location *</label>
-        <input type="text" class="form-input" id="acLocation" placeholder="e.g. Dallas, TX">
-      </div>
-      
-      <!-- Premium Dropzone for Resume -->
-      <div class="field-group" style="margin-top:10px">
-        <label class="field-label">Resume (PDF) *</label>
-        <div class="dropzone" id="acDropzone" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); transition: all 0.3s;">
-          <div style="font-size: 24px; margin-bottom: 8px;">📄</div>
-          <div id="acDzText" style="font-size:14px; font-weight: 600; color: #fff;">Click to upload Resume</div>
-          <input type="file" id="acFileInput" accept="application/pdf" style="display:none">
-        </div>
-      </div>
-      
-      <button class="btn-search-main" style="width:100%;margin-top:10px" id="acSubmitBtn" onclick="saveCandidate()">🤖 AI Process & Save to Bench</button>
+    <div class="col-list"><div class="empty">Enter a skill and click Search</div></div>
+  </div>
+  <div class="col">
+    <div class="col-head">
+      <div class="col-name">🎲 Dice</div>
+      <div class="col-badge" style="background:rgba(232,93,4,.15);color:#e85d04">0</div>
     </div>
+    <div class="col-list"><div class="empty">Enter a skill and click Search</div></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     MODAL: AI MATCH
-     ════════════════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="matchModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="matchModalTitle">🤖 AI Bench Match</div>
-        <div style="font-size:12px;color:var(--text-sub)" id="matchModalSub"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal('matchModal')">✕</button>
-    </div>
-    <div id="matchList"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:20px">
-      <button class="btn-action btn-action-indigo" onclick="closeModal('matchModal')" style="height:36px;padding:0 16px">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════
-     MODAL: SUBMIT CONSULTANT & DEAL MARGIN
-     ════════════════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="submitModal">
-  <div class="modal-box" style="max-width:640px">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">✅ Submit Consultant &amp; Deal Margin</div>
-        <div style="font-size:12px;color:var(--text-sub)" id="submitModalSub"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal('submitModal')">✕</button>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">Consultant Name *</label>
-          <input class="form-input" id="subConsultant" type="text" placeholder="e.g. Rajitha K."/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Skill</label>
-          <input class="form-input" id="subSkill" type="text" placeholder="e.g. SAP MM"/>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">Location</label>
-          <input class="form-input" id="subLocation" type="text" placeholder="e.g. United States of America"/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Work Auth</label>
-          <select class="form-select" id="subVisa">
-            <option value="H1B">H1B Visa</option>
-            <option value="Green Card">Green Card</option>
-            <option value="US Citizen" selected>US Citizen</option>
-            <option value="OPT">OPT / CPT</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Margin Calculator -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:13px;font-weight:700;color:var(--emerald)">💰 Deal Profitability &amp; Margin Calculator</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="field-group">
-            <label class="field-label">Client Bill Rate ($/hr)</label>
-            <input class="form-input" id="subBill" type="number" placeholder="e.g. 90" oninput="calcMargin()"/>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Consultant Pay Rate ($/hr)</label>
-            <input class="form-input" id="subPay" type="number" placeholder="e.g. 65" oninput="calcMargin()"/>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);padding:10px 14px;border-radius:8px;font-size:13px">
-          <div>Margin: <strong id="marginHr" style="color:var(--emerald)">$25.00/hr</strong> <span id="marginPct" style="color:var(--indigo)">(27.8%)</span></div>
-          <div>Monthly Profit: <strong id="marginMonthly" style="color:var(--amber)">$4,333/mo</strong></div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">Vendor Contact Name</label>
-          <input class="form-input" id="subVendorName" type="text" placeholder="John Smith"/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Vendor Email</label>
-          <input class="form-input" id="subVendorEmail" type="email" placeholder="john@vendor.com"/>
-        </div>
-      </div>
-      
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">Vendor Phone</label>
-          <input class="form-input" id="subVendorPhone" type="text" placeholder="(555) 123-4567"/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Vendor Company</label>
-          <input class="form-input" id="subVendorCompany" type="text" placeholder="e.g. Teksystems, TCS"/>
-        </div>
-      </div>
-      
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">End Client Name</label>
-          <input class="form-input" id="subEndClient" type="text" placeholder="e.g. JP Morgan, Apple"/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Interview Availability</label>
-          <input class="form-input" id="subAvailability" type="text" placeholder="e.g. Any time next Tue/Wed"/>
-        </div>
-      </div>
-      
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field-group">
-          <label class="field-label">Submission Status</label>
-          <select class="form-select" id="subStatus">
-            <option value="Submitted">Submitted to Vendor</option>
-            <option value="Interviewing">Interviewing</option>
-            <option value="Offered">Offered</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Submission Notes</label>
-          <input class="form-input" id="subNotes" type="text" placeholder="e.g. Rate negotiated, available next week"/>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button type="button" class="btn-action btn-action-indigo" onclick="genEmail()" style="height:36px;padding:0 14px">✉️ Draft Vendor Email</button>
-        <button type="button" class="btn-action btn-action-emerald" onclick="genResumePresentation()" style="height:36px;padding:0 14px">📄 Client Presentation Sheet</button>
-      </div>
-
-      <div id="emailDraftBox" class="hidden" style="background:var(--bg-input);border:1px solid var(--border);padding:14px;border-radius:8px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--text-sub);max-height:180px;overflow-y:auto"></div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
-      <button class="btn-action btn-action-indigo" onclick="closeModal('submitModal')" style="height:38px;padding:0 18px">Cancel</button>
-      <button class="btn-action btn-action-emerald" onclick="confirmSubmit()" style="height:38px;padding:0 18px">✅ Confirm &amp; Log Submission</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: VENDOR -->
-<div class="modal-overlay hidden" id="vendorModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">📞 Add Vendor Contact</div>
-      <button class="modal-close" onclick="closeModal('vendorModal')">✕</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <input class="form-input" id="vName" placeholder="Contact Name *"/>
-      <input class="form-input" id="vCompany" placeholder="Company Name *"/>
-      <input class="form-input" id="vEmail" placeholder="Email Address"/>
-      <input class="form-input" id="vPhone" placeholder="Phone Number"/>
-      <select class="form-select" id="vTier">
-        <option value="" disabled selected>Select Vendor Tier</option>
-        <option value="Direct Client">Direct Client</option>
-        <option value="Tier 1">Tier 1 Partner</option>
-        <option value="Implementation Partner">Implementation Partner</option>
-        <option value="Other">Other</option>
-      </select>
-      <input class="form-input" id="vTech" placeholder="Preferred Technologies (e.g. SAP, AWS)"/>
-      <input class="form-input" id="vNotes" placeholder="Additional Notes (e.g. Fast payer, Net 30)"/>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
-      <button class="btn-action btn-action-indigo" onclick="closeModal('vendorModal')" style="height:36px;padding:0 16px">Cancel</button>
-      <button class="btn-action btn-action-emerald" onclick="saveVendor()" style="height:36px;padding:0 16px">Save Contact</button>
-    </div>
-  </div>
-</div>
+<div id="toast"></div>
 
 <script>
-window.EMBEDDED_CANDIDATES = [];
-</script>
-<script>
-/**
- * app.js — 3SBC Staffing Platform Controller
- * Perfectly aligned card layout & instant 5-column job rendering
- */
-
-
-
-// ── AUTHENTICATION ENGINE ────────────────────────────────────
-
-let CURRENT_USER = { id: 'admin', role: 'admin' };
-
-function checkSession() {
-  CURRENT_USER = { id: 'admin', role: 'admin' };
-  applyRoleBasedUI();
-  // runSearch is called by DOMContentLoaded after defaults are set
-}
-
-
-function logout() {
-  localStorage.removeItem('3sbc_user');
-  location.reload();
-}
-
-function applyRoleBasedUI() {
-  const isAdmin = CURRENT_USER.role === 'admin';
-  
-  // Set the navbar name to the logged in user
-  const emailLabel = document.getElementById('userEmailLabel');
-  if (emailLabel) {
-    emailLabel.textContent = CURRENT_USER.role === 'admin' ? "Admin Mode" : CURRENT_USER.id;
-  }
-  
-  // Hide restricted tabs from employees
-  const feedbacksBtn = document.querySelector('button[data-tab="feedbacks"]');
-  const vendorsBtn = document.querySelector('button[data-tab="vendors"]');
-  if (feedbacksBtn) feedbacksBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-  if (vendorsBtn) vendorsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-  
-  }
-}
-
-// Intercept global fetch calls to append user_id if needed
-const originalFetch = window.fetch;
-window.fetch = async function() {
-  let [resource, config] = arguments;
-  
-  if (typeof resource === 'string' && resource.startsWith('/api/')) {
-    // Inject user_id into GET query params
-    if (!config || !config.method || config.method === 'GET') {
-      const url = new URL(resource, window.location.origin);
-      url.searchParams.append('user_id', CURRENT_USER.id);
-      if (CURRENT_USER.role === 'admin') {
-        url.searchParams.append('is_admin', 'true');
-      }
-      resource = url.toString();
-    } 
-    // Inject user_id into POST JSON body
-    else if (config.method === 'POST') {
-      if (config.body && typeof config.body === 'string') {
-        try {
-          const bodyObj = JSON.parse(config.body);
-          if (!bodyObj.user_id) bodyObj.user_id = CURRENT_USER.id;
-          config.body = JSON.stringify(bodyObj);
-        } catch(e) {}
-      }
-    }
-  }
-  
-  return originalFetch.apply(this, [resource, config]);
+const BOARD_META = {
+  linkedin: { name:'LinkedIn', icon:'💼', color:'#0a66c2', bg:'rgba(10,102,194,.15)' },
+  dice:     { name:'Dice',     icon:'🎲', color:'#e85d04', bg:'rgba(232,93,4,.15)' },
 };
 
-// Session is checked inside DOMContentLoaded below
+function esc(s){ const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
 
-// ── END AUTHENTICATION ENGINE ────────────────────────────────
-
-// ── FEEDBACK ENGINE ──────────────────────────────────────────
-
-function openFeedbackModal() {
-  document.getElementById('feedbackText').value = '';
-  document.getElementById('feedbackImage').value = '';
-  document.getElementById('feedbackModal').classList.remove('hidden');
+function toast(msg, dur=3500){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), dur);
 }
 
-function closeFeedbackModal() {
-  document.getElementById('feedbackModal').classList.add('hidden');
+function setStatus(state, text){
+  const dot=document.getElementById('status-dot');
+  const txt=document.getElementById('status-text');
+  dot.className='status-dot' + (state==='loading'?' spin' : state==='ok'?' green' : '');
+  txt.textContent=text;
 }
 
-async function processFeedbackImage() {
-  const fileInput = document.getElementById('feedbackImage');
-  if (!fileInput.files || fileInput.files.length === 0) return "";
-  
-  const file = fileInput.files[0];
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.getElementById('feedbackCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let width = img.width;
-        let height = img.height;
-        const max_dim = 800; // Resize to max 800px
-        
-        if (width > height) {
-          if (width > max_dim) {
-            height *= max_dim / width;
-            width = max_dim;
-          }
-        } else {
-          if (height > max_dim) {
-            width *= max_dim / height;
-            height = max_dim;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Output base64 JPEG at 70% quality to ensure <1MB
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(dataUrl);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+function preset(skill, loc){
+  document.getElementById('inp-skill').value = skill;
+  document.getElementById('inp-loc').value   = loc;
+  doSearch();
 }
 
-async function submitFeedback() {
-  const text = document.getElementById('feedbackText').value.trim();
-  const btn = document.getElementById('btnSubmitFeedback');
-  
-  if (!text) {
-    toast("Please enter some feedback.", "error");
-    return;
-  }
-  
+function skeleton(){
+  return [1,2,3].map(()=>`
+    <div class="jcard">
+      <div class="sk sk-title"></div>
+      <div class="sk sk-sub"></div>
+      <div><span class="sk sk-tag"></span><span class="sk sk-tag"></span></div>
+    </div>`).join('');
+}
+
+function dayColor(n){
+  if(n===0) return 'green';
+  if(n<=2)  return 'amber';
+  return 'rose';
+}
+
+function renderCard(j){
+  const dc = dayColor(j.days_ago||0);
+  const sal = j.salary && j.salary.trim() ? `<span class="tag">${esc(j.salary)}</span>` : '';
+  return `
+    <div class="jcard">
+      <div class="jcard-title">${esc(j.title)}</div>
+      <div class="jcard-company">🏢 ${esc(j.company||'Company')}</div>
+      <div class="jcard-meta">
+        <span class="tag">📍 ${esc(j.location||'USA')}</span>
+        <span class="tag ${dc}">🕐 ${esc(j.posted||'Today')}</span>
+        ${sal}
+      </div>
+      <a class="btn-apply" href="${esc(j.apply_url||j.url||'#')}" target="_blank" rel="noopener">
+        Apply on ${esc(j.board_label)} ↗
+      </a>
+    </div>`;
+}
+
+function renderBoard(key, jobs){
+  const meta = BOARD_META[key];
+  const list = jobs.length
+    ? jobs.map(j=>renderCard(j)).join('')
+    : `<div class="empty">No jobs found on ${meta.name} for this search</div>`;
+  return `
+    <div class="col">
+      <div class="col-head">
+        <div class="col-name">${meta.icon} ${meta.name}</div>
+        <div class="col-badge" style="background:${meta.bg};color:${meta.color}">${jobs.length}</div>
+      </div>
+      <div class="col-list">${list}</div>
+    </div>`;
+}
+
+async function doSearch(){
+  const skill    = document.getElementById('inp-skill').value.trim() || 'SAP MM';
+  const location = document.getElementById('inp-loc').value.trim()   || 'United States of America';
+  const jobType  = document.getElementById('inp-type').value;
+  const btn      = document.getElementById('btn-search');
+  const kanban   = document.getElementById('kanban');
+
   btn.disabled = true;
-  btn.textContent = "Uploading...";
-  
-  try {
-    const base64Image = await processFeedbackImage();
-    
-    const res = await fetch('/api/feedbacks', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        text: text,
-        image_b64: base64Image
-      })
-    });
-    
-    if (res.ok) {
-      toast("Feedback submitted successfully!", "success");
-      closeFeedbackModal();
-    } else {
-      toast("Failed to submit feedback.", "error");
-    }
-  } catch (err) {
-    console.error(err);
-    toast("Error submitting feedback.", "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Submit Feedback";
-  }
-}
+  btn.textContent = '⏳ Searching…';
+  setStatus('loading', `Searching live jobs for "${skill}" in ${location}…`);
 
-async function renderFeedbacks() {
-  const list = document.getElementById('feedbacksList');
-  if (!list) return;
-  list.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-sub);">Loading feedbacks...</div>';
-  
-  try {
-    const res = await fetch('/api/feedbacks');
-    const data = await res.json();
-    
-    if (!data || data.length === 0) {
-      list.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-sub);">No feedbacks found.</div>';
-      return;
-    }
-    
-    list.innerHTML = data.map(f => `
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.85rem; color:var(--text-sub);">${f.created_at_iso || ''}</span>
-          <span style="font-size:0.8rem; background:var(--bg-body); padding:2px 8px; border-radius:12px;">ID: ${f.id}</span>
-        </div>
-        <p style="color:var(--text-main); line-height:1.5; white-space:pre-wrap; margin:0;">${esc(f.text)}</p>
-        ${f.image_b64 ? `<div style="margin-top:0.5rem;"><a href="${f.image_b64}" target="_blank"><img src="${f.image_b64}" style="max-width:300px; max-height:300px; border-radius:8px; border:1px solid var(--border); cursor:pointer;" alt="Feedback Screenshot" /></a></div>` : ''}
+  // Show skeletons
+  kanban.innerHTML = Object.entries(BOARD_META).map(([k,m])=>`
+    <div class="col">
+      <div class="col-head">
+        <div class="col-name">${m.icon} ${m.name}</div>
+        <div class="col-badge" style="background:${m.bg};color:${m.color}">…</div>
       </div>
-    `).join('');
-  } catch (err) {
-    list.innerHTML = '<div style="text-align:center; padding:3rem; color:red;">Failed to load feedbacks.</div>';
-  }
-}
-
-const STATE = {
-  candidates:  [],
-  submissions: [],
-  vendors:     [],
-  savedJobs:   [],
-  jobResults:  {},
-  pendingJob:  null,
-  chartInst:   null,
-};
-
-function toast(msg, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.textContent = msg;
-  container.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-function esc(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// ── TABS NAVIGATION ───────────────────────────────────────────
-function setupTabs() {
-  document.querySelectorAll('.nav-tab').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-  });
-}
-
-function switchTab(tabId) {
-  document.querySelectorAll('.nav-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tabId);
-  });
-  document.querySelectorAll('.tab-view').forEach(p => {
-    const isTarget = p.id === tabId + 'Tab';
-    p.style.display = isTarget ? 'flex' : 'none';
-  });
-
-  if (tabId === 'bench') renderBench();
-  if (tabId === 'feedbacks') renderFeedbacks();
-  if (tabId === 'submissions') renderSubmissions();
-  if (tabId === 'vendors') renderVendors();
-  if (tabId === 'savedJobs') renderSavedJobs();
-}
-
-// ── JOB FINDER ENGINE ─────────────────────────────────────────
-function setupSearch() {
-  const form = document.getElementById('searchForm');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      runSearch();
-    });
-  }
-}
-
-function preset(skill, location) {
-  document.getElementById('skillInput').value = skill;
-  document.getElementById('locationInput').value = location;
-  runSearch();
-}
-
-async function runSearch(isBackground = false) {
-  const skill    = document.getElementById('skillInput')?.value.trim() || 'SAP MM';
-  const location = document.getElementById('locationInput')?.value.trim() || 'United States of America';
-  const jobType  = document.getElementById('typeInput')?.value || 'contract';
-  const btn      = document.getElementById('searchBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
-
-  if (!isBackground) {
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = '⏳ Searching...';
-    }
-    if (refreshBtn) refreshBtn.disabled = true;
-
-    const grid = document.getElementById('kanbanGrid');
-    if (grid) {
-      // Elegant Skeleton Loading State
-      const columns = ['LinkedIn', 'Dice', 'Indeed', 'ZipRecruiter', 'Monster'];
-      grid.innerHTML = columns.map(c => `
-        <div class="kanban-column">
-          <div class="kanban-header">
-            <div style="display:flex;align-items:center;gap:6px">${c}</div>
-          </div>
-          <div class="kanban-cards-list">
-            ${[1, 2, 3].map(() => `
-              <div class="skeleton-card">
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text short"></div>
-                <div class="skeleton skeleton-text"></div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `).join('');
-    }
-  }
+      <div class="col-list">${skeleton()}</div>
+    </div>`).join('');
 
   try {
-    const cacheParam = '&cache=0'; // ALWAYS bypass cache for live results!
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s browser timeout
-    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`, { signal: controller.signal });
-    clearTimeout(timeoutId);
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 50000);
+    const res  = await fetch(
+      `/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${encodeURIComponent(jobType)}&cache=0`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(tid);
+
+    if(!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
 
-    STATE.jobResults = data.boards || {};
-    renderKanban(data);
-
-    if (data.rate_intelligence && data.rate_intelligence.display) {
-      const banner = document.getElementById('rateBanner');
-      if (banner) {
-        banner.classList.remove('hidden');
-        banner.innerHTML = `<span>💰 Live Market Rate Intelligence: <strong>${esc(data.rate_intelligence.display)}</strong></span>`;
-      }
-    }
+    const boards = data.boards || {};
+    kanban.innerHTML = Object.keys(BOARD_META).map(k => renderBoard(k, boards[k]||[])).join('');
 
     const total = data.total || 0;
-    toast(`Found ${total} real jobs! LinkedIn: ${(data.boards?.linkedin||[]).length}, Dice: ${(data.boards?.dice||[]).length}, Indeed: ${(data.boards?.indeed||[]).length}, Zip: ${(data.boards?.ziprecruiter||[]).length}, Monster: ${(data.boards?.monster||[]).length}`, 'success');
+    setStatus('ok', `Found ${total} real jobs in ${data.elapsed||'?'}s — LinkedIn: ${(boards.linkedin||[]).length}  |  Dice: ${(boards.dice||[]).length}`);
+    toast(`✅ ${total} jobs found!`);
 
-  } catch(e) {
-    console.error('[3SBC] Search error:', e);
-    const grid = document.getElementById('kanbanGrid');
-    if (grid && !isBackground) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--rose)"><div style="font-size:2rem;margin-bottom:12px">⚠️</div><div style="font-weight:700;margin-bottom:8px">Search Error</div><div style="color:var(--text-sub);font-size:13px;margin-bottom:16px">' + (e.message || 'API timeout or network error') + '</div><button onclick="runSearch()" style="padding:8px 20px;background:var(--indigo);color:#fff;border:none;border-radius:6px;cursor:pointer">🔄 Try Again</button></div>';
-    }
-    toast('Search failed — click Try Again', 'error');
-  } finally {
-    if (!isBackground) {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = '🔍 Search Jobs';
-      }
-      if (refreshBtn) refreshBtn.disabled = false;
-    }
-  }
-}
-
-function renderKanban(data) {
-  const grid = document.getElementById('kanbanGrid');
-  if (!grid) return;
-
-  const BOARD_META = {
-    linkedin:     { name: 'LinkedIn',     icon: '💼', color: '#0a66c2', base: 'https://www.linkedin.com/jobs' },
-    dice:         { name: 'Dice',         icon: '🎲', color: '#e85d04', base: 'https://www.dice.com/jobs' },
-    indeed:       { name: 'Indeed',       icon: '🔍', color: '#2164f3', base: 'https://www.indeed.com/jobs' },
-    ziprecruiter: { name: 'ZipRecruiter', icon: '📋', color: '#4caf50', base: 'https://www.ziprecruiter.com/jobs-search' },
-    monster:      { name: 'Monster',      icon: '👾', color: '#6d28d9', base: 'https://www.monster.com/jobs/search' },
-  };
-
-  const boardsData = data.boards || {};
-  const skill = data.search?.skill || '';
-  const location = data.search?.location || '';
-
-  grid.innerHTML = Object.entries(BOARD_META).map(([key, meta]) => {
-    const jobs = (boardsData[key] || []);
-    // Sort ascending by days_ago (newest first)
-    const sorted = [...jobs].sort((a, b) => (a.days_ago || 0) - (b.days_ago || 0));
-    const emptyMsg = jobs.length === 0
-      ? `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">No live jobs found.<br><a href="${meta.base}?q=${encodeURIComponent(skill)}&l=${encodeURIComponent(location)}" target="_blank" style="color:var(--indigo);text-decoration:underline">Search on ${meta.name} →</a></div>`
-      : '';
-    return `
-      <div class="kanban-column">
-        <div class="kanban-header" style="border-bottom:2px solid ${meta.color}22">
-          <span style="display:flex;align-items:center;gap:6px">${meta.icon} ${meta.name}</span>
-          <span class="col-count-badge" style="background:${meta.color}22;color:${meta.color}">${sorted.length}</span>
-        </div>
-        <div class="kanban-cards-list">
-          ${emptyMsg}
-          ${sorted.map(j => renderCard(j, meta)).join('')}
-        </div>
-      </div>`;
-  }).join('');
-
-  // Start live counters
-  startLiveCounters();
-}
-
-function renderCard(j, meta) {
-  const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
-  const isSaved = (STATE.savedJobs || []).some(sj => sj.url === j.url);
-  const cardStyle = isSaved ? 'border: 1px solid var(--emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);' : '';
-  const btnStyle = isSaved
-    ? 'width:100%;margin-top:8px;background:rgba(16, 185, 129, 0.1);color:var(--emerald);border:1px solid var(--emerald);font-size:12px;transition:all 0.3s ease'
-    : 'width:100%;margin-top:8px;background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid rgba(255,255,255,0.1);font-size:12px;transition:all 0.3s ease';
-  const btnText = isSaved ? '✅ Saved' : '⭐ Save to Hotlist';
-
-  // Compute REAL timestamp from days_ago
-  const daysAgo = typeof j.days_ago === 'number' ? j.days_ago : 0;
-  const postedMs = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
-  let postedColor = 'var(--text-sub)';
-  if (daysAgo === 0) postedColor = 'var(--emerald)';
-  else if (daysAgo === 1) postedColor = 'var(--amber)';
-  else postedColor = 'var(--rose)';
-
-  // Only show salary if we have a real value
-  const salaryHtml = j.salary && j.salary.trim() !== ''
-    ? `<span class="salary-pill">${esc(j.salary)}</span>`
-    : '';
-
-  // Apply URL - use the job's URL directly (it points to the right board)
-  const applyUrl = j.url && j.url !== '#' ? esc(j.url) : (meta ? `${meta.base}?q=${encodeURIComponent(j.title)}` : '#');
-
-  return `
-    <div class="job-card" data-job-url="${esc(j.url)}" style="${cardStyle}">
-      <div class="job-card-title">${esc(j.title)}</div>
-      <div class="job-card-company">🏢 ${esc(j.company || 'Company Not Listed')}</div>
-      <div class="job-card-meta">
-        <span>📍 ${esc(j.location || 'USA')}</span>
-        <span style="color:${postedColor};font-weight:700" class="live-counter" data-posted-ms="${postedMs}">🕐 ${esc(j.posted || 'Recently')}</span>
-        ${salaryHtml}
-      </div>
-      <div class="job-card-actions">
-        <a href="${applyUrl}" target="_blank" rel="noopener" class="btn-action btn-action-indigo" style="text-decoration:none;font-size:11px">🔗 Apply on ${esc(j.board_label || '')}</a>
-        <button type="button" class="btn-action btn-action-indigo" onclick="openMatchModal('${b64}')">🤖 Match</button>
-        <button type="button" class="btn-action btn-action-emerald" onclick="openSubmitModal('${b64}')">✅ Submit</button>
-      </div>
-      <button class="btn-action btn-toggle-hotlist" style="${btnStyle}" onclick="toggleHotlist('${b64}', this)">${btnText}</button>
+  } catch(err){
+    console.error(err);
+    kanban.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--rose)">
+      <div style="font-size:2rem;margin-bottom:12px">⚠️</div>
+      <div style="font-weight:700;margin-bottom:8px">Search Failed</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:16px">${esc(err.message)}</div>
+      <button onclick="doSearch()" style="padding:8px 20px;background:var(--indigo);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🔄 Try Again</button>
     </div>`;
-}
-
-function startLiveCounters() {
-  const update = () => {
-    document.querySelectorAll('.live-counter[data-posted-ms]').forEach(el => {
-      const postedMs = parseInt(el.dataset.postedMs, 10);
-      if (isNaN(postedMs)) return;
-      const diffMs = Date.now() - postedMs;
-      const diffSec = Math.floor(diffMs / 1000);
-      const diffMin = Math.floor(diffSec / 60);
-      const diffHr  = Math.floor(diffMin / 60);
-      const diffDay = Math.floor(diffHr / 24);
-      let label = '';
-      if (diffDay >= 1) label = `${diffDay}d ago`;
-      else if (diffHr >= 1) label = `${diffHr}h ago`;
-      else if (diffMin >= 1) label = `${diffMin}m ago`;
-      else label = 'Just now';
-      el.textContent = '🕐 ' + label;
-    });
-  };
-  update();
-  if (window._counterInterval) clearInterval(window._counterInterval);
-  window._counterInterval = setInterval(update, 30000);
-}
-
-// ── AI MATCH MODAL ───────────────────────────────────────────
-async function openMatchModal(b64) {
-  const job = JSON.parse(decodeURIComponent(atob(b64)));
-  STATE.pendingJob = job;
-
-  document.getElementById('matchModalTitle').textContent = `🤖 AI Bench Match — ${job.title}`;
-  document.getElementById('matchModalSub').textContent = `${job.company} · ${job.location}`;
-
-  const list = document.getElementById('matchList');
-  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sub)">Matching candidates...</div>';
-  document.getElementById('matchModal').classList.remove('hidden');
-
-  try {
-    const availableCandidates = STATE.candidates.filter(c => (c.Status || 'Available') !== 'Placed');
-    
-    const res  = await fetch('/api/jobs/match', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ job, candidates: availableCandidates }),
-    });
-    const data = await res.json();
-    renderMatches(data.matches || []);
-  } catch(e) {
-    list.innerHTML = '<div style="padding:10px;color:var(--rose)">Could not load matches.</div>';
-  }
-}
-
-function renderMatches(matches) {
-  const list = document.getElementById('matchList');
-  if (!list) return;
-
-  list.innerHTML = matches.map(m => `
-    <div style="background:var(--bg-card);border:1px solid var(--border);padding:14px;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-weight:700;color:#fff">${esc(m.name)} <span style="color:var(--emerald);font-size:13px;font-weight:800">(${m.fit_score}%)</span></div>
-        <div style="font-size:12px;color:var(--indigo);font-weight:600">${esc(m.skill)} · ${esc(m.location)}</div>
-        ${m.Resume_URL ? `<a href="${m.Resume_URL}" target="_blank" style="font-size:11px;color:var(--emerald);text-decoration:none;">📄 View Resume</a>` : ''}
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-action" style="height:34px;padding:0 14px;background:rgba(99,102,241,0.1);color:var(--indigo);border:1px solid rgba(99,102,241,0.3)" onclick="triggerAutoForward('${esc(m.name)}', '${esc(m.skill)}', '${esc(m.Resume_URL || "")}', '${esc(m.Email || "")}')">⚡ Auto-Forward</button>
-        <button class="btn-action btn-action-emerald" style="height:34px;padding:0 14px" onclick="selectMatch('${esc(m.name)}','${esc(m.skill)}','${esc(m.location)}')">Select →</button>
-      </div>
-    </div>`).join('') || '<div style="color:var(--text-sub)">No matches found.</div>';
-}
-
-async function triggerAutoForward(candName, candSkill, resumeUrl, candEmail) {
-  const vendorEmail = prompt(`Enter Vendor Email address to forward ${candName}'s profile to:`);
-  if (!vendorEmail) return;
-
-  toast('Generating AI emails and forwarding...', 'info');
-  const payload = {
-    job: STATE.pendingJob,
-    candidate: { name: candName, skill: candSkill, Resume_URL: resumeUrl, Email: candEmail },
-    vendor_email: vendorEmail
-  };
-
-  try {
-    const res = await fetch('/api/submissions/forward', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(data.success) {
-      toast('✅ Emails Sent & Logged to CRM!', 'success');
-      loadSubmissions();
-    } else {
-      toast('Failed to forward: ' + data.error, 'error');
-    }
-  } catch(e) {
-    toast('Network error during Auto-Forward.', 'error');
-  }
-}
-
-function selectMatch(name, skill, loc) {
-  closeModal('matchModal');
-  if (STATE.pendingJob) openSubmitModalWithCandidate(STATE.pendingJob, name, skill, loc);
-}
-
-// ── SUBMIT MODAL ──────────────────────────────────────────────
-function openSubmitModal(b64) {
-  const job = JSON.parse(decodeURIComponent(atob(b64)));
-  openSubmitModalWithCandidate(job, '', '', '');
-}
-
-function openSubmitModalWithCandidate(job, name, skill, loc) {
-  STATE.pendingJob = job;
-  document.getElementById('submitModalSub').textContent = `${job.title} at ${job.company}`;
-  document.getElementById('subConsultant').value = name || '';
-  document.getElementById('subSkill').value = skill || '';
-  document.getElementById('subLocation').value = loc || '';
-  document.getElementById('subBill').value = '90';
-  document.getElementById('subPay').value = '65';
-  document.getElementById('subVendorName').value = '';
-  document.getElementById('subVendorEmail').value = '';
-
-  calcMargin();
-  document.getElementById('emailDraftBox').classList.add('hidden');
-  document.getElementById('submitModal').classList.remove('hidden');
-}
-
-function calcMargin() {
-  const bill = parseFloat(document.getElementById('subBill')?.value || 90);
-  const pay  = parseFloat(document.getElementById('subPay')?.value || 65);
-  const margin = Math.max(bill - pay, 0);
-  const pct = bill > 0 ? ((margin / bill) * 100).toFixed(1) : 0;
-  const monthly = Math.round(margin * 173.3);
-
-  document.getElementById('marginHr').textContent = `$${margin.toFixed(2)}/hr`;
-  document.getElementById('marginPct').textContent = `(${pct}%)`;
-  document.getElementById('marginMonthly').textContent = `$${monthly.toLocaleString()}/mo`;
-}
-
-async function genEmail() {
-  const job    = STATE.pendingJob;
-  const cName  = document.getElementById('subConsultant').value.trim();
-  const cSkill = document.getElementById('subSkill').value.trim();
-  const cBill  = document.getElementById('subBill').value.trim();
-  const cVisa  = document.getElementById('subVisa')?.value || 'H1B';
-  const vName  = document.getElementById('subVendorName').value.trim();
-  const vEmail = document.getElementById('subVendorEmail').value.trim();
-
-  const box = document.getElementById('emailDraftBox');
-  box.textContent = '✨ Generating professional email with Gemini AI...';
-  box.classList.remove('hidden');
-
-  try {
-    const res = await fetch('/api/submissions/email', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ 
-        consultant: { name: cName, skill: cSkill, rate: cBill, visa: cVisa }, 
-        job, 
-        vendor: { name: vName, email: vEmail } 
-      }),
-    });
-    const data = await res.json();
-    box.textContent = data.body || '';
-    if (data.ai_powered) toast('✨ Email drafted by Gemini AI', 'success');
-  } catch(e) {
-    box.textContent = '';
-    box.classList.add('hidden');
-    toast('Could not generate email', 'error');
-  }
-}
-
-async function genResumePresentation() {
-  const cName  = document.getElementById('subConsultant').value.trim() || 'Consultant';
-  const cSkill = document.getElementById('subSkill').value.trim() || 'SAP MM';
-  const cLoc   = document.getElementById('subLocation').value.trim() || 'United States of America';
-  const cVisa  = document.getElementById('subVisa')?.value || 'H1B';
-  const cBill  = document.getElementById('subBill').value.trim();
-  const job    = STATE.pendingJob || {};
-
-  const box = document.getElementById('emailDraftBox');
-  box.textContent = '✨ Generating candidate presentation sheet with Gemini AI...';
-  box.classList.remove('hidden');
-
-  try {
-    const res = await fetch('/api/candidates/format-resume', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ 
-        name: cName, skill: cSkill, location: cLoc, visa: cVisa, rate: cBill,
-        job_title: job.title || '', job_company: job.company || ''
-      }),
-    });
-    const data = await res.json();
-    box.textContent = data.resume_summary || '';
-    if (data.ai_powered) toast('✨ Presentation Sheet by Gemini AI — ready to send to client!', 'success');
-    else toast('📄 Presentation Sheet generated!', 'success');
-  } catch(e) {
-    box.textContent = '';
-    box.classList.add('hidden');
-    toast('Could not generate presentation sheet', 'error');
-  }
-}
-
-async function confirmSubmit() {
-  const job   = STATE.pendingJob;
-  const cName = document.getElementById('subConsultant').value.trim();
-  const bill  = document.getElementById('subBill').value.trim();
-  const pay   = document.getElementById('subPay').value.trim();
-  const vEmail = document.getElementById('subVendorEmail').value.trim();
-  const vName = document.getElementById('subVendorName').value.trim();
-  const vPhone = document.getElementById('subVendorPhone').value.trim();
-  const vCompany = document.getElementById('subVendorCompany').value.trim();
-  const endClient = document.getElementById('subEndClient').value.trim();
-  const availability = document.getElementById('subAvailability').value.trim();
-  const status = document.getElementById('subStatus').value;
-  const notes = document.getElementById('subNotes').value.trim();
-
-  if (!cName || !job) {
-    toast('Enter consultant name', 'error');
-    return;
-  }
-
-  const marginHr = (parseFloat(bill) - parseFloat(pay)).toFixed(2);
-  const payload = {
-    consultant_name: cName,
-    job_id: job.id || job.url,
-    job_title: job.title,
-    company: job.company,
-    board: job.board,
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    status: status,
-    notes: notes,
-    bill_rate: bill,
-    pay_rate: pay,
-    margin_hr: marginHr,
-    vendor_email: vEmail,
-    vendor_name: vName,
-    vendor_phone: vPhone,
-    vendor_company: vCompany,
-    end_client: endClient,
-    availability: availability
-  };
-
-  try {
-    await fetch('/api/submissions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    // Add locally for instant UI update
-    STATE.submissions.unshift(payload);
-    toast(`✅ ${cName} submitted to ${job.company}!`, 'success');
-    closeModal('submitModal');
-    renderSubmissions();
-  } catch(e) {
-    toast('Failed to remove consultant', 'error');
-  }
-}
-
-async function markPlaced(id) {
-  if (!id) return;
-  if (!confirm('Mark this consultant as Placed? They will be removed from the Bench Pool.')) return;
-  try {
-    const res = await fetch(`/api/candidates/${id}/status`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({status: 'Placed'})
-    });
-    const result = await res.json();
-    if (result.success) {
-      toast('Consultant marked as Placed!', 'success');
-      // Update local state instantly
-      const c = STATE.candidates.find(x => (x._doc_id || x.id) === id);
-      if (c) c.Status = 'Placed';
-      renderBench();
-    } else {
-      toast(result.error || 'Failed to update status', 'error');
-    }
-  } catch(e) {
-    toast('API error', 'error');
-  }
-}
-
-// ── UTILS ──────────────────────────────────────────────────────
-async function loadBench() {
-  if (window.EMBEDDED_CANDIDATES && window.EMBEDDED_CANDIDATES.length > 0) {
-    STATE.candidates = window.EMBEDDED_CANDIDATES;
-  } else {
-    try {
-      const res = await fetch('/api/candidates');
-      STATE.candidates = await res.json();
-    } catch(e) {}
-  }
-  renderBench();
-}
-
-function renderBench() {
-  const tbody = document.getElementById('benchBody');
-  if (!tbody) return;
-
-  const query = (document.getElementById('benchSearch')?.value || '').toLowerCase();
-  const visa  = document.getElementById('benchVisa')?.value || '';
-
-  const list = STATE.candidates.filter(c => {
-    const name  = (c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || '').toLowerCase();
-    const skill = (c['Target Skill (AREA)'] || c['AREA'] || '').toLowerCase();
-    const loc   = (c['Target Location'] || c['Location'] || '').toLowerCase();
-    const v     = (c['Visa'] || 'H1B').toLowerCase();
-    const vRaw  = c['Visa'] || 'H1B';
-    const status = c['Status'] || 'Available';
-    return status !== 'Placed' && (!query || name.includes(query) || skill.includes(query) || loc.includes(query) || v.includes(query)) && (!visa || vRaw === visa);
-  });
-
-  document.getElementById('benchCount').textContent = `${list.length} Consultants`;
-
-  tbody.innerHTML = list.map(c => `
-    <tr>
-      <td style="font-weight:700;color:#fff">${esc(c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || 'Consultant')}</td>
-      <td><span style="color:var(--indigo);font-weight:600">${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}</span></td>
-      <td><span style="background:rgba(99,102,241,0.15);color:var(--indigo);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">${esc(c['Visa'] || 'H1B')}</span></td>
-      <td>📍 ${esc(c['Target Location'] || c['Location'] || 'USA')}</td>
-      <td style="color:var(--emerald);font-weight:700">$${c['PayRate'] || 65}/hr</td>
-      <td style="font-weight:800;color:var(--emerald)">${c['Match Score'] || 80}%</td>
-      <td><span style="color:var(--emerald);background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">Available</span></td>
-      <td style="display:flex;gap:6px">
-        <button class="btn-action btn-action-indigo" style="height:32px;padding:0 12px" onclick="preset('${esc(c['Target Skill (AREA)'] || c['AREA'] || 'IT')}','${esc(c['Target Location'] || c['Location'] || 'USA')}')">Find Jobs</button>
-        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(16,185,129,0.1);color:var(--emerald);border:1px solid rgba(16,185,129,0.3)" onclick="markPlaced('${esc(c._doc_id || c.id || '')}')" title="Mark Placed">✅</button>
-        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)" onclick="removeCandidate('${esc(c._doc_id || c.id || '')}', this)" title="Remove Candidate">🗑️</button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-sub)">No matching consultants.</td></tr>';
-}
-
-// ── SUBMISSIONS & VENDORS ──────────────────────────────────────
-async function loadSubmissions() {
-  try {
-    const res = await fetch('/api/submissions');
-    STATE.submissions = await res.json();
-    renderSubmissions();
-  } catch(e) {}
-}
-
-function renderSubmissions() {
-  const tbody = document.getElementById('submissionsBody');
-  if (!tbody) return;
-
-  // Update Dashboard
-  const count = STATE.submissions.length;
-  let totalMargin = 0;
-  STATE.submissions.forEach(s => {
-    totalMargin += parseFloat(s.margin_hr || 0);
-  });
-  const avgMargin = count ? (totalMargin / count).toFixed(2) : '0.00';
-  // Assume 160 hours per month for monthly pipeline
-  const monthlyPipeline = Math.round(totalMargin * 160);
-
-  const dCount = document.getElementById('crmTotalCount');
-  if (dCount) dCount.textContent = count;
-  const dAvg = document.getElementById('crmAvgMargin');
-  if (dAvg) dAvg.textContent = `$${avgMargin}/hr`;
-  const dPipe = document.getElementById('crmTotalMonthly');
-  if (dPipe) dPipe.textContent = `$${monthlyPipeline.toLocaleString()}`;
-
-  tbody.innerHTML = STATE.submissions.map(s => `
-    <tr>
-      <td>
-        <div style="font-weight:700;color:#fff">${esc(s.consultant_name)}</div>
-        ${s.notes ? `<div style="font-size:11px;color:var(--text-sub);margin-top:2px;font-style:italic">"${esc(s.notes)}"</div>` : ''}
-      </td>
-      <td><strong>${esc(s.job_title)}</strong><div style="font-size:11px;color:var(--indigo)">${esc(s.company)}</div></td>
-      <td style="text-transform:uppercase;font-weight:700;font-size:11px;color:var(--text-sub)">${esc(s.board)}</td>
-      <td>${esc(s.date || s.created_at_iso?.split(' ')[0] || '')}</td>
-      <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">${esc(s.status || 'Submitted')}</span></td>
-      <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
-      <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
-      <td>
-        ${esc(s.vendor_email || '—')}
-      </td>
-      <td style="display:flex;gap:4px;">
-        ${s.vendor_email ? `<a href="mailto:${encodeURIComponent(s.vendor_email)}?subject=${encodeURIComponent(`Submission for ${s.job_title} - ${s.consultant_name}`)}&body=${encodeURIComponent(`Hi ${s.vendor_name || 'Vendor'},
-
-I am submitting ${s.consultant_name} for the ${s.job_title} role at ${s.company}.
-
-Availability: ${s.availability || 'Immediate'}
-Proposed Bill Rate: $${s.bill_rate}/hr
-
-Please find the details attached and let me know the next steps.
-
-Thanks,
-${CURRENT_USER.id}`)}" class="btn-action" style="height:32px;padding:0 10px;background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.3);text-decoration:none;display:flex;align-items:center;justify-content:center;" title="Email Vendor">✉️ Send</a>` : ''}
-        <button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button>
-        <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteSubmission('${esc(s.id)}')">🗑</button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-sub)">No submissions logged yet. Click "Submit" on any job card.</td></tr>';
-    
-  updateAnalyticsChart();
-}
-
-function updateAnalyticsChart() {
-  const ctx = document.getElementById('analyticsChart');
-  if (!ctx) return;
-  
-  // Aggregate data by date
-  const dateCounts = {};
-  [...STATE.submissions].reverse().forEach(s => {
-    const d = s.date || (s.created_at_iso ? s.created_at_iso.split(' ')[0] : 'Unknown');
-    dateCounts[d] = (dateCounts[d] || 0) + 1;
-  });
-  const labels = Object.keys(dateCounts);
-  const data = Object.values(dateCounts);
-
-  if (STATE.chartInst) {
-    STATE.chartInst.data.labels = labels;
-    STATE.chartInst.data.datasets[0].data = data;
-    STATE.chartInst.update();
-  } else {
-    STATE.chartInst = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Submissions',
-          data: data,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3,
-          pointBackgroundColor: '#10b981',
-          pointBorderColor: '#10b981'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false, color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', stepSize: 1 } }
-        }
-      }
-    });
-  }
-}
-
-function escapeCsv(str) {
-  if (str === null || str === undefined) return '""';
-  return `"${String(str).replace(/"/g, '""')}"`;
-}
-
-function downloadCsv(filename, headers, rows) {
-  const csv = [headers.map(escapeCsv).join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-}
-
-function exportSubmissionsCSV() {
-  if (!STATE.submissions.length) { toast('No submissions to export', 'error'); return; }
-  const headers = ['Consultant', 'Job Title', 'Company', 'Board', 'Date', 'Status', 'Bill Rate', 'Pay Rate', 'Margin $/hr'];
-  const rows = STATE.submissions.map(s => [s.consultant_name, s.job_title, s.company, s.board, s.date || s.created_at_iso, s.status, s.bill_rate, s.pay_rate, s.margin_hr]);
-  downloadCsv('3SBC_Submissions.csv', headers, rows);
-  toast('Exported Submissions!', 'success');
-}
-
-function exportBenchCSV() {
-  if (!STATE.candidates.length) { toast('No candidates to export', 'error'); return; }
-  const headers = ['Consultant Name', 'Target Skill', 'Visa', 'Location', 'Pay Rate', 'Match Score', 'Status'];
-  const rows = STATE.candidates.map(c => [
-    c['Consultant Name'] || c['NAME OF THE CONSULTANT'] || '',
-    c['Target Skill (AREA)'] || c['AREA'] || '',
-    c['Visa'] || 'H1B',
-    c['Target Location'] || c['Location'] || '',
-    c['PayRate'] || 65,
-    c['Match Score'] || 75,
-    c['Status'] || 'Available'
-  ]);
-  downloadCsv('3SBC_Bench_Pool.csv', headers, rows);
-  toast('Exported Bench Pool!', 'success');
-}
-
-function exportSavedJobsCSV() {
-  if (!STATE.savedJobs.length) { toast('No saved jobs to export', 'error'); return; }
-  const headers = ['Job Title', 'Company', 'Board', 'Location', 'Salary', 'URL', 'Date Saved'];
-  const rows = STATE.savedJobs.map(j => [j.title, j.company, j.board_label || j.board, j.location, j.salary, j.url, j.created_at_iso || '']);
-  downloadCsv('3SBC_Saved_Jobs.csv', headers, rows);
-  toast('Exported Saved Jobs!', 'success');
-}
-
-function exportCSV() {
-  exportSubmissionsCSV();
-}
-
-function renderVendors() {
-  const grid = document.getElementById('vendorGrid');
-  if (!grid) return;
-  grid.innerHTML = STATE.vendors.map(v => `
-    <div class="job-card" style="position:relative;">
-      <div style="font-weight:700;color:#fff">${esc(v.name)}</div>
-      <div style="color:var(--indigo);font-weight:600">${esc(v.company)} ${v.tier ? `<span style="font-size:10px;background:rgba(99,102,241,0.15);padding:2px 6px;border-radius:4px;margin-left:4px">${esc(v.tier)}</span>` : ''}</div>
-      <div style="font-size:12px;color:var(--text-sub);margin-top:4px">${esc(v.email)} · ${esc(v.phone)}</div>
-      ${v.tech ? `<div style="font-size:11px;color:var(--emerald);margin-top:4px">Tech: ${esc(v.tech)}</div>` : ''}
-      ${v.notes ? `<div style="font-size:11px;color:var(--text-sub);margin-top:4px;font-style:italic">"${esc(v.notes)}"</div>` : ''}
-      <button class="btn-action" style="position:absolute;top:16px;right:16px;height:24px;width:24px;padding:0;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteVendor('${esc(v.id)}')">🗑</button>
-    </div>`).join('') || '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-sub)">No vendor contacts added yet.</div>';
-}
-
-async function loadVendors() {
-  try {
-    const res = await fetch('/api/vendors');
-    STATE.vendors = await res.json();
-    renderVendors();
-  } catch(e) {}
-}
-
-function openVendorModal() { document.getElementById('vendorModal')?.classList.remove('hidden'); }
-async function saveVendor() {
-  const name = document.getElementById('vName').value.trim();
-  const company = document.getElementById('vCompany').value.trim();
-  const email = document.getElementById('vEmail').value.trim();
-  const phone = document.getElementById('vPhone').value.trim();
-  const tier = document.getElementById('vTier').value;
-  const tech = document.getElementById('vTech').value.trim();
-  const notes = document.getElementById('vNotes').value.trim();
-  
-  if (!name || !company) return toast('Name and Company required', 'error');
-  
-  const payload = { name, company, email, phone, tier, tech, notes };
-  try {
-    await fetch('/api/vendors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    STATE.vendors.push(payload);
-    toast('Added vendor contact!', 'success');
-    closeModal('vendorModal');
-    renderVendors();
-  } catch(e) {
-    toast('Failed to save vendor to cloud', 'error');
-  }
-}
-
-async function deleteVendor(vid) {
-  if(!confirm("Are you sure you want to delete this vendor?")) return;
-  try {
-    await fetch(`/api/vendors/${vid}`, { method: 'DELETE' });
-    STATE.vendors = STATE.vendors.filter(v => v.id !== vid);
-    renderVendors();
-    toast('Vendor deleted', 'info');
-  } catch(e) {}
-}
-
-async function deleteSubmission(subId) {
-  if(!confirm("Are you sure you want to delete this submission?")) return;
-  try {
-    await fetch(`/api/submissions/${subId}`, { method: 'DELETE' });
-    STATE.submissions = STATE.submissions.filter(s => s.id !== subId);
-    renderSubmissions();
-    toast('Submission deleted', 'info');
-  } catch(e) {}
-}
-
-function openAddCandidateModal() { document.getElementById('addCandidateModal')?.classList.remove('hidden'); }
-
-let acSelectedFile = null;
-const acDz = document.getElementById('acDropzone');
-const acInput = document.getElementById('acFileInput');
-const acDzText = document.getElementById('acDzText');
-
-if (acDz && acInput) {
-  acDz.addEventListener('click', () => acInput.click());
-  acDz.addEventListener('dragover', e => { e.preventDefault(); acDz.style.borderColor = 'var(--indigo)'; });
-  acDz.addEventListener('dragleave', () => acDz.style.borderColor = 'rgba(255,255,255,0.15)');
-  acDz.addEventListener('drop', e => {
-    e.preventDefault(); acDz.style.borderColor = 'rgba(255,255,255,0.15)';
-    if (e.dataTransfer.files.length) handleAcFile(e.dataTransfer.files[0]);
-  });
-  acInput.addEventListener('change', e => {
-    if (e.target.files.length) handleAcFile(e.target.files[0]);
-  });
-}
-
-function handleAcFile(file) {
-  if (file.type !== 'application/pdf') return toast('Please upload a PDF file.', 'error');
-  acSelectedFile = file;
-  acDzText.textContent = file.name;
-  acDzText.style.color = 'var(--emerald)';
-  acDz.style.borderColor = 'var(--emerald)';
-  acDz.style.background = 'rgba(16, 185, 129, 0.05)';
-}
-
-async function saveCandidate() {
-  const name = document.getElementById('acName').value.trim();
-  const email = document.getElementById('acEmail').value.trim();
-  const skill = document.getElementById('acSkill').value.trim();
-  const visa = document.getElementById('acVisa').value;
-  const pay = document.getElementById('acPay').value;
-  const loc = document.getElementById('acLocation').value.trim();
-  const btn = document.getElementById('acSubmitBtn');
-
-  if(!name || !skill || !email || !loc || !acSelectedFile) {
-    return toast('Please fill all fields and upload a Resume.', 'error');
-  }
-
-  btn.disabled = true;
-  btn.textContent = '🤖 Processing with AI...';
-
-  const formData = new FormData();
-  formData.append('resume', acSelectedFile);
-  formData.append('name', name);
-  formData.append('email', email);
-  formData.append('phone', '');
-  formData.append('location', loc);
-  formData.append('skill', skill);
-  formData.append('rate', pay);
-  formData.append('visa', visa);
-
-  try {
-    const res = await fetch('/api/candidates/apply', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    
-    if (data.success) {
-      toast('Candidate successfully processed and added to bench!', 'success');
-      document.getElementById('acName').value = '';
-      document.getElementById('acEmail').value = '';
-      document.getElementById('acSkill').value = '';
-      document.getElementById('acLocation').value = '';
-      document.getElementById('acPay').value = '85';
-      acSelectedFile = null;
-      acDzText.textContent = 'Click to upload Resume';
-      acDzText.style.color = '#fff';
-      acDz.style.borderColor = 'rgba(255,255,255,0.15)';
-      acDz.style.background = 'rgba(0,0,0,0.2)';
-      closeModal('addCandidateModal');
-      loadBench();
-    } else {
-      toast('AI Error: ' + data.error, 'error');
-    }
-  } catch(e) {
-    toast('Failed to reach AI processing engine', 'error');
+    setStatus('', `Error: ${err.message}`);
+    toast('Search failed — click Try Again');
   } finally {
     btn.disabled = false;
-    btn.textContent = '🤖 AI Process & Save to Bench';
+    btn.textContent = '🔍 Search Jobs';
   }
 }
 
-async function removeCandidate(id, btnEl) {
-  if (!id) return toast('Cannot delete: Missing Candidate ID', 'error');
-  if (!confirm('Are you sure you want to remove this candidate?')) return;
-  
-  if (btnEl) btnEl.disabled = true;
-  try {
-    await fetch('/api/candidates', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    toast('Candidate removed successfully!', 'success');
-    loadBench();
-  } catch(e) {
-    toast('Failed to remove candidate', 'error');
-    if (btnEl) btnEl.disabled = false;
-  }
-}
-
-// ── SAVED JOBS (HOTLIST) ──────────────────────────────────────
-async function loadSavedJobs() {
-  try {
-    const res = await fetch('/api/jobs/saved');
-    STATE.savedJobs = await res.json();
-    renderSavedJobs();
-  } catch(e) {}
-}
-
-function renderSavedJobs() {
-  const grid = document.getElementById('savedJobsGrid');
-  if (!grid) return;
-  
-  grid.innerHTML = (STATE.savedJobs || []).map(j => {
-    const b64 = btoa(encodeURIComponent(JSON.stringify(j)));
-    // URL is stored directly as a data attribute for bulletproof removal
-    const safeUrl = esc(j.url || '');
-    const boardColors = {linkedin:'#0077b5',dice:'#e8571e',indeed:'#003a9b',ziprecruiter:'#4caf50',monster:'#6d0df0'};
-    const bColor = boardColors[j.board] || 'var(--indigo)';
-    return `
-    <div class="job-card" style="border-top:3px solid ${bColor}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:10px;text-transform:uppercase;color:${bColor};font-weight:700;background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px">${esc(j.board_label || j.board)}</span>
-        ${j.url && j.url !== '#' ? `<a href="${safeUrl}" target="_blank" style="font-size:10px;color:var(--text-muted);text-decoration:none" title="View original posting">↗ View</a>` : ''}
-      </div>
-      <div style="font-weight:700;color:#fff;font-size:15px;line-height:1.3">${esc(j.title)}</div>
-      <div style="color:var(--indigo);font-size:13px;font-weight:600;margin-top:2px">${esc(j.company)}</div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text-sub)">📍 ${esc(j.location)}</div>
-      ${j.salary ? `<div style="margin-top:4px;font-size:12px;color:var(--emerald);font-weight:700">💰 ${esc(j.salary)}</div>` : ''}
-      <div style="margin-top:14px;display:flex;gap:8px">
-        <button class="btn-action btn-action-emerald" style="flex:1" onclick="openSubmitModal('${b64}')">🚀 Submit</button>
-        <button class="btn-action" style="flex:0.5;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)" onclick="removeSavedJobByUrl('${safeUrl}')">🗑️ Remove</button>
-      </div>
-    </div>`;
-  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-sub)"><div style="font-size:32px;margin-bottom:12px">⭐</div><div style="font-size:14px">No saved jobs yet</div><div style="font-size:12px;margin-top:4px">Click "Save to Hotlist" on any job card</div></div>';
-}
-
-async function removeSavedJobByUrl(jobUrl) {
-  if (!jobUrl) return;
-
-  // 1. Instantly remove from STATE and re-render (optimistic)
-  STATE.savedJobs = STATE.savedJobs.filter(j => j.url !== jobUrl);
-  renderSavedJobs();
-
-  // 2. Sync the Kanban board button back to unsaved state
-  document.querySelectorAll('.job-card').forEach(card => {
-    if (card.getAttribute('data-job-url') === jobUrl) {
-      card.style.border = '';
-      card.style.boxShadow = '';
-      const btn = card.querySelector('.btn-toggle-hotlist');
-      if (btn) {
-        btn.innerHTML = '⭐ Save to Hotlist';
-        btn.style.background = 'rgba(255,255,255,0.05)';
-        btn.style.color = 'var(--text-main)';
-        btn.style.borderColor = 'rgba(255,255,255,0.1)';
-      }
-    }
-  });
-
-  // 3. Delete from server using URL (no doc_id needed — server derives it)
-  try {
-    await fetch('/api/jobs/saved/delete', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ url: jobUrl })
-    });
-    toast('Job removed from Hotlist', 'success');
-  } catch(e) {
-    console.error('Remove failed:', e);
-    toast('Removed locally (sync failed)', 'success');
-  }
-}
-
-// Keep old name working too
-async function removeSavedJobB64(b64) {
-  if (!b64) return;
-  const targetJob = JSON.parse(decodeURIComponent(atob(b64)));
-  await removeSavedJobByUrl(targetJob.url);
-}
-
-async function toggleHotlist(b64, btnEl) {
-  const job      = JSON.parse(decodeURIComponent(atob(b64)));
-  const savedJob = (STATE.savedJobs || []).find(sj => sj.url === job.url);
-
-  if (savedJob) {
-    // ---- ALREADY SAVED: Optimistically unsave ----
-    if (btnEl) {
-      btnEl.innerHTML = '⭐ Save to Hotlist';
-      btnEl.style.background = 'rgba(255,255,255,0.05)';
-      btnEl.style.color = 'var(--text-main)';
-      btnEl.style.borderColor = 'rgba(255,255,255,0.1)';
-      const card = btnEl.closest('.job-card');
-      if (card) { card.style.border = ''; card.style.boxShadow = ''; }
-    }
-    await removeSavedJobByUrl(job.url);
-
-  } else {
-    // ---- NOT SAVED: Optimistically save ----
-    if (btnEl) {
-      btnEl.innerHTML = '✅ Saved';
-      btnEl.style.background = 'rgba(16, 185, 129, 0.1)';
-      btnEl.style.color = 'var(--emerald)';
-      btnEl.style.borderColor = 'var(--emerald)';
-      const card = btnEl.closest('.job-card');
-      if (card) {
-        card.style.border = '1px solid var(--emerald)';
-        card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
-      }
-    }
-    if (!STATE.savedJobs) STATE.savedJobs = [];
-    STATE.savedJobs.unshift({...job, doc_id: 'pending'});
-    renderSavedJobs();
-
-    try {
-      await fetch('/api/jobs/saved', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(job)
-      });
-      // Re-fetch to get real doc_ids synced
-      const saved = await fetch('/api/jobs/saved').then(r => r.json());
-      STATE.savedJobs = saved;
-      renderSavedJobs();
-      toast('⭐ Job saved to Hotlist!', 'success');
-    } catch(e) {
-      toast('Saved locally (cloud sync failed)', 'success');
-    }
-  }
-}
-
-function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
-
-// ── INITIALIZATION ────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  setupTabs();
-  setupSearch();
-  loadBench();
-  loadSubmissions();
-  loadVendors();
-  loadSavedJobs();
-
-  // Set default search values
-  const skillInput = document.getElementById('skillInput');
-  const locationInput = document.getElementById('locationInput');
-  if (skillInput && !skillInput.value) skillInput.value = 'SAP MM';
-  if (locationInput && !locationInput.value) locationInput.value = 'United States of America';
-
-  // Check User Auth & run initial search
-  checkSession();
-  runSearch();
-
-  // Auto poll every 5 minutes (avoid hammering scrapers)
-  setInterval(() => {
-    if (CURRENT_USER && CURRENT_USER.id) {
-      runSearch(true); // background refresh
-    }
-  }, 300000);
+// Enter key support
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('inp-skill').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+  document.getElementById('inp-loc').addEventListener('keydown',   e=>{ if(e.key==='Enter') doSearch(); });
+  doSearch(); // Auto-search on load
 });
-
-}
-
 </script>
-
-  <!-- Floating Action Button for Feedback -->
-  <button class="fab-btn" onclick="openFeedbackModal()" style="position:fixed; bottom:24px; right:24px; width:60px; height:60px; border-radius:30px; background:var(--accent-primary); color:white; border:none; box-shadow:0 10px 20px rgba(0,0,0,0.2); font-size:1.5rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:900; transition:transform 0.2s;">
-    💬
-  </button>
-
-  <!-- Feedback Modal -->
-  <div class="modal-overlay hidden" id="feedbackModal">
-    <div class="modal-content" style="max-width:500px;">
-      <div class="modal-header">
-        <h3>Submit Feedback</h3>
-        <button class="close-btn" onclick="closeFeedbackModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="field-group">
-          <label class="field-label">Your Feedback / Issue</label>
-          <textarea class="form-input" id="feedbackText" rows="4" placeholder="Describe your feedback, feature request, or issue here..." style="resize:vertical;"></textarea>
-        </div>
-        <div class="field-group" style="margin-top:1rem;">
-          <label class="field-label">Attach Image (Optional, for reference)</label>
-          <input type="file" id="feedbackImage" accept="image/*" class="form-input" style="padding:0.5rem;" />
-          <p style="font-size:0.8rem; color:var(--text-sub); margin-top:0.3rem;">Image will be compressed automatically.</p>
-        </div>
-        <canvas id="feedbackCanvas" style="display:none;"></canvas>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
-        <button class="btn-primary" id="btnSubmitFeedback" onclick="submitFeedback()">Submit Feedback</button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>

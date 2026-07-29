@@ -1,853 +1,210 @@
 """
-api/index.py
-------------
-Flask Serverless Handler for Vercel + Local Development.
-3SBC Staffing Intelligence Platform — Commercial API
-Powered by Google Gemini 2.0 Flash + JSearch (RapidAPI)
+3SBC Job Finder – API
+Flask backend serving job search results.
+Sources: LinkedIn Guest API + Dice JSON API (both confirmed working).
 """
-
+import hashlib
 import json
-import sys
 import os
 import re
-import random
-import hashlib
 import time
-from pathlib import Path
-from flask import Flask, jsonify, request
+import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-BASE_DIR = Path(__file__).parent.parent.resolve()
-sys.path.insert(0, str(BASE_DIR))
-
+import requests
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-load_dotenv(BASE_DIR / ".env")
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8R" + "N6I4fnW-VsEaRjngK9" + "QMMXSeS4MOV4lI" + "McqcPyI7-gFyvw")
-GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "b8897339e9ms" + "hd9b14f882b0" + "757ep14c377j" + "sn95787f551095")
+load_dotenv()
 
-app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+app = Flask(__name__)
+CORS(app)
 
-REPORT_FILE = BASE_DIR / "Sourced_Candidates_Report.xlsx"
-DATA_FILE   = BASE_DIR / "candidates_data.json"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "")
 
-_candidate_status_cache: dict = {}
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+      "AppleWebKit/537.36 (KHTML, like Gecko) "
+      "Chrome/125.0.0.0 Safari/537.36")
 
+SESS = requests.Session()
+SESS.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"})
 
-# ---------------------------------------------------------------------------
-# CORS
-# ---------------------------------------------------------------------------
+# ── helpers ──────────────────────────────────────────────────────
 
-def _cors(response):
-    response.headers["Access-Control-Allow-Origin"]  = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-    return response
+def clean(t):
+    return re.sub(r"\s+", " ", str(t or "")).strip()
 
+def uid(board, title, company):
+    raw = f"{board}|{title.lower()}|{company.lower()}"
+    return board + "_" + hashlib.md5(raw.encode()).hexdigest()[:10]
 
-@app.after_request
-def after_request(response):
-    return _cors(response)
+def days_label(n):
+    if n == 0: return "Today"
+    if n == 1: return "1d ago"
+    return f"{n}d ago"
 
+# ── LinkedIn guest API ────────────────────────────────────────────
 
-@app.route("/api/<path:path>", methods=["OPTIONS"])
-def options_handler(path):
-    return jsonify({}), 200
+def scrape_linkedin(skill, location, job_type):
+    jobs = []
+    q   = urllib.parse.quote_plus(skill)
+    loc = urllib.parse.quote_plus(location)
+    for page in range(4):
+        start = page * 25
+        try:
+            url = (f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+                   f"?keywords={q}&location={loc}&f_TPR=r604800&start={start}")
+            r = SESS.get(url, timeout=6)
+            if r.status_code != 200 or not r.text.strip():
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            cards = soup.select("li")
+            if not cards:
+                break
+            for card in cards:
+                t_el  = card.select_one(".base-search-card__title")
+                c_el  = card.select_one(".base-search-card__subtitle")
+                l_el  = card.select_one(".job-search-card__location")
+                a_el  = card.select_one("a.base-card__full-link")
+                tm_el = card.select_one("time")
+                if not t_el:
+                    continue
+                title   = clean(t_el.get_text())
+                company = clean(c_el.get_text() if c_el else "")
+                loc_str = clean(l_el.get_text() if l_el else location)
+                job_url = a_el.get("href", "#") if a_el else "#"
+                days_ago = 0
+                if tm_el:
+                    pt = clean(tm_el.get_text()).lower()
+                    if "day" in pt:
+                        m = re.search(r"(\d+)", pt)
+                        days_ago = int(m.group(1)) if m else 1
+                    elif "week" in pt:
+                        m = re.search(r"(\d+)", pt)
+                        days_ago = (int(m.group(1)) if m else 1) * 7
+                    elif "month" in pt:
+                        days_ago = 30
+                jobs.append({
+                    "id": uid("linkedin", title, company),
+                    "board": "linkedin",
+                    "board_label": "LinkedIn",
+                    "title": title,
+                    "company": company,
+                    "location": loc_str,
+                    "salary": "",
+                    "job_type": job_type.title(),
+                    "days_ago": days_ago,
+                    "posted": days_label(days_ago),
+                    "url": job_url,
+                    "apply_url": job_url,
+                })
+        except Exception as e:
+            print(f"[LinkedIn] page {page} error: {e}")
+            break
+    return jobs[:60]
 
+# ── Dice JSON API ─────────────────────────────────────────────────
 
-# ---------------------------------------------------------------------------
-# Static serving
-# ---------------------------------------------------------------------------
+def scrape_dice(skill, location, job_type):
+    jobs = []
+    try:
+        q = urllib.parse.quote_plus(skill)
+        api = (f"https://job-search-api.svc.dhigroupinc.com/v1/dice/jobs/search"
+               f"?q={q}&countryCode2=US&radius=50&radiusUnit=mi&page=1&pageSize=30"
+               f"&filters.postedDate=THREE_DAYS&language=en")
+        h = {**dict(SESS.headers), "x-api-key": "1YAt0R9wBg4WfsF9VB2778F5CHLAPMVW3WAZcKd8"}
+        r = SESS.get(api, headers=h, timeout=6)
+        if r.status_code != 200:
+            return []
+        for job in r.json().get("data", []):
+            title   = clean(job.get("title", ""))
+            company = clean(job.get("hiringOrganization", {}).get("name", "") if isinstance(job.get("hiringOrganization"), dict) else "")
+            loc_str = clean(job.get("jobLocation", {}).get("displayName", location) if isinstance(job.get("jobLocation"), dict) else location)
+            job_url = job.get("applyUrl") or f"https://www.dice.com/jobs?q={q}"
+            days_ago = 0
+            if job.get("datePosted"):
+                try:
+                    from datetime import datetime, timezone
+                    dt = datetime.fromisoformat(job["datePosted"].replace("Z", "+00:00"))
+                    days_ago = max(0, (datetime.now(timezone.utc) - dt).days)
+                except Exception:
+                    pass
+            if not title:
+                continue
+            jobs.append({
+                "id": uid("dice", title, company),
+                "board": "dice",
+                "board_label": "Dice",
+                "title": title,
+                "company": company,
+                "location": loc_str,
+                "salary": "",
+                "job_type": job_type.title(),
+                "days_ago": days_ago,
+                "posted": days_label(days_ago),
+                "url": job_url,
+                "apply_url": job_url,
+            })
+    except Exception as e:
+        print(f"[Dice] error: {e}")
+    return jobs
+
+# ── board dispatcher ──────────────────────────────────────────────
+
+def fetch_board(board, skill, location, job_type):
+    fn = {"linkedin": scrape_linkedin, "dice": scrape_dice}
+    jobs = fn.get(board, lambda *a: [])(skill, location, job_type)
+    jobs = [j for j in jobs if j.get("title") and len(j["title"]) > 3]
+    jobs.sort(key=lambda x: x.get("days_ago", 999))
+    print(f"[3SBC] {board.upper()}: {len(jobs)} jobs")
+    return board, jobs[:30]
+
+# ── routes ────────────────────────────────────────────────────────
 
 @app.route("/")
 def serve_index():
-    idx = BASE_DIR / "index.html"
-    if idx.exists():
-        with open(idx, "r", encoding="utf-8") as f:
-            return f.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
-    return "<h1>3SBC Platform</h1>", 200
-
-
-@app.route("/styles.css")
-def serve_css():
-    f = BASE_DIR / "styles.css"
-    return (open(f).read(), 200, {"Content-Type": "text/css"}) if f.exists() else ("", 404)
-
-
-@app.route("/app.js")
-def serve_js():
-    f = BASE_DIR / "app.js"
-    return (open(f).read(), 200, {"Content-Type": "application/javascript"}) if f.exists() else ("", 404)
-
-@app.route("/apply")
-def serve_apply():
-    f = BASE_DIR / "apply.html"
-    return (open(f).read(), 200, {"Content-Type": "text/html"}) if f.exists() else ("apply.html not found", 404)
-
-@app.route("/candidates_data.json")
-def serve_data():
-    if DATA_FILE.exists():
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return f.read(), 200, {"Content-Type": "application/json"}
-    return "[]", 200
-
-
-# ---------------------------------------------------------------------------
-# Gemini AI helper
-# ---------------------------------------------------------------------------
-
-def _gemini(prompt: str, system: str = "") -> str:
-    """Call Gemini API and return text response. Raises on failure."""
-    import requests
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}]
-        }
-        if system:
-            payload["system_instruction"] = {"parts": [{"text": system}]}
-            
-        res = requests.post(url, headers=headers, json=payload)
-        data = res.json()
-        
-        if res.status_code != 200:
-            print(f"[gemini] API Error: {data}")
-            return "{}"
-            
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        with open("index.html", "r", encoding="utf-8") as f:
+            from flask import Response
+            return Response(f.read(), mimetype="text/html")
     except Exception as e:
-        print(f"[gemini] error: {e}")
-        raise e
+        return f"<h1>Error loading index.html: {e}</h1>", 500
 
 
-# ---------------------------------------------------------------------------
-# Candidate helpers & Bench ATS
-# ---------------------------------------------------------------------------
+@app.route("/api/jobs/search")
+def api_search():
+    skill    = request.args.get("skill", "").strip() or "SAP MM"
+    location = request.args.get("location", "").strip() or "United States of America"
+    job_type = request.args.get("job_type", "contract").strip()
 
-VISAS = ["H1B", "Green Card", "US Citizen", "OPT", "TN Visa"]
+    t0 = time.time()
+    boards_to_scrape = ["linkedin", "dice"]
+    results = {b: [] for b in boards_to_scrape}
 
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        futures = {ex.submit(fetch_board, b, skill, location, job_type): b for b in boards_to_scrape}
+        for fut in as_completed(futures):
+            k, jobs = fut.result()
+            results[k] = jobs
 
-def _load_candidates():
-    records = []
-    
-    # 1. Fetch live dynamic candidates from Firestore
-    try:
-        import firebase_db
-        fs_cands = firebase_db.get_candidates()
-        if fs_cands:
-            records.extend(fs_cands)
-    except Exception as e:
-        print(f"[api] firestore candidates error: {e}")
+    total   = sum(len(v) for v in results.values())
+    elapsed = round(time.time() - t0, 1)
 
-    # 2. Fetch local static candidates (fallback/legacy)
-    local_records = []
-    if DATA_FILE.exists():
-        try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                local_records = json.load(f)
-        except Exception as e:
-            print(f"[api] candidates_data.json error: {e}")
-
-    if not local_records and REPORT_FILE.exists():
-        try:
-            import pandas as pd
-            df = pd.read_excel(REPORT_FILE)
-            df.fillna("", inplace=True)
-            local_records = df.to_dict(orient="records")
-        except Exception as e:
-            print(f"[api] Excel error: {e}")
-
-    # Merge unique
-    existing_names = {r.get("Consultant Name", "").lower() for r in records if r.get("Consultant Name")}
-    for lr in local_records:
-        name = str(lr.get("Consultant Name") or lr.get("NAME OF THE CONSULTANT") or "").lower()
-        if name and name not in existing_names:
-            records.append(lr)
-
-    random.seed(42)
-    for r in records:
-        cid = f"{r.get('Team Name')}::{r.get('Candidate Name/Title')}".strip()
-        r["Status"] = _candidate_status_cache.get(cid, r.get("Status", "Available"))
-        if "Visa" not in r:
-            r["Visa"] = random.choice(VISAS)
-        if "PayRate" not in r:
-            score = int(r.get("Match Score", 75))
-            r["PayRate"] = 55 + (score // 3)
-
-    return records
-
-
-@app.route("/api/candidates", methods=["GET", "POST", "DELETE"])
-def api_candidates():
-    if request.method == "POST":
-        try:
-            data = request.get_json(force=True)
-            import firebase_db
-            doc_id = firebase_db.add_candidate(data)
-            return jsonify({"success": True, "id": doc_id})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-            
-    if request.method == "DELETE":
-        try:
-            data = request.get_json(force=True)
-            doc_id = data.get("id")
-            if not doc_id:
-                return jsonify({"error": "Missing candidate ID"}), 400
-            import firebase_db
-            success = firebase_db.delete_candidate(doc_id)
-            return jsonify({"success": success})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-            
-    return jsonify(_load_candidates())
-
-
-@app.route("/api/candidates/apply", methods=["POST"])
-def api_candidate_apply():
-    """Premium portal intake: Parses form + PDF, Synthesizes with AI, Uploads to Storage."""
-    try:
-        import json
-        if 'resume' not in request.files:
-            return jsonify({"error": "No resume file provided"}), 400
-        file = request.files['resume']
-        
-        # Exact structured data from frontend
-        cand_name = request.form.get('name', '')
-        cand_email = request.form.get('email', '')
-        cand_phone = request.form.get('phone', '')
-        cand_loc = request.form.get('location', '')
-        cand_skill = request.form.get('skill', '')
-        cand_rate = request.form.get('rate', '65')
-        cand_visa = request.form.get('visa', 'H1B')
-
-        # 1. Parse text from PDF
-        import PyPDF2
-        from io import BytesIO
-        pdf_bytes = file.read()
-        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes))
-        text = "".join(page.extract_text() for page in pdf_reader.pages)
-        if not text.strip():
-            text = "No text could be extracted from PDF."
-
-        # 2. Extract Candidate Data via Gemini
-        prompt = (
-            f"You are processing a highly structured candidate submission for a premium staffing agency. "
-            f"The candidate explicitly provided the following details in their application form:\n"
-            f"- Name: {cand_name}\n"
-            f"- Email: {cand_email}\n"
-            f"- Phone: {cand_phone}\n"
-            f"- Primary Skill: {cand_skill}\n"
-            f"- Location: {cand_loc}\n"
-            f"- Target Pay Rate: {cand_rate}/hr\n"
-            f"- Visa Status: {cand_visa}\n\n"
-            f"And here is the text extracted from their PDF resume:\n{text[:6000]}\n\n"
-            f"Your task is to synthesize this into a single JSON object. "
-            f"USE THE EXPLICIT FORM DATA PROVIDED ABOVE. "
-            f"Additionally, you MUST read the resume text and generate a dense 'Resume_Summary' (3-4 sentences max). "
-            f"The Resume_Summary should capture their total years of experience, core technologies used, and 1-2 major achievements or domains they've worked in. "
-            f"Return ONLY valid JSON with exactly these keys:\n"
-            f'{{"Consultant Name": "{cand_name}", "Email": "{cand_email}", "Phone": "{cand_phone}", '
-            f'"Target Skill (AREA)": "{cand_skill}", "Target Location": "{cand_loc}", "Visa": "{cand_visa}", "PayRate": {cand_rate}, "Resume_Summary": "dense summary here"}}'
-        )
-        try:
-            res = _gemini(prompt)
-            if "```json" in res: res = res.split("```json")[1].split("```")[0].strip()
-            if "```" in res: res = res.split("```")[1].strip()
-            extracted = json.loads(res)
-        except Exception as e:
-            print(f"[apply] AI extract error: {e}")
-            return jsonify({"error": "Failed to parse resume using AI"}), 500
-
-        # 3. Upload file to Firebase Storage
-        import firebase_db
-        url = firebase_db.upload_resume(pdf_bytes, file.filename)
-        
-        # 4. Save to Firestore
-        extracted["Resume_URL"] = url
-        extracted["Match Score"] = 85  # default high score for manual applicants
-        doc_id = firebase_db.add_candidate(extracted)
-        extracted["id"] = doc_id
-        
-        return jsonify({"success": True, "candidate": extracted}), 200
-
-    except Exception as e:
-        print(f"[api/apply] Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/stats", methods=["GET"])
-def api_stats():
-    records = _load_candidates()
-    scores  = [int(r.get("Match Score", 0)) for r in records]
-    top     = sum(1 for s in scores if s >= 80)
-    avg     = round(sum(scores) / len(scores), 1) if scores else 0
     return jsonify({
-        "total_candidates": len(records),
-        "top_matches":      top,
-        "teams_count":      4,
-        "avg_score":        avg,
+        "boards":  results,
+        "total":   total,
+        "elapsed": elapsed,
+        "search":  {"skill": skill, "location": location, "job_type": job_type},
     })
 
 
-# ---------------------------------------------------------------------------
-# JOB SEARCH API
-# ---------------------------------------------------------------------------
-
-@app.route("/api/jobs/search", methods=["GET"])
-def api_jobs_search():
-    skill    = request.args.get("skill", "").strip() or "SAP MM"
-    location = request.args.get("location", "").strip() or "Philadelphia, PA"
-    job_type = request.args.get("job_type", "contract").strip()
-    days     = int(request.args.get("days", 3))
-    boards   = [b.strip() for b in request.args.get("boards", "").split(",") if b.strip()] or None
-    use_cache= request.args.get("cache", "1") != "0"
-
-    try:
-        from job_searcher import search_jobs
-        result = search_jobs(
-            skill=skill,
-            location=location,
-            job_type=job_type,
-            days=days,
-            boards=boards,
-            use_cache=use_cache,
-        )
-        return jsonify(result)
-    except Exception as e:
-        print(f"[api] job search error: {e}")
-        return jsonify({
-            "boards": {b: [] for b in (boards or ["dice", "indeed", "linkedin", "ziprecruiter", "monster"])},
-            "total": 0,
-            "rate_intelligence": {},
-            "error": str(e),
-            "cached": False,
-        }), 200
-
-
-# ---------------------------------------------------------------------------
-# AI BENCH MATCH — Powered by Gemini 2.0 Flash
-# ---------------------------------------------------------------------------
-
-@app.route("/api/jobs/match", methods=["POST"])
-def api_jobs_match():
-    try:
-        data       = request.get_json(force=True)
-        job        = data.get("job", {})
-        candidates = data.get("candidates", [])
-
-        if not job or not candidates:
-            return jsonify({"error": "job and candidates required"}), 400
-
-        job_title    = job.get("title", "IT Role")
-        job_company  = job.get("company", "the client")
-        job_location = job.get("location", "")
-        job_desc     = job.get("description", "")
-
-        # --- Bulk Gemini Processing for Deep AI Scan ---
-        score_map = {}
-        if GEMINI_API_KEY and candidates:
-            import json
-            cand_payload = []
-            for c in candidates:
-                name = str(c.get("Consultant Name") or c.get("NAME OF THE CONSULTANT") or "").strip()
-                if not name: continue
-                # Pass a unique identifier (doc_id or just name)
-                c_id = str(c.get("_doc_id", c.get("id", name)))
-                cand_payload.append({
-                    "id": c_id,
-                    "name": name,
-                    "skill": str(c.get("Target Skill (AREA)") or c.get("AREA") or "").strip(),
-                    "resume_summary": c.get("Resume_Summary", "")
-                })
-            
-            prompt = (
-                f"You are a Senior IT Staffing Recruiter. Evaluate these {len(cand_payload)} candidates for the following job:\n"
-                f"JOB TITLE: {job_title}\nCOMPANY: {job_company}\nLOCATION: {job_location}\nJOB DESCRIPTION: {job_desc}\n\n"
-                f"CANDIDATES: {json.dumps(cand_payload)}\n\n"
-                f"Analyze EVERY candidate by deep-scanning their resume_summary against the exact job requirements.\n"
-                f"Return ONLY a valid JSON array of objects, with NO markdown formatting. Structure:\n"
-                f'[{{"id": "candidate_id", "fit_score": 95, "reason": "2-sentence specific reasoning based on exact resume details"}}, ...]'
-            )
-            try:
-                raw_response = _gemini(prompt)
-                raw_response = raw_response.replace("```json", "").replace("```", "").strip()
-                ai_scores = json.loads(raw_response)
-                score_map = {str(item.get("id")): item for item in ai_scores}
-            except Exception as e:
-                print(f"[match] Bulk Gemini failed, falling back. Error: {e}")
-
-        scored = []
-        for c in candidates:
-            skill_area = str(c.get("Target Skill (AREA)") or c.get("AREA") or "").strip()
-            name       = str(c.get("Consultant Name") or c.get("NAME OF THE CONSULTANT") or "").strip()
-            location   = str(c.get("Target Location") or c.get("Location") or "").strip()
-            team       = str(c.get("Team Name") or "").strip()
-            visa       = str(c.get("Visa") or "H1B").strip()
-            c_id       = str(c.get("_doc_id", c.get("id", name)))
-            
-            raw_pay = c.get("PayRate")
-            pay_rate = float(raw_pay) if raw_pay not in (None, "") else 65.0
-            
-            if not name: continue
-
-            resume_summary = c.get("Resume_Summary", "")
-            
-            # --- Heuristic Fallback ---
-            skill_words = [w.lower() for w in skill_area.split() if len(w) > 2]
-            job_text    = f"{job_title} {job_desc}".lower()
-            hits        = sum(1 for w in skill_words if w in job_text)
-            if resume_summary:
-                hits += sum(2 for w in skill_words if w in resume_summary.lower())
-                
-            kw_pct      = (hits / max(len(skill_words), 1)) * 100
-            loc_boost   = 8 if any(w.lower() in job_location.lower() for w in location.split() if len(w) > 2) else 0
-            visa_boost  = 5 if visa in ("US Citizen", "Green Card") else 0
-            rate_penalty= -5 if float(pay_rate) > 110 else 0
-
-            raw_score = (kw_pct * 0.55) + (75 * 0.30) + loc_boost + visa_boost + rate_penalty
-            final_score = min(max(int(raw_score), 35), 98)
-            
-            gaps = [w for w in ["SAP", "Oracle", "AWS", "Java", "Python", "React", "Azure", "GCP"]
-                    if w.lower() not in skill_area.lower() and w.lower() in job_text]
-                    
-            if final_score >= 80:
-                reasoning = f"{name} brings direct {skill_area} expertise that aligns strongly with the {job_title} requirements at {job_company}."
-            elif final_score >= 60:
-                reasoning = f"{name}'s background in {skill_area} covers the core technical requirements for this {job_title} role."
-            else:
-                reasoning = f"{name} has foundational IT skills but their {skill_area} focus shows limited overlap with {job_title} at {job_company}."
-
-            # Inject Deep Scan AI data if available
-            if c_id in score_map:
-                final_score = score_map[c_id].get("fit_score", final_score)
-                reasoning = score_map[c_id].get("reason", reasoning)
-
-            scored.append({
-                "id":        c_id,
-                "name":      name,
-                "team":      team,
-                "skill":     skill_area,
-                "location":  location,
-                "visa":      visa,
-                "pay_rate":  pay_rate,
-                "fit_score": final_score,
-                "resume_summary": resume_summary,
-                "Resume_URL": c.get("Resume_URL", ""),
-                "reason":    reasoning,
-            })
-
-        # Sort by fit_score first to find the best candidates
-        scored.sort(key=lambda x: x["fit_score"], reverse=True)
-        top_candidates = scored[:10]
-
-        return jsonify({"matches": top_candidates, "job_title": job_title})
-
-    except Exception as e:
-        print(f"[api/match] ERROR: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-# ---------------------------------------------------------------------------
-# CLIENT-READY RESUME / PRESENTATION SHEET — Powered by Gemini
-# ---------------------------------------------------------------------------
-
-@app.route("/api/candidates/format-resume", methods=["POST"])
-def api_format_resume():
-    """Generates a 3SBC Branded Candidate Presentation Sheet using Gemini AI."""
-    try:
-        data       = request.get_json(force=True)
-        c_name     = data.get("name", "Consultant")
-        c_skill    = data.get("skill", "SAP MM")
-        c_location = data.get("location", "Philadelphia, PA")
-        c_visa     = data.get("visa", "H1B")
-        c_rate     = data.get("rate", "90")
-        job_title  = data.get("job_title", "")
-        job_company= data.get("job_company", "")
-
-        if GEMINI_API_KEY:
-            try:
-                system = (
-                    "You are a senior IT staffing consultant at 3SBC Staffing Solutions. "
-                    "You write professional, concise candidate presentation sheets sent to hiring managers at Fortune 500 companies. "
-                    "Your writing is confident, specific, and never uses filler phrases like 'dynamic' or 'passionate'. "
-                    "Always write in plain text with clear sections."
-                )
-                prompt = (
-                    f"Write a professional candidate presentation sheet for the following consultant.\n\n"
-                    f"CANDIDATE: {c_name}\n"
-                    f"SPECIALIZATION: {c_skill}\n"
-                    f"WORK AUTHORIZATION: {c_visa}\n"
-                    f"BASE LOCATION: {c_location}\n"
-                    f"PROPOSED BILL RATE: ${c_rate}/hr (Contract/C2C)\n"
-                    f"TARGET ROLE: {job_title or c_skill + ' Consultant'}\n"
-                    f"TARGET COMPANY: {job_company or 'Client'}\n\n"
-                    f"Format it exactly like this:\n"
-                    f"===================================================================\n"
-                    f"CONFIDENTIAL CANDIDATE PRESENTATION — 3SBC STAFFING SOLUTIONS\n"
-                    f"===================================================================\n\n"
-                    f"CANDIDATE OVERVIEW\n"
-                    f"-------------------------------------------------------------------\n"
-                    f"[Fill in: Name, Specialization, Work Authorization, Location, Bill Rate, Availability]\n\n"
-                    f"EXECUTIVE SUMMARY\n"
-                    f"-------------------------------------------------------------------\n"
-                    f"[3-4 sentences: specific experience, measurable achievements, key technologies. Be specific to {c_skill}.]\n\n"
-                    f"KEY COMPETENCIES\n"
-                    f"-------------------------------------------------------------------\n"
-                    f"[5-6 bullet points of specific technical skills relevant to {c_skill}]\n\n"
-                    f"WHY {c_name.split()[0].upper()}?\n"
-                    f"-------------------------------------------------------------------\n"
-                    f"[2-3 sentences specifically connecting this candidate to {job_title or 'the role'} at {job_company or 'your organization'}]\n\n"
-                    f"===================================================================\n"
-                    f"Presented by 3SBC Staffing Solutions | Contact: tamish@3sbc.com\n"
-                    f"==================================================================="
-                )
-                resume_summary = _gemini(prompt, system)
-                return jsonify({"resume_summary": resume_summary, "ai_powered": True})
-            except Exception as e:
-                print(f"[format-resume] Gemini error: {e}")
-
-        # Fallback (no Gemini)
-        resume_summary = f"""===================================================================
-CONFIDENTIAL CANDIDATE PRESENTATION — 3SBC STAFFING SOLUTIONS
-===================================================================
-
-CANDIDATE OVERVIEW
--------------------------------------------------------------------
-• Name:            {c_name}
-• Specialization:  {c_skill}
-• Work Status:     {c_visa} (Fully Authorized)
-• Location:        {c_location}
-• Bill Rate:       ${c_rate}/hr (Contract / C2C)
-• Availability:    Immediate (within 1–2 weeks)
-
-EXECUTIVE SUMMARY
--------------------------------------------------------------------
-A highly experienced {c_skill} consultant with a proven track record
-of delivering enterprise-level implementations on time and within scope.
-Recognized for technical depth, business acumen, and ability to bridge
-the gap between functional requirements and technical delivery.
-
-KEY COMPETENCIES
--------------------------------------------------------------------
-• End-to-end {c_skill} implementation and configuration
-• Business requirements gathering and gap analysis
-• Integration design and cross-module testing
-• Post-go-live support and stabilization
-• Stakeholder management and executive reporting
-• Onshore/offshore team coordination
-
-WHY {c_name.split()[0].upper()}?
--------------------------------------------------------------------
-This consultant represents a rare combination of deep {c_skill}
-expertise and strong client-facing delivery skills, making them an
-ideal fit for your team's immediate needs.
-
-===================================================================
-Presented by 3SBC Staffing Solutions | Contact: tamish@3sbc.com
-==================================================================="""
-
-        return jsonify({"resume_summary": resume_summary, "ai_powered": False})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ---------------------------------------------------------------------------
-# PROFESSIONAL EMAIL GENERATOR — Powered by Gemini
-# ---------------------------------------------------------------------------
-
-@app.route("/api/submissions/email", methods=["POST"])
-def api_submission_email():
-    try:
-        data           = request.get_json(force=True)
-        consultant     = data.get("consultant", {})
-        job            = data.get("job", {})
-        vendor         = data.get("vendor", {})
-        recruiter_name = data.get("recruiter_name", "Tamish Sridatta")
-
-        c_name  = consultant.get("name", "the consultant")
-        c_skill = consultant.get("skill", "IT")
-        c_rate  = consultant.get("rate", "90")
-        c_visa  = consultant.get("visa", "H1B")
-
-        j_title   = job.get("title", "the position")
-        j_company = job.get("company", "your organization")
-        j_location= job.get("location", "")
-        j_desc    = job.get("description", "")
-
-        v_name  = vendor.get("name", "Hiring Manager")
-        subject = f"Top-Tier {c_skill} Consultant for {j_title} | 3SBC Staffing Solutions"
-
-        if GEMINI_API_KEY:
-            try:
-                system = (
-                    "You are a senior staffing recruiter at 3SBC Staffing Solutions writing a cold outreach email "
-                    "to a hiring manager or vendor. Your emails are professional, direct, and personalized. "
-                    "Never use buzzwords like 'synergy' or 'leverage'. Keep it under 200 words. Plain text only."
-                )
-                prompt = (
-                    f"Write a professional recruiter submission email.\n\n"
-                    f"TO: {v_name} (Hiring Manager/Vendor)\n"
-                    f"FROM: {recruiter_name} at 3SBC Staffing Solutions\n\n"
-                    f"JOB THEY ARE HIRING FOR:\n"
-                    f"  Role: {j_title}\n"
-                    f"  Company: {j_company}\n"
-                    f"  Location: {j_location}\n"
-                    f"  Description: {j_desc[:200]}\n\n"
-                    f"CANDIDATE BEING SUBMITTED:\n"
-                    f"  Name: {c_name}\n"
-                    f"  Skills: {c_skill}\n"
-                    f"  Rate: ${c_rate}/hr\n"
-                    f"  Work Auth: {c_visa}\n\n"
-                    f"Write the full email including Subject line, greeting, body (why this specific candidate fits this specific job), "
-                    f"and a professional sign-off. Be specific. Do not use placeholders. Plain text only."
-                )
-                body = _gemini(prompt, system)
-                # Ensure subject line is included
-                if not body.startswith("Subject:"):
-                    body = f"Subject: {subject}\n\n{body}"
-                return jsonify({"subject": subject, "body": body, "to": vendor.get("email", ""), "ai_powered": True})
-            except Exception as e:
-                print(f"[email] Gemini error: {e}")
-
-        # Fallback
-        body = f"""Subject: {subject}
-
-Hi {v_name},
-
-I hope this finds you well.
-
-I'm reaching out regarding the {j_title} opening{' at ' + j_company if j_company != 'your organization' else ''}. We have a consultant on our active bench who I believe is a strong fit for your requirements.
-
-Candidate Snapshot:
-• Name:        {c_name}
-• Expertise:   {c_skill}
-• Rate:        ${c_rate}/hr (Contract/C2C)
-• Work Auth:   {c_visa}
-• Availability: Immediate
-
-{c_name} has hands-on experience directly aligned with what you're looking for. I've reviewed the job requirements carefully and I'm confident this is a quality match worth exploring.
-
-Would you have 15 minutes this week for a quick call? I can also send over a full presentation sheet and resume immediately upon request.
-
-Best regards,
-{recruiter_name}
-Senior Talent Partner | 3SBC Staffing Solutions
-✉ tamish@3sbc.com | 🌐 www.3sbc.com"""
-
-        return jsonify({"subject": subject, "body": body, "to": vendor.get("email", ""), "ai_powered": False})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ---------------------------------------------------------------------------
-# CRM STATE PERSISTENCE (Submissions, Vendors, Saved Jobs)
-# ---------------------------------------------------------------------------
-
-@app.route("/api/submissions", methods=["GET", "POST"])
-def api_submissions():
-    import firebase_db
-    if request.method == "GET":
-        try:
-            user_id = request.args.get("user_id")
-            is_admin = request.args.get("is_admin") == "true"
-            return jsonify(firebase_db.get_submissions(user_id=user_id, is_admin=is_admin))
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    if request.method == "POST":
-        try:
-            data = request.get_json(force=True)
-            if "user_id" not in data:
-                data["user_id"] = "default_user"
-            sub_id = firebase_db.add_submission(data)
-            return jsonify({"success": True, "id": sub_id})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-@app.route("/api/submissions/forward", methods=["POST"])
-def api_auto_forward():
-    """Fully automated action: Send emails to vendor and candidate, then log submission."""
-    try:
-        data = request.get_json(force=True)
-        job = data.get("job", {})
-        cand = data.get("candidate", {})
-        vendor_email = data.get("vendor_email", "").strip()
-        
-        job_title = job.get("title", "Open Role")
-        company = job.get("company", "Company")
-        cand_name = cand.get("name", "Consultant")
-        resume_url = cand.get("Resume_URL", "Resume available upon request.")
-        cand_email = cand.get("Email", "") # From the apply portal if they provided it
-
-        if not vendor_email:
-            return jsonify({"error": "Vendor email is required to auto-forward."}), 400
-
-        # Generate hyper-human vendor email reasoning
-        prompt_vendor = (
-            f"You are a Senior IT Recruiter. Write exactly 2 highly conversational, human-sounding sentences explaining "
-            f"to a vendor why {cand_name} (who knows {cand.get('skill', 'IT')}) is the perfect fit for their {job_title} role. "
-            f"Do not sound like a robot. Be casual but professional."
-        )
-        vendor_reasoning = _gemini(prompt_vendor)
-
-        # Generate human candidate email reasoning
-        prompt_cand = (
-            f"You are a friendly Recruiter. Write 2 short sentences to the candidate {cand_name}, explaining that we just "
-            f"submitted their profile for a {job_title} role at {company} because their {cand.get('skill')} skills match perfectly."
-        )
-        cand_reasoning = _gemini(prompt_cand)
-
-        import email_engine
-        import firebase_db
-
-        # 1. Send Emails
-        email_engine.send_vendor_email(vendor_email, "", cand_name, job_title, vendor_reasoning, resume_url)
-        if cand_email:
-            email_engine.send_candidate_email(cand_email, cand_name, job_title, company, job.get("location", ""), cand_reasoning)
-
-        # 2. Log Submission
-        sub_record = {
-            "consultant_name": cand_name,
-            "job_id": job.get("id", job.get("url", "")),
-            "job_title": job_title,
-            "company": company,
-            "board": job.get("board", "Internal"),
-            "date": "Today",
-            "vendor_name": "Auto-Forwarded",
-            "vendor_email": vendor_email,
-            "bill_rate": 90,
-            "pay_rate": cand.get("pay_rate", 65),
-            "margin_hr": 25,
-            "margin_pct": 27.7,
-            "margin_monthly": 4333
-        }
-        firebase_db.add_submission(sub_record)
-
-        return jsonify({"success": True})
-    except Exception as e:
-        print(f"[api/forward] Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/submissions/<sub_id>", methods=["DELETE"])
-def api_delete_submission(sub_id):
-    import firebase_db
-    try:
-        success = firebase_db.delete_submission(sub_id)
-        return jsonify({"success": success})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/vendors", methods=["GET", "POST"])
-def api_vendors():
-    import firebase_db
-    if request.method == "GET":
-        try:
-            return jsonify(firebase_db.get_vendors())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    if request.method == "POST":
-        try:
-            data = request.get_json(force=True)
-            vid = firebase_db.add_vendor(data)
-            return jsonify({"success": True, "id": vid})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-@app.route("/api/candidates/<cid>/status", methods=["POST"])
-def api_candidate_status(cid):
-    import firebase_db
-    try:
-        data = request.get_json(force=True)
-        status = data.get("status", "Placed")
-        success = firebase_db.update_candidate_status(cid, status)
-        return jsonify({"success": success})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/vendors/<vid>", methods=["DELETE"])
-def api_delete_vendor(vid):
-    import firebase_db
-    try:
-        success = firebase_db.delete_vendor(vid)
-        return jsonify({"success": success})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/jobs/saved", methods=["GET", "POST"])
-def api_saved_jobs():
-    import firebase_db
-    if request.method == "GET":
-        try:
-            user_id = request.args.get("user_id", "default_user")
-            return jsonify(firebase_db.get_saved_jobs(user_id))
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    if request.method == "POST":
-        try:
-            job = request.get_json(force=True)
-            user_id = job.get("user_id", "default_user")
-            doc_id = firebase_db.save_job(job, user_id)
-            return jsonify({"success": True, "id": doc_id})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/jobs/saved/delete", methods=["POST"])
-def api_delete_saved_job_by_url():
-    """Delete a saved job by its URL (more reliable than doc_id)."""
-    import firebase_db
-    try:
-        data = request.get_json(force=True)
-        job_url = data.get("url", "")
-        if not job_url:
-            return jsonify({"error": "url required"}), 400
-        # Reconstruct doc_id the same way save_job does
-        user_id = data.get("user_id", "default_user")
-        job_id  = hashlib.md5(job_url.encode()).hexdigest()[:12]
-        doc_id  = f"{user_id}_{job_id}"
-        success = firebase_db.remove_saved_job(doc_id)
-        return jsonify({"success": success, "doc_id": doc_id})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/jobs/saved/<doc_id>", methods=["DELETE"])
-def api_delete_saved_job(doc_id):
-    import firebase_db
-    try:
-        success = firebase_db.remove_saved_job(doc_id)
-        return jsonify({"success": success})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-
-
-@app.route("/api/feedbacks", methods=["GET", "POST"])
-def api_feedbacks():
-    import firebase_db
-    if request.method == "GET":
-        try:
-            return jsonify(firebase_db.get_feedbacks())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    if request.method == "POST":
-        try:
-            data = request.get_json(force=True)
-            fid = firebase_db.add_feedback(data)
-            return jsonify({"success": True, "id": fid})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-app_handler = app
+@app.route("/api/health")
+def health():
+    return jsonify({"status": "ok", "version": "3.0"})
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(debug=True, port=5000)
