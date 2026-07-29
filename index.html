@@ -1576,8 +1576,21 @@ function renderSubmissions() {
       <td><span style="color:var(--blue);background:rgba(59,130,246,0.15);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700">${esc(s.status || 'Submitted')}</span></td>
       <td>$${s.bill_rate}/hr / $${s.pay_rate}/hr</td>
       <td style="color:var(--emerald);font-weight:700">$${s.margin_hr}/hr</td>
-      <td>${esc(s.vendor_email || '—')}</td>
+      <td>
+        ${esc(s.vendor_email || '—')}
+      </td>
       <td style="display:flex;gap:4px;">
+        ${s.vendor_email ? `<a href="mailto:${encodeURIComponent(s.vendor_email)}?subject=${encodeURIComponent(`Submission for ${s.job_title} - ${s.consultant_name}`)}&body=${encodeURIComponent(`Hi ${s.vendor_name || 'Vendor'},
+
+I am submitting ${s.consultant_name} for the ${s.job_title} role at ${s.company}.
+
+Availability: ${s.availability || 'Immediate'}
+Proposed Bill Rate: $${s.bill_rate}/hr
+
+Please find the details attached and let me know the next steps.
+
+Thanks,
+${CURRENT_USER.id}`)}" class="btn-action" style="height:32px;padding:0 10px;background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.3);text-decoration:none;display:flex;align-items:center;justify-content:center;" title="Email Vendor">✉️ Send</a>` : ''}
         <button class="btn-action btn-action-indigo" style="height:32px;padding:0 10px" onclick="toast('Logged submission details')">👁</button>
         <button class="btn-action" style="height:32px;padding:0 10px;background:rgba(244,63,94,0.1);color:var(--rose);border:1px solid rgba(244,63,94,0.3)" onclick="deleteSubmission('${esc(s.id)}')">🗑</button>
       </td>
