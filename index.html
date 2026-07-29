@@ -831,14 +831,18 @@ function applyRoleBasedUI() {
   // Add logout button to nav if not exists
   let logoutBtn = document.getElementById('logoutBtn');
   if (!logoutBtn) {
-    const nav = document.querySelector('.navbar');
-    logoutBtn = document.createElement('button');
-    logoutBtn.id = 'logoutBtn';
-    logoutBtn.className = 'btn-secondary';
-    logoutBtn.textContent = 'Logout';
-    logoutBtn.style.marginLeft = 'auto';
-    logoutBtn.onclick = logout;
-    nav.appendChild(logoutBtn);
+    const nav = document.querySelector('.user-area');
+    if (nav) {
+      logoutBtn = document.createElement('button');
+      logoutBtn.id = 'logoutBtn';
+      logoutBtn.className = 'nav-tab';
+      logoutBtn.textContent = 'Logout';
+      logoutBtn.style.marginLeft = '12px';
+      logoutBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+      logoutBtn.style.color = '#ef4444';
+      logoutBtn.onclick = logout;
+      nav.appendChild(logoutBtn);
+    }
   }
 }
 
