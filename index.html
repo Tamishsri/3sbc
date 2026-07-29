@@ -1052,8 +1052,11 @@ async function runSearch(isBackground = false) {
   }
 
   try {
-    const cacheParam = '&cache=0'; // ALWAYS bypass cache for live demo!
-    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`);
+    const cacheParam = '&cache=0'; // ALWAYS bypass cache for live results!
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s browser timeout
+    const res  = await fetch(`/api/jobs/search?skill=${encodeURIComponent(skill)}&location=${encodeURIComponent(location)}&job_type=${jobType}${cacheParam}`, { signal: controller.signal });
+    clearTimeout(timeoutId);
     const data = await res.json();
 
     STATE.jobResults = data.boards || {};

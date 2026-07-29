@@ -124,7 +124,7 @@ def _scrape_linkedin(skill: str, location: str, job_type: str) -> list:
                 f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
                 f"?keywords={q}&location={loc}&f_TPR=r604800&start={start}"
             )
-            r = SESSION.get(url, timeout=12)
+            r = SESSION.get(url, timeout=6)
             if r.status_code != 200 or not r.text.strip():
                 break
 
@@ -198,7 +198,7 @@ def _scrape_indeed(skill: str, location: str, job_type: str) -> list:
         loc = urllib.parse.quote_plus(location)
         url = f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage=7&sort=date"
 
-        r = SESSION.get(url, timeout=12)
+        r = SESSION.get(url, timeout=6)
         if r.status_code != 200:
             print(f"[job_searcher] Indeed HTTP {r.status_code}")
             return []
@@ -263,7 +263,7 @@ def _scrape_dice(skill: str, location: str, job_type: str) -> list:
             f"&filters.postedDate=THREE_DAYS&language=en"
         )
         headers_dice = {**HEADERS, "x-api-key": "1YAt0R9wBg4WfsF9VB2778F5CHLAPMVW3WAZcKd8"}
-        r = SESSION.get(api_url, headers=headers_dice, timeout=10)
+        r = SESSION.get(api_url, headers=headers_dice, timeout=6)
 
         if r.status_code == 200:
             data = r.json()
@@ -314,7 +314,7 @@ def _scrape_dice(skill: str, location: str, job_type: str) -> list:
         else:
             # Fallback to HTML scrape
             url = f"https://www.dice.com/jobs?q={q}&location={loc}&filters.postedDate=THREE_DAYS&filters.employmentType=CONTRACTS"
-            r2 = SESSION.get(url, timeout=10)
+            r2 = SESSION.get(url, timeout=6)
             if r2.status_code == 200:
                 soup = BeautifulSoup(r2.text, "html.parser")
                 for card in soup.select("dhi-search-card, [data-cy='card'], .card")[:RESULTS_PER_BOARD]:
@@ -365,7 +365,7 @@ def _scrape_ziprecruiter(skill: str, location: str, job_type: str) -> list:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
         url = f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days=7"
-        r   = SESSION.get(url, timeout=12)
+        r   = SESSION.get(url, timeout=6)
         if r.status_code != 200:
             return []
 
@@ -421,7 +421,7 @@ def _scrape_monster(skill: str, location: str, job_type: str) -> list:
         q   = urllib.parse.quote_plus(skill)
         loc = urllib.parse.quote_plus(location)
         url = f"https://www.monster.com/jobs/search?q={q}&where={loc}&jobtype=contract&tm=7"
-        r   = SESSION.get(url, timeout=12)
+        r   = SESSION.get(url, timeout=6)
         if r.status_code != 200:
             return []
 
